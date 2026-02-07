@@ -1,0 +1,7 @@
+/vendor/
+.env
+/node_modules/
+*.log
+.DS_Store
+myopcards.com.conf
+/tmp/
