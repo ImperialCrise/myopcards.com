@@ -65,11 +65,23 @@ class Card
         $whereClause = implode(' AND ', $where);
         $offset = ($page - 1) * $perPage;
 
+        $sortMap = [
+            'set'        => 'set_id ASC, card_set_id ASC',
+            'name'       => 'card_name ASC',
+            'name_desc'  => 'card_name DESC',
+            'price'      => 'market_price DESC',
+            'price_asc'  => 'market_price ASC',
+            'rarity'     => "FIELD(rarity,'SEC','SP','L','SR','R','UC','C','P') ASC",
+            'newest'     => 'id DESC',
+        ];
+        $sortKey = $filters['sort'] ?? 'set';
+        $orderBy = $sortMap[$sortKey] ?? $sortMap['set'];
+
         $countStmt = $db->prepare("SELECT COUNT(*) FROM cards WHERE $whereClause");
         $countStmt->execute($params);
         $total = (int)$countStmt->fetchColumn();
 
-        $sql = "SELECT * FROM cards WHERE $whereClause ORDER BY set_id ASC, card_set_id ASC LIMIT :limit OFFSET :offset";
+        $sql = "SELECT * FROM cards WHERE $whereClause ORDER BY $orderBy LIMIT :limit OFFSET :offset";
         $stmt = $db->prepare($sql);
         foreach ($params as $key => $value) {
             $stmt->bindValue($key, $value);

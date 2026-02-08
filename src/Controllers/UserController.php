@@ -8,6 +8,7 @@ use App\Core\Auth;
 use App\Core\View;
 use App\Models\User;
 use App\Models\Friendship;
+use App\Models\PageView;
 
 class UserController
 {
@@ -17,12 +18,16 @@ class UserController
         $user = Auth::user();
         $stats = User::getCollectionStats(Auth::id());
         $friendCount = Friendship::getFriendCount(Auth::id());
+        $viewCounts = PageView::getCounts(Auth::id());
+        $recentViewers = PageView::getRecentViewers(Auth::id(), 5);
 
         View::render('pages/profile', [
             'title' => 'My Profile',
             'user' => $user,
             'stats' => $stats,
             'friendCount' => $friendCount,
+            'viewCounts' => $viewCounts,
+            'recentViewers' => $recentViewers,
         ]);
     }
 
@@ -51,16 +56,27 @@ class UserController
             return;
         }
 
+        PageView::record($user['id'], 'profile');
+
         $stats = User::getCollectionStats($user['id']);
         $friendCount = Friendship::getFriendCount($user['id']);
         $isFriend = Auth::check() ? Friendship::areFriends(Auth::id(), $user['id']) : false;
+        $viewCounts = PageView::getCounts($user['id']);
+
+        $profileDesc = $user['username'] . "'s One Piece TCG collection on MyOPCards. "
+            . number_format((int)($stats['unique_cards'] ?? 0)) . ' unique cards, valued at $'
+            . number_format((float)($stats['total_value'] ?? 0), 2) . '.';
 
         View::render('pages/public-profile', [
-            'title' => $user['username'] . "'s Profile",
+            'title' => $user['username'] . "'s One Piece TCG Collection - MyOPCards",
             'profileUser' => $user,
             'stats' => $stats,
             'friendCount' => $friendCount,
             'isFriend' => $isFriend,
+            'viewCounts' => $viewCounts,
+            'seoDescription' => $profileDesc,
+            'seoImage' => $user['avatar'] ?? '',
+            'seoOgType' => 'profile',
         ]);
     }
 

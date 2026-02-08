@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Database;
 use App\Core\View;
 use App\Models\Card;
 use App\Models\Collection;
 use App\Models\User;
 use App\Models\CardSet;
+use App\Models\PageView;
+use PDO;
 
 class CollectionController
 {
@@ -21,20 +24,108 @@ class CollectionController
         $filters = [
             'q' => $_GET['q'] ?? '',
             'set_id' => $_GET['set_id'] ?? '',
+            'rarity' => $_GET['rarity'] ?? '',
+            'color' => $_GET['color'] ?? '',
+            'sort' => $_GET['sort'] ?? 'set',
         ];
         $page = max(1, (int)($_GET['page'] ?? 1));
 
         $result = Collection::getUserCollection(Auth::id(), $wishlist, $filters, $page);
         $stats = User::getCollectionStats(Auth::id());
-        $sets = Card::getDistinctValues('set_id');
+        $user = Auth::user();
+        $viewCounts = PageView::getCounts(Auth::id());
 
         View::render('pages/collection', [
             'title' => $wishlist ? 'My Wishlist' : 'My Collection',
             'result' => $result,
             'stats' => $stats,
             'filters' => $filters,
-            'sets' => $sets,
+            'sets' => Card::getDistinctValues('set_id'),
+            'rarities' => Card::getDistinctValues('rarity'),
+            'colors' => Card::getDistinctValues('card_color'),
             'wishlist' => $wishlist,
+            'shareToken' => $user['share_token'] ?? null,
+            'viewCounts' => $viewCounts,
+            'user' => $user,
+        ]);
+    }
+
+    public function generateShare(): void
+    {
+        Auth::requireAuth();
+        header('Content-Type: application/json');
+
+        $user = Auth::user();
+        if (!empty($user['share_token'])) {
+            echo json_encode([
+                'success' => true,
+                'token' => $user['share_token'],
+                'url' => ($_ENV['APP_URL'] ?? 'https://myopcards.com') . '/s/' . $user['share_token'],
+            ]);
+            return;
+        }
+
+        $token = bin2hex(random_bytes(12));
+        User::update(Auth::id(), ['share_token' => $token]);
+
+        echo json_encode([
+            'success' => true,
+            'token' => $token,
+            'url' => ($_ENV['APP_URL'] ?? 'https://myopcards.com') . '/s/' . $token,
+        ]);
+    }
+
+    public function revokeShare(): void
+    {
+        Auth::requireAuth();
+        header('Content-Type: application/json');
+
+        $db = Database::getConnection();
+        $stmt = $db->prepare("UPDATE users SET share_token = NULL WHERE id = :id");
+        $stmt->execute(['id' => Auth::id()]);
+
+        echo json_encode(['success' => true]);
+    }
+
+    public function sharedView(string $token): void
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("SELECT * FROM users WHERE share_token = :token AND share_token IS NOT NULL LIMIT 1");
+        $stmt->execute(['token' => $token]);
+        $owner = $stmt->fetch();
+
+        if (!$owner) {
+            http_response_code(404);
+            View::render('pages/404');
+            return;
+        }
+
+        PageView::record($owner['id'], 'shared');
+
+        $filters = [
+            'q' => $_GET['q'] ?? '',
+            'set_id' => $_GET['set_id'] ?? '',
+            'rarity' => $_GET['rarity'] ?? '',
+            'color' => $_GET['color'] ?? '',
+            'sort' => $_GET['sort'] ?? 'set',
+        ];
+        $page = max(1, (int)($_GET['page'] ?? 1));
+
+        $result = Collection::getUserCollection($owner['id'], false, $filters, $page);
+        $stats = User::getCollectionStats($owner['id']);
+        $viewCounts = PageView::getCounts($owner['id']);
+
+        View::render('pages/shared-collection', [
+            'title' => $owner['username'] . "'s Collection",
+            'owner' => $owner,
+            'result' => $result,
+            'stats' => $stats,
+            'filters' => $filters,
+            'sets' => Card::getDistinctValues('set_id'),
+            'rarities' => Card::getDistinctValues('rarity'),
+            'colors' => Card::getDistinctValues('card_color'),
+            'token' => $token,
+            'viewCounts' => $viewCounts,
         ]);
     }
 
@@ -124,9 +215,12 @@ class CollectionController
             return;
         }
 
+        PageView::record($owner['id'], 'collection');
+
         $filters = [
             'q' => $_GET['q'] ?? '',
             'set_id' => $_GET['set_id'] ?? '',
+            'sort' => $_GET['sort'] ?? 'set',
         ];
         $page = max(1, (int)($_GET['page'] ?? 1));
 

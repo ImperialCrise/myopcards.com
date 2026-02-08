@@ -1,6 +1,5 @@
 <?php
 $cards = $result['cards'] ?? [];
-$collectionUser = $owner ?? [];
 $totalValueUsd = $result['total_value_usd'] ?? 0;
 $totalValueEur = $result['total_value_eur'] ?? 0;
 $currentSort = $filters['sort'] ?? 'set';
@@ -14,18 +13,30 @@ $sortOptions = [
     'added' => 'Recently Added',
     'qty' => 'Quantity',
 ];
-$baseUrl = '/collection/' . urlencode($collectionUser['username'] ?? '');
+$baseUrl = '/s/' . urlencode($token);
 ?>
 <div class="space-y-6">
-    <div class="flex items-center justify-between flex-wrap gap-4">
-        <div>
-            <div class="flex items-center gap-2">
-                <a href="/user/<?= htmlspecialchars($collectionUser['username'] ?? '') ?>" class="text-gold-400 hover:text-gold-300 transition">
-                    <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> <?= htmlspecialchars($collectionUser['username'] ?? '') ?>
-                </a>
+    <!-- Back to profile -->
+    <div class="flex items-center gap-2">
+        <a href="/user/<?= htmlspecialchars($owner['username'] ?? '') ?>" class="text-gold-400 hover:text-gold-300 transition flex items-center gap-1.5 text-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> <?= htmlspecialchars($owner['username'] ?? '') ?>'s Profile
+        </a>
+    </div>
+
+    <!-- Owner Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <?php if (!empty($owner['avatar'])): ?>
+                <img src="<?= htmlspecialchars($owner['avatar']) ?>" alt="" class="w-14 h-14 rounded-full border-2 border-dark-600">
+            <?php else: ?>
+                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-gold-500 to-amber-600 flex items-center justify-center text-2xl font-bold text-dark-900">
+                    <?= strtoupper(substr($owner['username'] ?? '?', 0, 1)) ?>
+                </div>
+            <?php endif; ?>
+            <div>
+                <h1 class="text-2xl font-display font-bold text-white"><?= htmlspecialchars($owner['username']) ?>'s Collection</h1>
+                <p class="text-sm text-dark-400 mt-0.5"><?= number_format($result['total'] ?? 0) ?> unique cards</p>
             </div>
-            <h1 class="text-2xl font-display font-bold text-white mt-1"><?= htmlspecialchars($collectionUser['username'] ?? '') ?>'s Collection</h1>
-            <p class="text-sm text-dark-400 mt-1"><?= number_format($result['total'] ?? 0) ?> unique cards</p>
         </div>
     </div>
 
@@ -49,7 +60,7 @@ $baseUrl = '/collection/' . urlencode($collectionUser['username'] ?? '');
         </div>
     </div>
 
-    <!-- Sort -->
+    <!-- Filters + Sort -->
     <div class="glass rounded-xl p-4">
         <form method="GET" action="<?= $baseUrl ?>" onsubmit="event.preventDefault(); cleanSubmit(this);" class="flex flex-wrap gap-3 items-center">
             <div class="relative flex-1 min-w-[180px]">
@@ -64,6 +75,18 @@ $baseUrl = '/collection/' . urlencode($collectionUser['username'] ?? '');
                     <option value="<?= htmlspecialchars($s) ?>" <?= ($filters['set_id'] ?? '') === $s ? 'selected' : '' ?>><?= htmlspecialchars($s) ?></option>
                 <?php endforeach; ?>
             </select>
+            <select name="rarity" onchange="cleanSubmit(this.form)" class="px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
+                <option value="">All Rarities</option>
+                <?php foreach ($rarities as $r): ?>
+                    <option value="<?= htmlspecialchars($r) ?>" <?= ($filters['rarity'] ?? '') === $r ? 'selected' : '' ?>><?= htmlspecialchars($r) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select name="color" onchange="cleanSubmit(this.form)" class="px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
+                <option value="">All Colors</option>
+                <?php foreach ($colors as $c): ?>
+                    <option value="<?= htmlspecialchars($c) ?>" <?= ($filters['color'] ?? '') === $c ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
+                <?php endforeach; ?>
+            </select>
             <div class="flex items-center gap-1.5 ml-auto">
                 <i data-lucide="arrow-up-down" class="w-4 h-4 text-dark-400"></i>
                 <select name="sort" onchange="cleanSubmit(this.form)" class="px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
@@ -72,28 +95,31 @@ $baseUrl = '/collection/' . urlencode($collectionUser['username'] ?? '');
                     <?php endforeach; ?>
                 </select>
             </div>
-            <?php if (!empty($filters['q']) || !empty($filters['set_id'])): ?>
+            <?php if (!empty($filters['q']) || !empty($filters['set_id']) || !empty($filters['rarity']) || !empty($filters['color'])): ?>
                 <a href="<?= $baseUrl ?>" class="text-xs text-dark-400 hover:text-gold-400 transition">Reset</a>
             <?php endif; ?>
         </form>
     </div>
 
+    <!-- Cards Grid -->
     <?php if (!empty($cards)): ?>
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         <?php foreach ($cards as $card): ?>
-            <a href="/cards/<?= urlencode($card['card_set_id']) ?>" class="group card-hover">
+            <div class="group card-hover">
                 <div class="glass rounded-xl overflow-hidden">
-                    <div class="relative aspect-[5/7] bg-dark-700">
-                        <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.classList.add('skeleton');this.style.display='none'">
-                        <span class="absolute top-1.5 right-1.5 px-2 py-0.5 bg-dark-900/80 text-white text-xs font-bold rounded-full"><?= (int)($card['quantity'] ?? 1) ?>x</span>
-                        <?php if (!empty($card['rarity'])): ?>
-                            <?php
-                                $rc = ['SEC' => 'from-gold-500 to-amber-600', 'SP' => 'from-purple-500 to-pink-500', 'SR' => 'from-blue-500 to-cyan-500', 'R' => 'from-emerald-500 to-green-500', 'L' => 'from-gold-500 to-amber-500'];
-                                $rb = $rc[$card['rarity']] ?? 'from-gray-500 to-gray-600';
-                            ?>
-                            <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-bold text-white bg-gradient-to-r <?= $rb ?> rounded shadow"><?= htmlspecialchars($card['rarity']) ?></span>
-                        <?php endif; ?>
-                    </div>
+                    <a href="/cards/<?= urlencode($card['card_set_id']) ?>">
+                        <div class="relative aspect-[5/7] bg-dark-700">
+                            <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.classList.add('skeleton');this.style.display='none'">
+                            <span class="absolute top-1.5 right-1.5 px-2 py-0.5 bg-dark-900/80 text-white text-xs font-bold rounded-full"><?= (int)($card['quantity'] ?? 1) ?>x</span>
+                            <?php if (!empty($card['rarity'])): ?>
+                                <?php
+                                    $rc = ['SEC' => 'from-gold-500 to-amber-600', 'SP' => 'from-purple-500 to-pink-500', 'SR' => 'from-blue-500 to-cyan-500', 'R' => 'from-emerald-500 to-green-500', 'L' => 'from-gold-500 to-amber-500'];
+                                    $rb = $rc[$card['rarity']] ?? 'from-gray-500 to-gray-600';
+                                ?>
+                                <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-bold text-white bg-gradient-to-r <?= $rb ?> rounded shadow"><?= htmlspecialchars($card['rarity']) ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </a>
                     <div class="p-2">
                         <p class="text-xs font-bold text-white truncate"><?= htmlspecialchars($card['card_name']) ?></p>
                         <div class="flex items-center justify-between mt-1">
@@ -104,7 +130,7 @@ $baseUrl = '/collection/' . urlencode($collectionUser['username'] ?? '');
                         </div>
                     </div>
                 </div>
-            </a>
+            </div>
         <?php endforeach; ?>
     </div>
 
@@ -136,8 +162,15 @@ $baseUrl = '/collection/' . urlencode($collectionUser['username'] ?? '');
             <div class="w-16 h-16 rounded-2xl bg-dark-700/50 flex items-center justify-center mx-auto mb-4">
                 <i data-lucide="package-open" class="w-8 h-8 text-dark-400"></i>
             </div>
-            <h3 class="text-lg font-display font-bold text-dark-300">Empty collection</h3>
-            <p class="text-sm text-dark-400 mt-2">This user hasn't added any cards yet.</p>
+            <h3 class="text-lg font-display font-bold text-dark-300">This collection is empty</h3>
         </div>
     <?php endif; ?>
+
+    <!-- View stats -->
+    <div class="glass rounded-xl p-4 flex items-center justify-between">
+        <span class="text-sm text-dark-400 flex items-center gap-1.5"><i data-lucide="eye" class="w-4 h-4"></i> <?= number_format($viewCounts['total'] ?? 0) ?> total views</span>
+        <a href="/user/<?= htmlspecialchars($owner['username'] ?? '') ?>" class="text-xs text-gold-400 hover:text-gold-300 transition flex items-center gap-1">
+            <i data-lucide="user" class="w-3 h-3"></i> View profile
+        </a>
+    </div>
 </div>

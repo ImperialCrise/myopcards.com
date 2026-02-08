@@ -37,6 +37,9 @@ $router->post('/collection/add', [App\Controllers\CollectionController::class, '
 $router->post('/collection/remove', [App\Controllers\CollectionController::class, 'remove']);
 $router->post('/collection/update', [App\Controllers\CollectionController::class, 'update']);
 $router->get('/collection/export', [App\Controllers\CollectionController::class, 'export']);
+$router->post('/collection/share', [App\Controllers\CollectionController::class, 'generateShare']);
+$router->post('/collection/share/revoke', [App\Controllers\CollectionController::class, 'revokeShare']);
+$router->get('/s/{token}', [App\Controllers\CollectionController::class, 'sharedView']);
 $router->get('/collection/{username}', [App\Controllers\CollectionController::class, 'publicView']);
 
 $router->get('/friends', [App\Controllers\FriendController::class, 'index']);
@@ -63,5 +66,8 @@ $router->get('/api/market/movers', [App\Controllers\MarketController::class, 'mo
 
 $router->get('/api/search', [App\Controllers\SearchController::class, 'search']);
 $router->get('/api/cards/price-history/{id}', [App\Controllers\CardController::class, 'priceHistory']);
+
+$router->get('/sitemap.xml', [App\Controllers\SeoController::class, 'sitemap']);
+$router->get('/robots.txt', [App\Controllers\SeoController::class, 'robots']);
 
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

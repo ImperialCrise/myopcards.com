@@ -32,11 +32,26 @@ class HomeController
         $userCount = $db->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
         View::render('pages/home', [
-            'title' => 'MyOPCards - One Piece TCG Collection Tracker',
+            'title' => 'MyOPCards - One Piece TCG Collection Tracker & Price Guide',
             'fullWidth' => true,
             'totalCards' => $totalCards,
             'showcaseCards' => $showcaseCards,
             'userCount' => (int)$userCount,
+            'seoDescription' => 'The ultimate One Piece TCG collection tracker. Browse ' . number_format($totalCards) . ' cards, track market prices from TCGPlayer & Cardmarket, manage your collection, and share it with friends. Join ' . number_format((int)$userCount) . ' collectors today.',
+            'seoKeywords' => 'One Piece TCG, OPTCG, card collection tracker, One Piece trading card game, card prices, Cardmarket, TCGPlayer, collection manager, One Piece cards database',
+            'seoCanonical' => 'https://myopcards.com/',
+            'seoJsonLd' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'WebSite',
+                'name' => 'MyOPCards',
+                'url' => 'https://myopcards.com',
+                'description' => 'One Piece TCG Collection Tracker & Price Guide',
+                'potentialAction' => [
+                    '@type' => 'SearchAction',
+                    'target' => 'https://myopcards.com/cards?q={search_term_string}',
+                    'query-input' => 'required name=search_term_string',
+                ],
+            ],
         ]);
     }
 }

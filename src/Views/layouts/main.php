@@ -18,12 +18,45 @@ $langs = \App\Services\OfficialSiteScraper::getAvailableLanguages();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($title ?? 'MyOPCards') ?></title>
+    <title><?= htmlspecialchars($title ?? 'MyOPCards - One Piece TCG Collection Tracker') ?></title>
+    <link rel="icon" href="/assets/img/favicon.ico" type="image/x-icon">
+    <link rel="canonical" href="<?= htmlspecialchars(($seoCanonical ?? null) ?: ('https://myopcards.com' . strtok($_SERVER['REQUEST_URI'], '?'))) ?>">
+
+    <?php
+        $seoDesc = $seoDescription ?? 'Track, manage, and share your One Piece TCG card collection. Browse card prices, market trends, and connect with other collectors on MyOPCards.';
+        $seoImage = $seoImage ?? 'https://myopcards.com/assets/img/og-default.png';
+        $seoUrl = $seoCanonical ?? 'https://myopcards.com' . strtok($_SERVER['REQUEST_URI'], '?');
+        $seoTitle = $title ?? 'MyOPCards - One Piece TCG Collection Tracker';
+    ?>
+    <meta name="description" content="<?= htmlspecialchars($seoDesc) ?>">
+    <meta name="keywords" content="<?= htmlspecialchars($seoKeywords ?? 'One Piece TCG, card collection, OPTCG, trading cards, card tracker, card prices, Cardmarket, TCGPlayer, One Piece cards, collection manager') ?>">
+    <meta name="author" content="MyOPCards">
+    <meta name="robots" content="<?= htmlspecialchars($seoRobots ?? 'index, follow') ?>">
+    <meta name="theme-color" content="#06080d">
+
+    <meta property="og:type" content="<?= htmlspecialchars($seoOgType ?? 'website') ?>">
+    <meta property="og:site_name" content="MyOPCards">
+    <meta property="og:title" content="<?= htmlspecialchars($seoTitle) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($seoDesc) ?>">
+    <meta property="og:url" content="<?= htmlspecialchars($seoUrl) ?>">
+    <meta property="og:image" content="<?= htmlspecialchars($seoImage) ?>">
+    <meta property="og:locale" content="<?= $currentLang === 'fr' ? 'fr_FR' : 'en_US' ?>">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= htmlspecialchars($seoTitle) ?>">
+    <meta name="twitter:description" content="<?= htmlspecialchars($seoDesc) ?>">
+    <meta name="twitter:image" content="<?= htmlspecialchars($seoImage) ?>">
+
+    <?php if (!empty($seoJsonLd)): ?>
+    <script type="application/ld+json"><?= json_encode($seoJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?></script>
+    <?php endif; ?>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -71,30 +104,55 @@ $langs = \App\Services\OfficialSiteScraper::getAvailableLanguages();
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center gap-2">
-                    <a href="/" class="flex items-center gap-2 mr-6">
-                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-gold-500 to-red-600 flex items-center justify-center">
-                            <i data-lucide="crown" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <span class="text-lg font-display font-bold text-white hidden sm:block">MyOPCards</span>
+                    <a href="/" class="flex items-center gap-2.5 mr-6 group">
+                        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0">
+                            <defs>
+                                <linearGradient id="logoGrad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stop-color="#d4a853"/>
+                                    <stop offset="100%" stop-color="#dc2626"/>
+                                </linearGradient>
+                                <linearGradient id="cardGrad" x1="10" y1="8" x2="26" y2="28" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+                                    <stop offset="100%" stop-color="#f0d48a" stop-opacity="0.9"/>
+                                </linearGradient>
+                            </defs>
+                            <rect width="36" height="36" rx="10" fill="url(#logoGrad)"/>
+                            <!-- Back card -->
+                            <rect x="8" y="7" width="15" height="21" rx="2.5" fill="white" fill-opacity="0.3" transform="rotate(-8 8 7)"/>
+                            <!-- Front card -->
+                            <rect x="12" y="8" width="15" height="21" rx="2.5" fill="url(#cardGrad)" transform="rotate(5 20 18)"/>
+                            <!-- OP text -->
+                            <text x="18" y="22" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="10" fill="#06080d" letter-spacing="-0.5">OP</text>
+                        </svg>
+                        <span class="text-lg font-display font-bold hidden sm:flex items-baseline gap-0">
+                            <span class="text-white group-hover:text-dark-200 transition">My</span><span class="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-amber-500">OP</span><span class="text-white group-hover:text-dark-200 transition">Cards</span>
+                        </span>
                     </a>
-                    <div class="hidden md:flex items-center gap-1">
-                        <a href="/cards" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition">
+                    <div class="hidden md:flex items-center gap-0.5">
+                        <a href="/cards" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition">
                             <i data-lucide="layers" class="w-4 h-4"></i> Cards
                         </a>
-                        <a href="/market" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition">
+                        <a href="/market" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition">
                             <i data-lucide="trending-up" class="w-4 h-4"></i> Market
                         </a>
                         <?php if ($isLoggedIn): ?>
-                        <a href="/dashboard" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition">
-                            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
-                        </a>
-                        <a href="/collection" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition">
+                        <div class="relative" x-data="{ navDrop: false }" @click.outside="navDrop = false">
+                            <button @click="navDrop = !navDrop" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition">
+                                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard <i data-lucide="chevron-down" class="w-3 h-3 transition" :class="navDrop && 'rotate-180'"></i>
+                            </button>
+                            <div x-show="navDrop" x-transition.opacity x-cloak class="absolute top-full left-0 mt-1 glass-strong rounded-xl shadow-2xl py-1 w-44 z-50">
+                                <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 text-sm text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition">
+                                    <i data-lucide="home" class="w-4 h-4"></i> Overview
+                                </a>
+                                <a href="/analytics" class="flex items-center gap-2 px-3 py-2 text-sm text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition">
+                                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics
+                                </a>
+                            </div>
+                        </div>
+                        <a href="/collection" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition">
                             <i data-lucide="folder-open" class="w-4 h-4"></i> Collection
                         </a>
-                        <a href="/analytics" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition">
-                            <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics
-                        </a>
-                        <a href="/friends" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition relative">
+                        <a href="/friends" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-dark-300 hover:text-gold-400 hover:bg-dark-700/50 transition relative">
                             <i data-lucide="users" class="w-4 h-4"></i> Friends
                             <?php if ($pendingCount > 0): ?>
                                 <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"><?= $pendingCount ?></span>
@@ -253,13 +311,31 @@ $langs = \App\Services\OfficialSiteScraper::getAvailableLanguages();
     </main>
 
     <footer class="border-t border-dark-800 mt-16">
-        <div class="max-w-7xl mx-auto px-4 py-8 text-center text-dark-400 text-sm">
+        <div class="max-w-7xl mx-auto px-4 py-8 text-center text-dark-400 text-sm space-y-2">
             <p>&copy; <?= date('Y') ?> MyOPCards. Not affiliated with Bandai or One Piece.</p>
-            <p class="mt-1">Card data via OPTCG API. Prices are indicative and may differ from actual market values.</p>
+            <p>Card data provided by OPTCG API. Prices sourced from TCGPlayer and Cardmarket.</p>
+            <p class="text-dark-500 text-xs max-w-xl mx-auto">
+                Prices displayed may not reflect current market values. MyOPCards is a recently launched platform
+                and price data is still being collected. Actual card values may vary &mdash;
+                always verify on official marketplaces before making purchasing decisions.
+            </p>
         </div>
     </footer>
 
     <script>
+        function cleanSubmit(form) {
+            const action = form.getAttribute('action') || window.location.pathname;
+            const params = new URLSearchParams();
+            for (const el of form.elements) {
+                if (!el.name) continue;
+                if (el.value && !(el.name === 'sort' && el.value === 'set')) {
+                    params.set(el.name, el.value);
+                }
+            }
+            const qs = params.toString();
+            window.location.href = action + (qs ? '?' + qs : '');
+        }
+
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');

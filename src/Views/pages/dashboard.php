@@ -8,7 +8,7 @@ $user = \App\Core\Auth::user();
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div class="glass rounded-2xl p-5">
             <div class="flex items-center gap-3 mb-3">
                 <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
@@ -48,6 +48,15 @@ $user = \App\Core\Auth::user();
             ?>
             <p class="text-2xl font-display font-bold text-white"><?= $pct ?>%</p>
             <p class="text-xs text-dark-400 mt-1">Completion</p>
+        </div>
+        <div class="glass rounded-2xl p-5">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                    <i data-lucide="eye" class="w-5 h-5 text-cyan-400"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-display font-bold text-white"><?= number_format($viewCounts['total'] ?? 0) ?></p>
+            <p class="text-xs text-dark-400 mt-1">Profile Views</p>
         </div>
     </div>
 

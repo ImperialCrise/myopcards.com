@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Collection;
 use App\Models\Friendship;
 use App\Models\CardSet;
+use App\Models\PageView;
 
 class DashboardController
 {
@@ -23,6 +24,7 @@ class DashboardController
         $friendCount = Friendship::getFriendCount(Auth::id());
         $pending = Friendship::getPendingRequests(Auth::id());
         $setCompletion = CardSet::getCompletionForUser(Auth::id());
+        $viewCounts = PageView::getCounts(Auth::id());
 
         View::render('pages/dashboard', [
             'title' => 'Dashboard',
@@ -32,6 +34,7 @@ class DashboardController
             'friendCount' => $friendCount,
             'pendingRequests' => $pending,
             'setCompletion' => $setCompletion,
+            'viewCounts' => $viewCounts,
         ]);
     }
 }

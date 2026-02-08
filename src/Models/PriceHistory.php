@@ -9,16 +9,18 @@ use PDO;
 
 class PriceHistory
 {
-    public static function getForCard(int $cardId, string $source = 'tcgplayer', int $days = 90): array
+    public static function getForCard(int $cardId, string $source = 'tcgplayer', int $days = 90, string $edition = 'en'): array
     {
         $db = Database::getConnection();
         $stmt = $db->prepare(
-            "SELECT price, recorded_at FROM price_history
-             WHERE card_id = :card_id AND source = :source AND recorded_at >= DATE_SUB(CURDATE(), INTERVAL :days DAY)
+            "SELECT price, recorded_at, edition FROM price_history
+             WHERE card_id = :card_id AND source = :source AND edition = :edition
+               AND recorded_at >= DATE_SUB(CURDATE(), INTERVAL :days DAY)
              ORDER BY recorded_at ASC"
         );
         $stmt->bindValue('card_id', $cardId, PDO::PARAM_INT);
         $stmt->bindValue('source', $source);
+        $stmt->bindValue('edition', $edition);
         $stmt->bindValue('days', $days, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();

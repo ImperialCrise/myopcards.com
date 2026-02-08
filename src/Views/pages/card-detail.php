@@ -1,7 +1,9 @@
 <?php
 $isLoggedIn = \App\Core\Auth::check();
 $priceUsd = $card['market_price'] ? number_format((float)$card['market_price'], 2) : null;
-$priceEur = $card['cardmarket_price'] ? number_format((float)$card['cardmarket_price'], 2) : null;
+$priceEn = $card['price_en'] ? number_format((float)$card['price_en'], 2) : ($card['cardmarket_price'] ? number_format((float)$card['cardmarket_price'], 2) : null);
+$priceFr = $card['price_fr'] ? number_format((float)$card['price_fr'], 2) : null;
+$priceJp = $card['price_jp'] ? number_format((float)$card['price_jp'], 2) : null;
 $rarityColors = ['SEC' => 'from-gold-500 to-amber-600', 'SP' => 'from-purple-500 to-pink-500', 'SR' => 'from-blue-500 to-cyan-500', 'R' => 'from-emerald-500 to-green-500', 'L' => 'from-gold-500 to-amber-500'];
 $rarityBg = $rarityColors[$card['rarity']] ?? 'from-gray-500 to-gray-600';
 ?>
@@ -87,29 +89,48 @@ $rarityBg = $rarityColors[$card['rarity']] ?? 'from-gray-500 to-gray-600';
             <h2 class="text-lg font-display font-bold text-white mb-4 flex items-center gap-2">
                 <i data-lucide="banknote" class="w-5 h-5 text-gold-400"></i> Market Prices
             </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="bg-dark-800/50 rounded-xl p-5">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="text-xs font-bold text-dark-400 uppercase">TCGPlayer (USD)</span>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="bg-dark-800/50 rounded-xl p-4">
+                    <div class="flex items-center gap-1.5 mb-2">
+                        <span class="text-[10px] font-bold text-dark-400 uppercase tracking-wider">TCGPlayer (USD)</span>
                     </div>
-                    <p class="text-3xl font-display font-bold <?= $priceUsd ? 'text-green-400' : 'text-dark-500' ?>">
+                    <p class="text-2xl font-display font-bold <?= $priceUsd ? 'text-green-400' : 'text-dark-500' ?>">
                         <?= $priceUsd ? '$' . $priceUsd : 'N/A' ?>
                     </p>
                 </div>
-                <div class="bg-dark-800/50 rounded-xl p-5">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="text-xs font-bold text-dark-400 uppercase">Cardmarket (EUR)</span>
+                <div class="bg-dark-800/50 rounded-xl p-4">
+                    <div class="flex items-center gap-1.5 mb-2">
+                        <span class="inline-block w-4 h-3 rounded-sm bg-gradient-to-r from-blue-600 via-white to-red-500 mr-1"></span>
+                        <span class="text-[10px] font-bold text-dark-400 uppercase tracking-wider">EN (EUR)</span>
                     </div>
-                    <p class="text-3xl font-display font-bold <?= $priceEur ? 'text-blue-400' : 'text-dark-500' ?>">
-                        <?= $priceEur ? '&euro;' . $priceEur : 'N/A' ?>
+                    <p class="text-2xl font-display font-bold <?= $priceEn ? 'text-blue-400' : 'text-dark-500' ?>">
+                        <?= $priceEn ? '&euro;' . $priceEn : 'N/A' ?>
                     </p>
-                    <?php if (!empty($card['cardmarket_url'])): ?>
-                        <a href="<?= htmlspecialchars($card['cardmarket_url']) ?>" target="_blank" class="text-xs text-dark-400 hover:text-gold-400 mt-2 inline-flex items-center gap-1">
-                            View on Cardmarket <i data-lucide="external-link" class="w-3 h-3"></i>
-                        </a>
-                    <?php endif; ?>
+                </div>
+                <div class="bg-dark-800/50 rounded-xl p-4">
+                    <div class="flex items-center gap-1.5 mb-2">
+                        <span class="inline-block w-4 h-3 rounded-sm bg-gradient-to-b from-blue-700 via-white to-red-600 mr-1"></span>
+                        <span class="text-[10px] font-bold text-dark-400 uppercase tracking-wider">FR (EUR)</span>
+                    </div>
+                    <p class="text-2xl font-display font-bold <?= $priceFr ? 'text-indigo-400' : 'text-dark-500' ?>">
+                        <?= $priceFr ? '&euro;' . $priceFr : 'N/A' ?>
+                    </p>
+                </div>
+                <div class="bg-dark-800/50 rounded-xl p-4">
+                    <div class="flex items-center gap-1.5 mb-2">
+                        <span class="inline-block w-4 h-3 rounded-sm bg-white mr-1 relative"><span class="absolute inset-0 flex items-center justify-center"><span class="w-2 h-2 rounded-full bg-red-600"></span></span></span>
+                        <span class="text-[10px] font-bold text-dark-400 uppercase tracking-wider">JP (EUR)</span>
+                    </div>
+                    <p class="text-2xl font-display font-bold <?= $priceJp ? 'text-red-400' : 'text-dark-500' ?>">
+                        <?= $priceJp ? '&euro;' . $priceJp : 'N/A' ?>
+                    </p>
                 </div>
             </div>
+            <?php if (!empty($card['cardmarket_url'])): ?>
+                <a href="<?= htmlspecialchars($card['cardmarket_url']) ?>" target="_blank" class="text-xs text-dark-400 hover:text-gold-400 mt-3 inline-flex items-center gap-1">
+                    View on Cardmarket <i data-lucide="external-link" class="w-3 h-3"></i>
+                </a>
+            <?php endif; ?>
         </div>
 
         <!-- Price Chart -->
@@ -140,11 +161,16 @@ function priceChart() {
             const ctx = document.getElementById('priceHistoryChart').getContext('2d');
             if (this.chart) this.chart.destroy();
 
-            const tcgDates = data.tcgplayer.map(p => p.recorded_at);
-            const tcgPrices = data.tcgplayer.map(p => parseFloat(p.price));
-            const cmDates = data.cardmarket.map(p => p.recorded_at);
-            const cmPrices = data.cardmarket.map(p => parseFloat(p.price));
-            const allDates = [...new Set([...tcgDates, ...cmDates])].sort();
+            const series = [
+                { key: 'tcgplayer',      label: 'TCGPlayer (USD)', color: '#22c55e' },
+                { key: 'cardmarket_en',  label: 'EN (EUR)',        color: '#3b82f6' },
+                { key: 'cardmarket_fr',  label: 'FR (EUR)',        color: '#818cf8' },
+                { key: 'cardmarket_jp',  label: 'JP (EUR)',        color: '#ef4444' },
+            ];
+
+            let allDates = new Set();
+            series.forEach(s => (data[s.key] || []).forEach(p => allDates.add(p.recorded_at)));
+            allDates = [...allDates].sort();
 
             if (allDates.length === 0) {
                 ctx.font = '14px Inter'; ctx.fillStyle = '#4a6480'; ctx.textAlign = 'center';
@@ -152,15 +178,16 @@ function priceChart() {
                 return;
             }
 
+            const datasets = series
+                .filter(s => (data[s.key] || []).length > 0)
+                .map(s => {
+                    const pts = (data[s.key] || []).map(p => ({ x: p.recorded_at, y: parseFloat(p.price) }));
+                    return { label: s.label, data: pts, borderColor: s.color, backgroundColor: s.color + '0d', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: true };
+                });
+
             this.chart = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: allDates,
-                    datasets: [
-                        { label: 'TCGPlayer (USD)', data: tcgDates.map((d, i) => ({ x: d, y: tcgPrices[i] })), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.05)', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: true },
-                        { label: 'Cardmarket (EUR)', data: cmDates.map((d, i) => ({ x: d, y: cmPrices[i] })), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.05)', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: true }
-                    ]
-                },
+                data: { labels: allDates, datasets },
                 options: {
                     responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' },
                     plugins: { legend: { labels: { color: '#8ba4c0', font: { size: 11 } } } },

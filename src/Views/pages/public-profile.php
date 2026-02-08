@@ -34,7 +34,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="glass rounded-xl p-5 text-center">
             <p class="text-2xl font-display font-bold text-white"><?= number_format($stats['unique_cards'] ?? 0) ?></p>
             <p class="text-xs text-dark-400 mt-1">Cards</p>
@@ -46,6 +46,10 @@
         <div class="glass rounded-xl p-5 text-center">
             <p class="text-2xl font-display font-bold text-white"><?= $friendCount ?></p>
             <p class="text-xs text-dark-400 mt-1">Friends</p>
+        </div>
+        <div class="glass rounded-xl p-5 text-center">
+            <p class="text-2xl font-display font-bold text-white"><?= number_format($viewCounts['total'] ?? 0) ?></p>
+            <p class="text-xs text-dark-400 mt-1 flex items-center justify-center gap-1"><i data-lucide="eye" class="w-3 h-3"></i> Views</p>
         </div>
     </div>
 

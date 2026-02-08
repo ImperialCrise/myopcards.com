@@ -17,11 +17,13 @@ class MarketController
         $setSummary = PriceHistory::getSetValueSummary();
 
         View::render('pages/market', [
-            'title' => 'Market Overview',
+            'title' => 'One Piece TCG Market Prices & Trends',
             'expensive' => $expensive,
             'collected' => $collected,
             'recentCards' => $recentCards,
             'setSummary' => $setSummary,
+            'seoDescription' => 'Track One Piece TCG card prices and market trends. See the most expensive cards, top movers, set value summaries, and price history from TCGPlayer and Cardmarket.',
+            'seoKeywords' => 'One Piece TCG prices, OPTCG market, card price tracker, most expensive One Piece cards, TCGPlayer prices, Cardmarket prices, card value trends',
         ]);
     }
 

@@ -10,29 +10,33 @@ use PDO;
 
 class CardmarketScraper
 {
-    private const SEARCH_URL = 'https://www.cardmarket.com/en/OnePiece/Products/Search?searchString=%s';
+    private const SEARCH_URLS = [
+        'en' => 'https://www.cardmarket.com/en/OnePiece/Products/Search?searchString=%s',
+        'fr' => 'https://www.cardmarket.com/fr/OnePiece/Products/Search?searchString=%s',
+        'jp' => 'https://www.cardmarket.com/en/OnePiece/Products/Search?searchString=%s+Japanese',
+    ];
     private const USER_AGENTS = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     ];
 
-    public function scrapeCardsForToday(int $limit = 670): array
+    public function scrapeCardsForToday(int $limit = 670, string $edition = 'en'): array
     {
-        $stats = ['updated' => 0, 'failed' => 0, 'skipped' => 0];
+        $stats = ['updated' => 0, 'failed' => 0, 'skipped' => 0, 'edition' => $edition];
         $cards = $this->getCardsToUpdate($limit);
 
-        echo "  " . count($cards) . " cards to update on Cardmarket...\n";
+        echo "  " . count($cards) . " cards to update on Cardmarket ($edition edition)...\n";
 
         foreach ($cards as $card) {
             $delay = random_int(2000000, 5000000);
             usleep($delay);
 
-            $result = $this->scrapeCardPrice($card['card_set_id']);
+            $result = $this->scrapeCardPrice($card['card_set_id'], $edition);
 
             if ($result !== null) {
-                $this->updateCardPrice($card['id'], $result['price'], $result['url']);
-                $this->recordPriceHistory($card['id'], 'cardmarket', $result['price']);
+                $this->updateCardPrice($card['id'], $result['price'], $result['url'], $edition);
+                $this->recordPriceHistory($card['id'], 'cardmarket', $result['price'], $edition);
                 $stats['updated']++;
             } else {
                 $this->markUpdated($card['id']);
@@ -83,9 +87,10 @@ class CardmarketScraper
         return $stmt->fetchAll();
     }
 
-    private function scrapeCardPrice(string $cardSetId): ?array
+    private function scrapeCardPrice(string $cardSetId, string $edition = 'en'): ?array
     {
-        $url = sprintf(self::SEARCH_URL, urlencode($cardSetId));
+        $baseUrl = self::SEARCH_URLS[$edition] ?? self::SEARCH_URLS['en'];
+        $url = sprintf($baseUrl, urlencode($cardSetId));
         $html = $this->fetchWithRetry($url, 2);
 
         if (!$html) return null;
@@ -162,13 +167,18 @@ class CardmarketScraper
         return null;
     }
 
-    private function updateCardPrice(int $cardId, float $price, string $url): void
+    private function updateCardPrice(int $cardId, float $price, string $url, string $edition = 'en'): void
     {
         $db = Database::getConnection();
+        $col = match ($edition) {
+            'fr' => 'price_fr',
+            'jp' => 'price_jp',
+            default => 'price_en',
+        };
         $stmt = $db->prepare(
-            "UPDATE cards SET cardmarket_price = :price, cardmarket_url = :url, price_updated_at = NOW() WHERE id = :id"
+            "UPDATE cards SET $col = :price, cardmarket_price = COALESCE(cardmarket_price, :price2), cardmarket_url = :url, price_updated_at = NOW() WHERE id = :id"
         );
-        $stmt->execute(['price' => $price, 'url' => $url, 'id' => $cardId]);
+        $stmt->execute(['price' => $price, 'price2' => $price, 'url' => $url, 'id' => $cardId]);
     }
 
     private function markUpdated(int $cardId): void
@@ -178,14 +188,14 @@ class CardmarketScraper
         $stmt->execute(['id' => $cardId]);
     }
 
-    private function recordPriceHistory(int $cardId, string $source, float $price): void
+    private function recordPriceHistory(int $cardId, string $source, float $price, string $edition = 'en'): void
     {
         $db = Database::getConnection();
         $stmt = $db->prepare(
-            "INSERT INTO price_history (card_id, source, price, recorded_at)
-             VALUES (:card_id, :source, :price, CURDATE())
+            "INSERT INTO price_history (card_id, source, edition, price, recorded_at)
+             VALUES (:card_id, :source, :edition, :price, CURDATE())
              ON DUPLICATE KEY UPDATE price = VALUES(price)"
         );
-        $stmt->execute(['card_id' => $cardId, 'source' => $source, 'price' => $price]);
+        $stmt->execute(['card_id' => $cardId, 'source' => $source, 'edition' => $edition, 'price' => $price]);
     }
 }

@@ -17,9 +17,10 @@ if ($source === 'tcgplayer') {
     $stats = $service->updateTcgplayerPrices();
     echo "TCGPlayer prices updated: {$stats['updated']}\n";
 } elseif ($source === 'cardmarket') {
+    $edition = $argv[2] ?? 'en';
     $scraper = new App\Services\CardmarketScraper();
-    $stats = $scraper->scrapeCardsForToday(670);
-    echo "Cardmarket: {$stats['updated']} updated, {$stats['failed']} failed, {$stats['skipped']} skipped\n";
+    $stats = $scraper->scrapeCardsForToday(670, $edition);
+    echo "Cardmarket ($edition): {$stats['updated']} updated, {$stats['failed']} failed, {$stats['skipped']} skipped\n";
 } else {
     echo "Unknown source: $source. Use 'tcgplayer' or 'cardmarket'.\n";
     exit(1);
