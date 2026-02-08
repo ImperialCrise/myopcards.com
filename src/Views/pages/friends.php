@@ -18,7 +18,7 @@
         </div>
         <div x-show="results.length > 0" class="mt-3 space-y-2">
             <template x-for="u in results" :key="u.id">
-                <div class="flex items-center justify-between p-3 bg-dark-800/50 rounded-xl">
+                <div class="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl">
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-full bg-gradient-to-br from-gold-500 to-gold-300 flex items-center justify-center text-dark-900 font-bold text-sm" x-text="u.username.charAt(0).toUpperCase()"></div>
                         <a :href="'/user/' + u.username" class="text-sm text-white hover:text-gold-400 transition" x-text="u.username"></a>
@@ -40,7 +40,7 @@
         </h2>
         <div class="space-y-2">
             <?php foreach ($pendingRequests as $req): ?>
-                <div class="flex items-center justify-between p-3 bg-dark-800/50 rounded-xl">
+                <div class="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl">
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
                             <?= strtoupper(substr($req['username'], 0, 1)) ?>
@@ -73,7 +73,7 @@
         <?php else: ?>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <?php foreach ($friends as $f): ?>
-                    <div class="flex items-center justify-between p-3 bg-dark-800/50 rounded-xl">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl">
                         <a href="/user/<?= htmlspecialchars($f['username']) ?>" class="flex items-center gap-3 flex-1 min-w-0">
                             <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gold-500 to-gold-300 flex items-center justify-center text-dark-900 font-bold">
                                 <?= strtoupper(substr($f['username'], 0, 1)) ?>

@@ -13,7 +13,7 @@
             <div class="space-y-2">
                 <template x-if="gainers.length === 0"><p class="text-sm text-dark-400 text-center py-4">No price data yet. Check back after price sync runs.</p></template>
                 <template x-for="card in gainers" :key="card.id">
-                    <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 p-2 rounded-lg hover:bg-dark-700/50 transition">
+                    <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition">
                         <img :src="card.card_image_url" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="this.style.display='none'">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-white truncate" x-text="card.card_name"></p>
@@ -34,7 +34,7 @@
             <div class="space-y-2">
                 <template x-if="losers.length === 0"><p class="text-sm text-dark-400 text-center py-4">No price data yet.</p></template>
                 <template x-for="card in losers" :key="card.id">
-                    <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 p-2 rounded-lg hover:bg-dark-700/50 transition">
+                    <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition">
                         <img :src="card.card_image_url" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="this.style.display='none'">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-white truncate" x-text="card.card_name"></p>

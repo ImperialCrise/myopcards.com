@@ -63,7 +63,7 @@
                     <?php if (!empty($v['avatar'])): ?>
                         <img src="<?= htmlspecialchars($v['avatar']) ?>" class="w-8 h-8 rounded-full" alt="">
                     <?php else: ?>
-                        <div class="w-8 h-8 rounded-full bg-dark-600 flex items-center justify-center text-xs font-bold text-dark-300"><?= strtoupper(substr($v['username'] ?? '?', 0, 1)) ?></div>
+                        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600"><?= strtoupper(substr($v['username'] ?? '?', 0, 1)) ?></div>
                     <?php endif; ?>
                     <div class="flex-1 min-w-0">
                         <a href="/user/<?= htmlspecialchars($v['username'] ?? '') ?>" class="text-sm font-medium text-white hover:text-gold-400 transition"><?= htmlspecialchars($v['username'] ?? 'Anonymous') ?></a>

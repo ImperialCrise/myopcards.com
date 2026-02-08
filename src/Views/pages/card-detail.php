@@ -67,19 +67,19 @@ $rarityBg = $rarityColors[$card['rarity']] ?? 'from-gray-500 to-gray-600';
                 foreach ($attrs as [$label, $value, $icon]):
                     if (empty($value)) continue;
                 ?>
-                    <div class="bg-dark-800/50 rounded-xl p-3">
-                        <div class="flex items-center gap-1.5 text-dark-400 mb-1">
+                    <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+                        <div class="flex items-center gap-1.5 text-gray-400 mb-1">
                             <i data-lucide="<?= $icon ?>" class="w-3.5 h-3.5"></i>
                             <span class="text-xs font-bold uppercase tracking-wider"><?= $label ?></span>
                         </div>
-                        <p class="text-sm font-bold text-white"><?= htmlspecialchars($value) ?></p>
+                        <p class="text-sm font-bold text-gray-900"><?= htmlspecialchars($value) ?></p>
                     </div>
                 <?php endforeach; ?>
             </div>
 
             <?php if (!empty($card['card_text'])): ?>
-                <div class="mt-4 p-4 bg-dark-800/50 rounded-xl">
-                    <p class="text-sm text-dark-200 leading-relaxed"><?= nl2br(htmlspecialchars($card['card_text'])) ?></p>
+                <div class="mt-4 p-4 bg-gray-50 border border-gray-100 rounded-xl">
+                    <p class="text-sm text-gray-700 leading-relaxed"><?= nl2br(htmlspecialchars($card['card_text'])) ?></p>
                 </div>
             <?php endif; ?>
         </div>
@@ -90,38 +90,38 @@ $rarityBg = $rarityColors[$card['rarity']] ?? 'from-gray-500 to-gray-600';
                 <i data-lucide="banknote" class="w-5 h-5 text-gold-400"></i> Market Prices
             </h2>
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div class="bg-dark-800/50 rounded-xl p-4">
+                <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
                     <div class="flex items-center gap-1.5 mb-2">
-                        <span class="text-[10px] font-bold text-dark-400 uppercase tracking-wider">TCGPlayer (USD)</span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">TCGPlayer (USD)</span>
                     </div>
-                    <p class="text-2xl font-display font-bold <?= $priceUsd ? 'text-green-400' : 'text-dark-500' ?>">
+                    <p class="text-2xl font-display font-bold <?= $priceUsd ? 'text-emerald-600' : 'text-gray-300' ?>">
                         <?= $priceUsd ? '$' . $priceUsd : 'N/A' ?>
                     </p>
                 </div>
-                <div class="bg-dark-800/50 rounded-xl p-4">
+                <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
                     <div class="flex items-center gap-1.5 mb-2">
-                        <span class="inline-block w-4 h-3 rounded-sm bg-gradient-to-r from-blue-600 via-white to-red-500 mr-1"></span>
-                        <span class="text-[10px] font-bold text-dark-400 uppercase tracking-wider">EN (EUR)</span>
+                        <span class="inline-block w-4 h-3 rounded-sm bg-gradient-to-r from-blue-600 via-white to-red-500 mr-1 border border-gray-200"></span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">EN (EUR)</span>
                     </div>
-                    <p class="text-2xl font-display font-bold <?= $priceEn ? 'text-blue-400' : 'text-dark-500' ?>">
+                    <p class="text-2xl font-display font-bold <?= $priceEn ? 'text-blue-600' : 'text-gray-300' ?>">
                         <?= $priceEn ? '&euro;' . $priceEn : 'N/A' ?>
                     </p>
                 </div>
-                <div class="bg-dark-800/50 rounded-xl p-4">
+                <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
                     <div class="flex items-center gap-1.5 mb-2">
-                        <span class="inline-block w-4 h-3 rounded-sm bg-gradient-to-b from-blue-700 via-white to-red-600 mr-1"></span>
-                        <span class="text-[10px] font-bold text-dark-400 uppercase tracking-wider">FR (EUR)</span>
+                        <span class="inline-block w-4 h-3 rounded-sm bg-gradient-to-b from-blue-700 via-white to-red-600 mr-1 border border-gray-200"></span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">FR (EUR)</span>
                     </div>
-                    <p class="text-2xl font-display font-bold <?= $priceFr ? 'text-indigo-400' : 'text-dark-500' ?>">
+                    <p class="text-2xl font-display font-bold <?= $priceFr ? 'text-indigo-600' : 'text-gray-300' ?>">
                         <?= $priceFr ? '&euro;' . $priceFr : 'N/A' ?>
                     </p>
                 </div>
-                <div class="bg-dark-800/50 rounded-xl p-4">
+                <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
                     <div class="flex items-center gap-1.5 mb-2">
-                        <span class="inline-block w-4 h-3 rounded-sm bg-white mr-1 relative"><span class="absolute inset-0 flex items-center justify-center"><span class="w-2 h-2 rounded-full bg-red-600"></span></span></span>
-                        <span class="text-[10px] font-bold text-dark-400 uppercase tracking-wider">JP (EUR)</span>
+                        <span class="inline-block w-4 h-3 rounded-sm bg-white mr-1 relative border border-gray-200"><span class="absolute inset-0 flex items-center justify-center"><span class="w-2 h-2 rounded-full bg-red-600"></span></span></span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">JP (EUR)</span>
                     </div>
-                    <p class="text-2xl font-display font-bold <?= $priceJp ? 'text-red-400' : 'text-dark-500' ?>">
+                    <p class="text-2xl font-display font-bold <?= $priceJp ? 'text-red-600' : 'text-gray-300' ?>">
                         <?= $priceJp ? '&euro;' . $priceJp : 'N/A' ?>
                     </p>
                 </div>
@@ -173,7 +173,7 @@ function priceChart() {
             allDates = [...allDates].sort();
 
             if (allDates.length === 0) {
-                ctx.font = '14px Inter'; ctx.fillStyle = '#4a6480'; ctx.textAlign = 'center';
+                ctx.font = '14px Inter'; ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center';
                 ctx.fillText('No price history available yet', ctx.canvas.width / 2, ctx.canvas.height / 2);
                 return;
             }
@@ -190,8 +190,8 @@ function priceChart() {
                 data: { labels: allDates, datasets },
                 options: {
                     responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' },
-                    plugins: { legend: { labels: { color: '#8ba4c0', font: { size: 11 } } } },
-                    scales: { x: { ticks: { color: '#4a6480', maxTicksLimit: 8 }, grid: { color: 'rgba(74,100,128,0.1)' } }, y: { ticks: { color: '#4a6480' }, grid: { color: 'rgba(74,100,128,0.1)' } } }
+                    plugins: { legend: { labels: { color: '#6b7280', font: { size: 11 } } } },
+                    scales: { x: { ticks: { color: '#9ca3af', maxTicksLimit: 8 }, grid: { color: 'rgba(0,0,0,0.06)' } }, y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(0,0,0,0.06)' } } }
                 }
             });
         }

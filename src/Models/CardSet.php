@@ -42,7 +42,7 @@ class CardSet
              LEFT JOIN cards c ON c.set_id = s.set_id
              LEFT JOIN user_cards uc ON uc.card_id = c.id AND uc.user_id = :user_id AND uc.is_wishlist = 0
              GROUP BY s.set_id, s.set_name, s.card_count
-             ORDER BY s.set_id ASC'
+             ORDER BY owned DESC, s.set_id ASC'
         );
         $stmt->execute(['user_id' => $userId]);
         return $stmt->fetchAll();

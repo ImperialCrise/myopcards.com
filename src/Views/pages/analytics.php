@@ -120,7 +120,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             <?php foreach ($setCompletion as $sc): ?>
                 <?php $pctComp = $sc['card_count'] > 0 ? round($sc['owned'] / $sc['card_count'] * 100) : 0; ?>
-                <a href="/cards?set_id=<?= urlencode($sc['set_id']) ?>" class="block bg-dark-800/50 rounded-xl p-4 hover:bg-dark-700/50 transition text-center group">
+                <a href="/cards?set_id=<?= urlencode($sc['set_id']) ?>" class="block bg-gray-50 border border-gray-100 rounded-xl p-4 hover:bg-gray-100 transition text-center group">
                     <p class="text-3xl font-display font-bold <?= $pctComp >= 100 ? 'text-gold-400' : ($pctComp >= 50 ? 'text-green-400' : 'text-dark-300') ?>"><?= $pctComp ?>%</p>
                     <p class="text-xs text-dark-400 mt-1 truncate group-hover:text-gold-400 transition"><?= htmlspecialchars($sc['set_name'] ?? $sc['set_id']) ?></p>
                     <p class="text-[10px] text-dark-500 mt-0.5"><?= $sc['owned'] ?>/<?= $sc['card_count'] ?></p>
@@ -139,14 +139,14 @@ function valueTimeline() {
             const data = await res.json();
             const ctx = document.getElementById('analyticsValueChart').getContext('2d');
             if (this.chart) this.chart.destroy();
-            if (data.length === 0) { ctx.font = '14px Inter'; ctx.fillStyle = '#4a6480'; ctx.textAlign = 'center'; ctx.fillText('No snapshot data yet.', ctx.canvas.width/2, ctx.canvas.height/2); return; }
+            if (data.length === 0) { ctx.font = '14px Inter'; ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.fillText('No snapshot data yet.', ctx.canvas.width/2, ctx.canvas.height/2); return; }
             this.chart = new Chart(ctx, {
                 type: 'line',
                 data: { labels: data.map(d => d.snapshot_date), datasets: [
                     { label: 'USD', data: data.map(d => parseFloat(d.total_value_usd)), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.05)', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: true },
                     { label: 'EUR', data: data.map(d => parseFloat(d.total_value_eur || 0)), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.05)', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: true }
                 ] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#8ba4c0', font: { size: 11 } } } }, scales: { x: { ticks: { color: '#4a6480', maxTicksLimit: 8 }, grid: { display: false } }, y: { ticks: { color: '#4a6480' }, grid: { color: 'rgba(74,100,128,0.1)' } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#6b7280', font: { size: 11 } } } }, scales: { x: { ticks: { color: '#9ca3af', maxTicksLimit: 8 }, grid: { display: false } }, y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(0,0,0,0.06)' } } } }
             });
         }
     }
@@ -155,19 +155,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const res = await fetch('/api/analytics/distribution');
     const data = await res.json();
     const palette = ['#ef4444','#3b82f6','#22c55e','#a855f7','#eab308','#06b6d4','#f97316','#ec4899','#6366f1','#14b8a6','#f43f5e','#8b5cf6'];
-    const chartOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#8ba4c0', boxWidth: 12, padding: 6, font: { size: 10 } } } } };
+    const chartOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#6b7280', boxWidth: 12, padding: 6, font: { size: 10 } } } } };
 
     if (data.colors && data.colors.length > 0) {
         new Chart(document.getElementById('analyticsColorChart'), { type: 'doughnut', data: { labels: data.colors.map(c => c.label), datasets: [{ data: data.colors.map(c => parseInt(c.value)), backgroundColor: palette, borderWidth: 0 }] }, options: chartOpts });
     }
     if (data.rarities && data.rarities.length > 0) {
-        new Chart(document.getElementById('analyticsRarityChart'), { type: 'bar', data: { labels: data.rarities.map(r => r.label), datasets: [{ data: data.rarities.map(r => parseInt(r.value)), backgroundColor: palette, borderWidth: 0, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#4a6480' }, grid: { color: 'rgba(74,100,128,0.1)' } }, y: { ticks: { color: '#8ba4c0' }, grid: { display: false } } } } });
+        new Chart(document.getElementById('analyticsRarityChart'), { type: 'bar', data: { labels: data.rarities.map(r => r.label), datasets: [{ data: data.rarities.map(r => parseInt(r.value)), backgroundColor: palette, borderWidth: 0, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(0,0,0,0.06)' } }, y: { ticks: { color: '#6b7280' }, grid: { display: false } } } } });
     }
     if (data.types && data.types.length > 0) {
         new Chart(document.getElementById('analyticsTypeChart'), { type: 'pie', data: { labels: data.types.map(t => t.label), datasets: [{ data: data.types.map(t => parseInt(t.value)), backgroundColor: palette, borderWidth: 0 }] }, options: chartOpts });
     }
     if (data.sets && data.sets.length > 0) {
-        new Chart(document.getElementById('analyticsSetChart'), { type: 'bar', data: { labels: data.sets.map(s => s.label), datasets: [{ data: data.sets.map(s => parseInt(s.value)), backgroundColor: '#d4a853', borderWidth: 0, borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#4a6480', maxRotation: 45 }, grid: { display: false } }, y: { ticks: { color: '#4a6480' }, grid: { color: 'rgba(74,100,128,0.1)' } } } } });
+        new Chart(document.getElementById('analyticsSetChart'), { type: 'bar', data: { labels: data.sets.map(s => s.label), datasets: [{ data: data.sets.map(s => parseInt(s.value)), backgroundColor: '#374151', borderWidth: 0, borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af', maxRotation: 45 }, grid: { display: false } }, y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(0,0,0,0.06)' } } } } });
     }
 });
 </script>

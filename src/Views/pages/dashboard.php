@@ -94,7 +94,7 @@ $user = \App\Core\Auth::user();
                                 <span class="text-xs">(<?= $sc['card_count'] > 0 ? round($sc['owned'] / $sc['card_count'] * 100) : 0 ?>%)</span>
                             </span>
                         </div>
-                        <div class="w-full bg-dark-700 rounded-full h-1.5">
+                        <div class="w-full bg-gray-200 rounded-full h-1.5">
                             <div class="bg-gradient-to-r from-gold-500 to-amber-500 h-1.5 rounded-full transition-all" style="width: <?= $sc['card_count'] > 0 ? round($sc['owned'] / $sc['card_count'] * 100, 1) : 0 ?>%"></div>
                         </div>
                     </div>
@@ -109,7 +109,7 @@ $user = \App\Core\Auth::user();
             </h2>
             <div class="space-y-2 max-h-80 overflow-y-auto pr-2">
                 <?php foreach ($recentCards as $rc): ?>
-                    <a href="/cards/<?= urlencode($rc['card_set_id']) ?>" class="flex items-center gap-3 p-2 rounded-lg hover:bg-dark-700/50 transition">
+                    <a href="/cards/<?= urlencode($rc['card_set_id']) ?>" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition">
                         <img src="<?= htmlspecialchars($rc['card_image_url'] ?? '') ?>" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="this.style.display='none'" loading="lazy">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-white truncate"><?= htmlspecialchars($rc['card_name']) ?></p>
@@ -133,11 +133,11 @@ function dashValueChart() {
             const res = await fetch('/api/analytics/value-history?days=30');
             const data = await res.json();
             const ctx = document.getElementById('dashValueChart').getContext('2d');
-            if (data.length === 0) { ctx.font = '13px Inter'; ctx.fillStyle = '#4a6480'; ctx.textAlign = 'center'; ctx.fillText('No data yet', ctx.canvas.width/2, ctx.canvas.height/2); return; }
+            if (data.length === 0) { ctx.font = '13px Inter'; ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.fillText('No data yet', ctx.canvas.width/2, ctx.canvas.height/2); return; }
             new Chart(ctx, {
                 type: 'line',
-                data: { labels: data.map(d => d.snapshot_date), datasets: [{ label: 'Value (USD)', data: data.map(d => parseFloat(d.total_value_usd)), borderColor: '#d4a853', backgroundColor: 'rgba(212,168,83,0.05)', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: true }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#4a6480', maxTicksLimit: 6 }, grid: { display: false } }, y: { ticks: { color: '#4a6480' }, grid: { color: 'rgba(74,100,128,0.1)' } } } }
+                data: { labels: data.map(d => d.snapshot_date), datasets: [{ label: 'Value (USD)', data: data.map(d => parseFloat(d.total_value_usd)), borderColor: '#374151', backgroundColor: 'rgba(55,65,81,0.06)', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: true }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af', maxTicksLimit: 6 }, grid: { display: false } }, y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(0,0,0,0.06)' } } } }
             });
         }
     }
@@ -149,12 +149,12 @@ function dashColorChart() {
             const data = await res.json();
             const ctx = document.getElementById('dashColorChart').getContext('2d');
             const colors = data.colors || [];
-            if (colors.length === 0) { ctx.font = '13px Inter'; ctx.fillStyle = '#4a6480'; ctx.textAlign = 'center'; ctx.fillText('No data yet', ctx.canvas.width/2, ctx.canvas.height/2); return; }
+            if (colors.length === 0) { ctx.font = '13px Inter'; ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.fillText('No data yet', ctx.canvas.width/2, ctx.canvas.height/2); return; }
             const palette = ['#ef4444','#3b82f6','#22c55e','#a855f7','#eab308','#06b6d4','#f97316','#ec4899','#6366f1','#14b8a6'];
             new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: colors.map(c => c.label), datasets: [{ data: colors.map(c => parseInt(c.value)), backgroundColor: palette.slice(0, colors.length), borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#8ba4c0', boxWidth: 12, padding: 8, font: { size: 11 } } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#6b7280', boxWidth: 12, padding: 8, font: { size: 11 } } } } }
             });
         }
     }
