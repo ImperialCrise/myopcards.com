@@ -1,10 +1,11 @@
 <?php
 $currentUser = \App\Core\Auth::user();
 $isLoggedIn = \App\Core\Auth::check();
-$pendingCount = 0;
+$_pendingReqs = [];
 if ($isLoggedIn) {
-    $pendingCount = count(\App\Models\Friendship::getPendingRequests(\App\Core\Auth::id()));
+    $_pendingReqs = \App\Models\Friendship::getPendingRequests(\App\Core\Auth::id());
 }
+$pendingCount = count($_pendingReqs);
 $currentLang = 'en';
 if ($isLoggedIn && $currentUser) {
     $currentLang = $currentUser['preferred_lang'] ?? 'en';
@@ -329,22 +330,15 @@ $_r4 = array_slice($_bgCards, 36, 12);
                         <?php if ($isLoggedIn): ?>
                         <div class="relative" x-data="{ navDrop: false }" @click.outside="navDrop = false">
                             <button @click="navDrop = !navDrop" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
-                                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard <i data-lucide="chevron-down" class="w-3 h-3 transition" :class="navDrop && 'rotate-180'"></i>
+                                <i data-lucide="compass" class="w-4 h-4"></i> My Space <i data-lucide="chevron-down" class="w-3 h-3 transition" :class="navDrop && 'rotate-180'"></i>
                             </button>
-                            <div x-show="navDrop" x-transition.opacity x-cloak class="absolute top-full left-0 mt-1 glass-strong rounded-xl shadow-2xl py-1 w-44 z-50">
-                                <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="home" class="w-4 h-4"></i> Overview</a>
+                            <div x-show="navDrop" x-transition.opacity x-cloak class="absolute top-full left-0 mt-1 glass-strong rounded-xl shadow-2xl py-1 w-48 z-50">
+                                <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="home" class="w-4 h-4"></i> Dashboard</a>
+                                <a href="/collection" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="folder-open" class="w-4 h-4"></i> Collection</a>
                                 <a href="/analytics" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics</a>
+                                <a href="/friends" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="users" class="w-4 h-4"></i> Friends</a>
                             </div>
                         </div>
-                        <a href="/collection" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
-                            <i data-lucide="folder-open" class="w-4 h-4"></i> Collection
-                        </a>
-                        <a href="/friends" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition relative">
-                            <i data-lucide="users" class="w-4 h-4"></i> Friends
-                            <?php if ($pendingCount > 0): ?>
-                                <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center" style="color:#fff !important;font-size:10px;font-weight:700"><?= $pendingCount ?></span>
-                            <?php endif; ?>
-                        </a>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -400,6 +394,39 @@ $_r4 = array_slice($_bgCards, 36, 12);
                         </div>
                     </div>
 
+                    <?php if ($isLoggedIn): ?>
+                    <div class="relative hidden md:block" x-data="notifBell()" @click.outside="open = false">
+                        <button @click="toggle()" class="relative p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
+                            <i data-lucide="bell" class="w-4 h-4"></i>
+                            <span id="nav-notif-dot" class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" <?= $pendingCount === 0 ? 'style="display:none"' : '' ?>></span>
+                            <span id="nav-notif-count" class="absolute -top-0.5 -right-1 min-w-[16px] h-4 px-0.5 bg-red-500 rounded-full flex items-center justify-center" style="color:#fff !important;font-size:10px;font-weight:700;<?= $pendingCount === 0 ? 'display:none' : '' ?>"><?= $pendingCount ?></span>
+                        </button>
+                        <div x-show="open" x-transition x-cloak class="absolute top-full right-0 mt-1 glass-strong rounded-xl shadow-2xl w-80 z-50 overflow-hidden">
+                            <div class="px-4 py-3 border-b" style="border-color:var(--nav-border)">
+                                <p class="text-sm font-display font-bold text-gray-900">Notifications</p>
+                            </div>
+                            <div class="max-h-80 overflow-y-auto">
+                                <template x-if="items.length === 0">
+                                    <div class="px-4 py-6 text-center text-gray-400 text-sm">No pending requests</div>
+                                </template>
+                                <template x-for="req in items" :key="req.id">
+                                    <div class="px-4 py-3 border-b last:border-0 hover:bg-gray-50 transition" style="border-color:var(--nav-border)">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0" x-text="req.username.charAt(0).toUpperCase()"></div>
+                                            <p class="text-sm text-gray-900 flex-1 min-w-0"><span class="font-bold" x-text="req.username"></span> <span class="text-gray-500">wants to be friends</span></p>
+                                        </div>
+                                        <div class="flex gap-2 mt-2 ml-11">
+                                            <button @click="accept(req)" class="flex-1 px-3 py-1.5 bg-green-500 rounded-lg text-xs font-bold hover:bg-green-600 transition" style="color:#fff !important">Accept</button>
+                                            <button @click="decline(req)" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-200 transition">Decline</button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            <a href="/friends" class="block px-4 py-2.5 text-center text-xs font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition" style="border-top:1px solid var(--nav-border)">View all friends</a>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                     <button onclick="toggleDark()" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition" title="Toggle dark mode" id="dm-btn">
                         <svg id="dm-moon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"></path></svg>
                         <svg id="dm-sun" class="w-4 h-4 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><path stroke-linecap="round" d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.73 12.73l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
@@ -451,7 +478,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
                 <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</a>
                 <a href="/collection" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="folder-open" class="w-4 h-4"></i> Collection</a>
                 <a href="/analytics" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics</a>
-                <a href="/friends" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="users" class="w-4 h-4"></i> Friends</a>
+                <a href="/friends" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="users" class="w-4 h-4"></i> Friends <?php if ($pendingCount > 0): ?><span class="ml-auto px-1.5 py-0.5 bg-red-500 rounded-full text-xs font-bold" style="color:#fff !important"><?= $pendingCount ?></span><?php endif; ?></a>
                 <a href="/profile" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="user" class="w-4 h-4"></i> Profile</a>
                 <a href="/logout" class="flex items-center gap-2 px-3 py-2 rounded text-red-500 text-sm"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</a>
             <?php else: ?>
@@ -543,6 +570,38 @@ $_r4 = array_slice($_bgCards, 36, 12);
         }
 
         async function setLanguage(lang) { await apiPost('/settings/language', { lang: lang }); location.reload(); }
+
+        function notifBell() {
+            return {
+                open: false,
+                items: <?= $isLoggedIn ? json_encode(array_values($_pendingReqs)) : '[]' ?>,
+                toggle() { this.open = !this.open; },
+                async accept(req) {
+                    const res = await apiPost('/friends/accept', { user_id: req.user_id });
+                    if (res.success) {
+                        showToast(req.username + ' is now your friend');
+                        this.items = this.items.filter(r => r.id !== req.id);
+                        this.syncBadge();
+                    }
+                },
+                async decline(req) {
+                    const res = await apiPost('/friends/decline', { user_id: req.user_id });
+                    if (res.success) {
+                        showToast('Request declined');
+                        this.items = this.items.filter(r => r.id !== req.id);
+                        this.syncBadge();
+                    }
+                },
+                syncBadge() {
+                    const c = this.items.length;
+                    const dot = document.getElementById('nav-notif-dot');
+                    const badge = document.getElementById('nav-notif-count');
+                    if (dot) dot.style.display = c > 0 ? '' : 'none';
+                    if (badge) { badge.textContent = c; badge.style.display = c > 0 ? '' : 'none'; }
+                    if (typeof updateNavBadge === 'function') updateNavBadge(c);
+                }
+            }
+        }
     </script>
     <script src="/assets/js/app.js"></script>
 </body>

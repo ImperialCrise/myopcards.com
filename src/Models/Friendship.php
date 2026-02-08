@@ -117,6 +117,16 @@ class Friendship
         return $stmt->fetch() ?: null;
     }
 
+    public static function hasPendingRequest(int $fromUserId, int $toUserId): bool
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare(
+            'SELECT COUNT(*) FROM friendships WHERE user_id = :from AND friend_id = :to AND status = :pending'
+        );
+        $stmt->execute(['from' => $fromUserId, 'to' => $toUserId, 'pending' => 'pending']);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
     public static function areFriends(int $userId, int $friendId): bool
     {
         $rel = self::getRelationship($userId, $friendId);

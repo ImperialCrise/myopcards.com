@@ -48,6 +48,7 @@ $router->post('/friends/accept', [App\Controllers\FriendController::class, 'acce
 $router->post('/friends/decline', [App\Controllers\FriendController::class, 'decline']);
 $router->post('/friends/remove', [App\Controllers\FriendController::class, 'remove']);
 $router->get('/api/users/search', [App\Controllers\FriendController::class, 'searchUsers']);
+$router->get('/api/notifications/pending', [App\Controllers\FriendController::class, 'pendingJson']);
 
 $router->get('/profile', [App\Controllers\UserController::class, 'profile']);
 $router->post('/profile/update', [App\Controllers\UserController::class, 'updateProfile']);

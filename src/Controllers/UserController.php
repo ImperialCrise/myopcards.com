@@ -20,6 +20,8 @@ class UserController
         $friendCount = Friendship::getFriendCount(Auth::id());
         $viewCounts = PageView::getCounts(Auth::id());
         $recentViewers = PageView::getRecentViewers(Auth::id(), 5);
+        $friends = Friendship::getFriends(Auth::id());
+        $recentCollection = \App\Models\Collection::getUserCollection(Auth::id(), false, ['sort' => 'added'], 1, 12);
 
         View::render('pages/profile', [
             'title' => 'My Profile',
@@ -28,6 +30,8 @@ class UserController
             'friendCount' => $friendCount,
             'viewCounts' => $viewCounts,
             'recentViewers' => $recentViewers,
+            'friends' => $friends,
+            'recentCards' => $recentCollection['cards'] ?? [],
         ]);
     }
 
@@ -60,7 +64,16 @@ class UserController
 
         $stats = User::getCollectionStats($user['id']);
         $friendCount = Friendship::getFriendCount($user['id']);
-        $isFriend = Auth::check() ? Friendship::areFriends(Auth::id(), $user['id']) : false;
+        $isFriend = false;
+        $pendingSent = false;
+        $pendingReceived = false;
+        if (Auth::check()) {
+            $isFriend = Friendship::areFriends(Auth::id(), $user['id']);
+            if (!$isFriend) {
+                $pendingSent = Friendship::hasPendingRequest(Auth::id(), $user['id']);
+                $pendingReceived = Friendship::hasPendingRequest($user['id'], Auth::id());
+            }
+        }
         $viewCounts = PageView::getCounts($user['id']);
 
         $profileDesc = $user['username'] . "'s One Piece TCG collection on MyOPCards. "
@@ -73,6 +86,8 @@ class UserController
             'stats' => $stats,
             'friendCount' => $friendCount,
             'isFriend' => $isFriend,
+            'pendingSent' => $pendingSent,
+            'pendingReceived' => $pendingReceived,
             'viewCounts' => $viewCounts,
             'seoDescription' => $profileDesc,
             'seoImage' => $user['avatar'] ?? '',

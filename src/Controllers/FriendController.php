@@ -16,14 +16,14 @@ class FriendController
         Auth::requireAuth();
 
         $friends = Friendship::getFriends(Auth::id());
-        $pending = Friendship::getPendingRequests(Auth::id());
-        $sent = Friendship::getSentRequests(Auth::id());
+        $pendingRequests = Friendship::getPendingRequests(Auth::id());
+        $sentRequests = Friendship::getSentRequests(Auth::id());
 
         View::render('pages/friends', [
             'title' => 'Friends',
             'friends' => $friends,
-            'pending' => $pending,
-            'sent' => $sent,
+            'pendingRequests' => $pendingRequests,
+            'sentRequests' => $sentRequests,
         ]);
     }
 
@@ -32,7 +32,7 @@ class FriendController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $friendId = (int)($_POST['friend_id'] ?? 0);
+        $friendId = (int)($_POST['user_id'] ?? 0);
         if ($friendId <= 0) {
             echo json_encode(['success' => false, 'message' => 'Invalid user']);
             return;
@@ -50,7 +50,7 @@ class FriendController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $friendId = (int)($_POST['friend_id'] ?? 0);
+        $friendId = (int)($_POST['user_id'] ?? 0);
         $result = Friendship::acceptRequest(Auth::id(), $friendId);
         echo json_encode([
             'success' => $result,
@@ -63,7 +63,7 @@ class FriendController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $friendId = (int)($_POST['friend_id'] ?? 0);
+        $friendId = (int)($_POST['user_id'] ?? 0);
         Friendship::declineRequest(Auth::id(), $friendId);
         echo json_encode(['success' => true, 'message' => 'Request declined']);
     }
@@ -73,7 +73,7 @@ class FriendController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $friendId = (int)($_POST['friend_id'] ?? 0);
+        $friendId = (int)($_POST['user_id'] ?? 0);
         Friendship::removeFriend(Auth::id(), $friendId);
         echo json_encode(['success' => true, 'message' => 'Friend removed']);
     }
@@ -91,5 +91,14 @@ class FriendController
 
         $users = User::searchByUsername($query, Auth::id());
         echo json_encode($users);
+    }
+
+    public function pendingJson(): void
+    {
+        Auth::requireAuth();
+        header('Content-Type: application/json');
+
+        $pending = Friendship::getPendingRequests(Auth::id());
+        echo json_encode($pending);
     }
 }
