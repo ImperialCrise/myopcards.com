@@ -1,33 +1,3 @@
-<style>
-    .home-hero {
-        position: relative;
-        min-height: 100vh;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-    .home-content { position: relative; z-index: 10; }
-    .home-title { font-size: clamp(3rem, 8vw, 7rem); line-height: 1; letter-spacing: -0.03em; }
-
-    .stat-pill {
-        background: var(--stat-bg);
-        backdrop-filter: blur(20px);
-        border: 1px solid var(--stat-border);
-        transition: all 0.3s;
-    }
-    .stat-pill:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
-
-    .feat-card {
-        background: var(--feat-bg);
-        backdrop-filter: blur(16px);
-        border: 1px solid var(--feat-border);
-        transition: all 0.35s cubic-bezier(.4,0,.2,1);
-    }
-    .feat-card:hover { transform: translateY(-5px); box-shadow: 0 16px 48px rgba(0,0,0,0.08); }
-</style>
-
 <div class="home-hero">
     <div class="home-content flex flex-col items-center justify-center min-h-screen px-4 text-center">
 

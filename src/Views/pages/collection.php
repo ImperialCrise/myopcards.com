@@ -229,41 +229,5 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
     </div>
 </div>
 
-<script>
-function collectionPage() {
-    return {
-        shareOpen: false,
-        shareUrl: <?= json_encode($shareToken ? $appUrl . '/s/' . $shareToken : '') ?>,
-        shareLoading: false,
-        copied: false,
-
-        shareCollection() {
-            this.shareOpen = !this.shareOpen;
-        },
-
-        async generateShare() {
-            this.shareLoading = true;
-            try {
-                const res = await apiPost('/collection/share', {});
-                if (res.success) {
-                    this.shareUrl = res.url;
-                    showToast('Share link created');
-                }
-            } catch(e) {}
-            this.shareLoading = false;
-        },
-
-        async revokeShare() {
-            await apiPost('/collection/share/revoke', {});
-            this.shareUrl = '';
-            showToast('Share link revoked', 'info');
-        },
-
-        copyShare() {
-            navigator.clipboard.writeText(this.shareUrl);
-            this.copied = true;
-            setTimeout(() => this.copied = false, 2000);
-        }
-    }
-}
-</script>
+<script>window.__PAGE_DATA = { shareUrl: <?= json_encode($shareToken ? $appUrl . '/s/' . $shareToken : '') ?> };</script>
+<script src="/assets/js/pages/collection.js"></script>

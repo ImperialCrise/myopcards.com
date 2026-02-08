@@ -76,36 +76,16 @@
 </div>
 
 <script>
-function publicProfile() {
-    const userId = <?= (int)$profileUser['id'] ?>;
-    const username = <?= json_encode($profileUser['username']) ?>;
-    return {
-        relation: <?= json_encode(
-            $isFriend ? 'friend' : (
-                ($pendingSent ?? false) ? 'pending_sent' : (
-                    ($pendingReceived ?? false) ? 'pending_received' : 'none'
-                )
+window.__PAGE_DATA = {
+    userId: <?= (int)$profileUser['id'] ?>,
+    username: <?= json_encode($profileUser['username']) ?>,
+    relation: <?= json_encode(
+        $isFriend ? 'friend' : (
+            ($pendingSent ?? false) ? 'pending_sent' : (
+                ($pendingReceived ?? false) ? 'pending_received' : 'none'
             )
-        ) ?>,
-
-        async addFriend() {
-            const res = await apiPost('/friends/request', { user_id: userId });
-            if (res.success) { showToast('Friend request sent'); this.relation = 'pending_sent'; }
-            else showToast(res.message || 'Could not send request', 'error');
-        },
-        async acceptRequest() {
-            const res = await apiPost('/friends/accept', { user_id: userId });
-            if (res.success) { showToast('You are now friends with ' + username); this.relation = 'friend'; }
-        },
-        async declineRequest() {
-            const res = await apiPost('/friends/decline', { user_id: userId });
-            if (res.success) { showToast('Request declined'); this.relation = 'none'; }
-        },
-        async removeFriend() {
-            if (!confirm('Remove ' + username + ' from your friends?')) return;
-            const res = await apiPost('/friends/remove', { user_id: userId });
-            if (res.success) { showToast('Friend removed'); this.relation = 'none'; }
-        }
-    }
-}
+        )
+    ) ?>
+};
 </script>
+<script src="/assets/js/pages/public-profile.js"></script>

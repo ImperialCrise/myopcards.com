@@ -151,50 +151,5 @@ $rarityBg = $rarityColors[$card['rarity']] ?? 'from-gray-500 to-gray-600';
     </div>
 </div>
 
-<script>
-function priceChart() {
-    return {
-        chart: null, days: 90,
-        async loadChart() {
-            const res = await fetch('/api/cards/price-history/<?= urlencode($card['card_set_id']) ?>?days=' + this.days);
-            const data = await res.json();
-            const ctx = document.getElementById('priceHistoryChart').getContext('2d');
-            if (this.chart) this.chart.destroy();
-
-            const series = [
-                { key: 'tcgplayer',      label: 'TCGPlayer (USD)', color: '#22c55e' },
-                { key: 'cardmarket_en',  label: 'EN (EUR)',        color: '#3b82f6' },
-                { key: 'cardmarket_fr',  label: 'FR (EUR)',        color: '#818cf8' },
-                { key: 'cardmarket_jp',  label: 'JP (EUR)',        color: '#ef4444' },
-            ];
-
-            let allDates = new Set();
-            series.forEach(s => (data[s.key] || []).forEach(p => allDates.add(p.recorded_at)));
-            allDates = [...allDates].sort();
-
-            if (allDates.length === 0) {
-                ctx.font = '14px Inter'; ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center';
-                ctx.fillText('No price history available yet', ctx.canvas.width / 2, ctx.canvas.height / 2);
-                return;
-            }
-
-            const datasets = series
-                .filter(s => (data[s.key] || []).length > 0)
-                .map(s => {
-                    const pts = (data[s.key] || []).map(p => ({ x: p.recorded_at, y: parseFloat(p.price) }));
-                    return { label: s.label, data: pts, borderColor: s.color, backgroundColor: s.color + '0d', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: true };
-                });
-
-            this.chart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: allDates, datasets },
-                options: {
-                    responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' },
-                    plugins: { legend: { labels: { color: '#6b7280', font: { size: 11 } } } },
-                    scales: { x: { ticks: { color: '#9ca3af', maxTicksLimit: 8 }, grid: { color: 'rgba(0,0,0,0.06)' } }, y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(0,0,0,0.06)' } } }
-                }
-            });
-        }
-    }
-}
-</script>
+<script>window.__PAGE_DATA = { cardSetId: <?= json_encode($card['card_set_id']) ?> };</script>
+<script src="/assets/js/pages/card-detail.js"></script>

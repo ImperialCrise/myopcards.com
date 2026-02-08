@@ -167,20 +167,4 @@
     </div>
 </div>
 
-<script>
-function priceMovers() {
-    return {
-        gainers: [], losers: [],
-        async load() {
-            try {
-                const [gRes, lRes] = await Promise.all([
-                    fetch('/api/market/movers?direction=up&days=7'),
-                    fetch('/api/market/movers?direction=down&days=7')
-                ]);
-                this.gainers = await gRes.json();
-                this.losers = await lRes.json();
-            } catch(e) {}
-        }
-    }
-}
-</script>
+<script src="/assets/js/pages/market.js"></script>

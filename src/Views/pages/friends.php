@@ -102,66 +102,10 @@
 </div>
 
 <script>
-function friendsPage() {
-    return {
-        searchQuery: '',
-        searchResults: [],
-        pendingRequests: <?= json_encode(array_values($pendingRequests ?? [])) ?>,
-        sentRequests: <?= json_encode(array_values($sentRequests ?? [])) ?>,
-        friendsList: <?= json_encode(array_values($friends ?? [])) ?>,
-        get friendCount() { return this.friendsList.length; },
-
-        async searchUsers() {
-            if (this.searchQuery.length < 2) { this.searchResults = []; return; }
-            const res = await fetch('/api/users/search?q=' + encodeURIComponent(this.searchQuery));
-            this.searchResults = await res.json();
-        },
-
-        async sendRequest(userId) {
-            const res = await apiPost('/friends/request', { user_id: userId });
-            if (res.success) {
-                showToast('Friend request sent');
-                this.searchResults = this.searchResults.filter(u => u.id !== userId);
-            } else {
-                showToast(res.message || 'Could not send request', 'error');
-            }
-        },
-
-        async acceptRequest(userId, reqId) {
-            const res = await apiPost('/friends/accept', { user_id: userId });
-            if (res.success) {
-                showToast('Friend request accepted');
-                const req = this.pendingRequests.find(r => r.id === reqId);
-                this.pendingRequests = this.pendingRequests.filter(r => r.id !== reqId);
-                if (req) this.friendsList.push({ id: req.user_id, username: req.username, avatar: req.avatar, card_count: 0 });
-                updateNavBadge(this.pendingRequests.length);
-            }
-        },
-
-        async declineRequest(userId, reqId) {
-            const res = await apiPost('/friends/decline', { user_id: userId });
-            if (res.success) {
-                showToast('Request declined');
-                this.pendingRequests = this.pendingRequests.filter(r => r.id !== reqId);
-                updateNavBadge(this.pendingRequests.length);
-            }
-        },
-
-        async removeFriend(friendId, username) {
-            if (!confirm('Remove ' + username + ' from your friends?')) return;
-            const res = await apiPost('/friends/remove', { user_id: friendId });
-            if (res.success) {
-                showToast('Friend removed');
-                this.friendsList = this.friendsList.filter(f => f.id !== friendId);
-            }
-        }
-    }
-}
-
-function updateNavBadge(count) {
-    const badge = document.getElementById('nav-notif-count');
-    const dot = document.getElementById('nav-notif-dot');
-    if (badge) { badge.textContent = count; badge.style.display = count > 0 ? '' : 'none'; }
-    if (dot) { dot.style.display = count > 0 ? '' : 'none'; }
-}
+window.__PAGE_DATA = {
+    pendingRequests: <?= json_encode(array_values($pendingRequests ?? [])) ?>,
+    sentRequests: <?= json_encode(array_values($sentRequests ?? [])) ?>,
+    friends: <?= json_encode(array_values($friends ?? [])) ?>
+};
 </script>
+<script src="/assets/js/pages/friends.js"></script>
