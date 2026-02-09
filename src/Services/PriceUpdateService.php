@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Core\Database;
+use App\Services\CardSyncService;
 use PDO;
 
 class PriceUpdateService
@@ -52,10 +53,7 @@ class PriceUpdateService
         $cardSetId = $card['card_set_id'] ?? '';
         if (empty($cardSetId)) return;
 
-        $isParallel = str_contains(strtolower($card['card_name'] ?? ''), 'parallel')
-            || str_contains($card['card_image_id'] ?? '', '_p');
-
-        $uniqueId = $isParallel ? ($card['card_image_id'] ?? $cardSetId . '_p') : $cardSetId;
+        [$uniqueId] = CardSyncService::deriveUniqueId($card);
 
         $marketPrice = $card['market_price'] ?? null;
         $inventoryPrice = $card['inventory_price'] ?? null;

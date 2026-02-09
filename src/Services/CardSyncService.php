@@ -122,10 +122,7 @@ class CardSyncService
         $cardSetId = $card['card_set_id'] ?? '';
         if (empty($cardSetId)) return;
 
-        $isParallel = str_contains(strtolower($card['card_name'] ?? ''), 'parallel')
-            || str_contains($card['card_image_id'] ?? '', '_p');
-
-        $uniqueId = $isParallel ? ($card['card_image_id'] ?? $cardSetId . '_p') : $cardSetId;
+        [$uniqueId, $isParallel] = self::deriveUniqueId($card);
 
         Card::upsert([
             'card_set_id' => $uniqueId,
@@ -147,6 +144,48 @@ class CardSyncService
             'inventory_price' => $card['inventory_price'] ?? null,
             'is_parallel' => $isParallel ? 1 : 0,
         ]);
+    }
+
+    public static function deriveUniqueId(array $card): array
+    {
+        $cardSetId = $card['card_set_id'] ?? '';
+        $cardImageId = $card['card_image_id'] ?? $cardSetId;
+        $cardName = strtolower($card['card_name'] ?? '');
+
+        $isVariant = str_contains($cardImageId, '_p')
+            || str_contains($cardImageId, '_r');
+
+        if ($cardImageId !== $cardSetId && $isVariant) {
+            return [$cardImageId, true];
+        }
+
+        $suffixes = [
+            '_spr'  => ['(spr)'],
+            '_par'  => ['(parallel)'],
+            '_dp'   => ['(dash pack)'],
+            '_rep'  => ['(reprint)'],
+            '_manga'=> ['(manga)'],
+            '_foil' => ['(pirate foil)'],
+            '_sp'   => ['(sp)', '- ' . $cardSetId . ' (sp)'],
+        ];
+
+        foreach ($suffixes as $suffix => $patterns) {
+            foreach ($patterns as $pattern) {
+                if (str_contains($cardName, $pattern)) {
+                    return [$cardSetId . $suffix, true];
+                }
+            }
+        }
+
+        $isParallel = str_contains($cardName, 'alternate art')
+            || str_contains($cardImageId, '_p')
+            || str_contains($cardImageId, '_r');
+
+        if ($isParallel && $cardImageId !== $cardSetId) {
+            return [$cardImageId, true];
+        }
+
+        return [$cardSetId, false];
     }
 
     private function apiGet(string $endpoint): ?array
