@@ -1,0 +1,15 @@
+services:
+  myopcards-flaresolverr:
+    image: 21hsmw/flaresolverr:nodriver
+    container_name: myopcards-flaresolverr
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8192:8191"
+    environment:
+      - LOG_LEVEL=info
+      - LOG_HTML=false
+      - TZ=UTC
+    deploy:
+      resources:
+        limits:
+          memory: 1g

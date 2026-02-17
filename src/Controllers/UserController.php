@@ -164,11 +164,15 @@ class UserController
 
     public function changeCurrency(): void
     {
-        Auth::requireAuth();
         $currency = $_POST['currency'] ?? 'usd';
-        if (!in_array($currency, ['usd', 'eur'])) $currency = 'usd';
+        $valid = ['usd', 'eur_en', 'eur_fr', 'eur_jp'];
+        if (!in_array($currency, $valid)) $currency = 'usd';
 
-        User::update(Auth::id(), ['preferred_currency' => $currency]);
+        setcookie('currency', $currency, time() + 86400 * 365, '/', '', true, false);
+
+        if (Auth::check()) {
+            User::update(Auth::id(), ['preferred_currency' => $currency]);
+        }
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'currency' => $currency]);

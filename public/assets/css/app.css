@@ -177,3 +177,78 @@ html.dark .focus\:ring-gray-300\/30:focus { --tw-ring-color:rgba(74,100,128,0.2)
 .feat-card:hover { transform:translateY(-5px); box-shadow:0 16px 48px rgba(0,0,0,0.08); }
 
 [x-cloak] { display:none !important; }
+
+/* ===== FORUM CONTENT STYLES ===== */
+.forum-content { line-height: 1.6; }
+.forum-content img { 
+    max-width: 100%; 
+    height: auto; 
+    border-radius: 8px; 
+    margin: 1rem 0; 
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+.forum-content img:hover { transform: scale(1.02); }
+.forum-content iframe { 
+    max-width: 100%; 
+    border-radius: 8px; 
+    margin: 1rem 0; 
+    border: 1px solid #e5e7eb;
+}
+html.dark .forum-content iframe { border-color: #374151; }
+.forum-content blockquote {
+    border-left: 4px solid #3b82f6;
+    padding: 1rem;
+    margin: 1rem 0;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+}
+html.dark .forum-content blockquote {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: #60a5fa;
+}
+.forum-content pre {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 1rem;
+    margin: 1rem 0;
+    overflow-x: auto;
+    font-family: 'Courier New', Courier, monospace;
+}
+html.dark .forum-content pre {
+    background: #1f2937;
+    border-color: #374151;
+    color: #e5e7eb;
+}
+.forum-content code {
+    background: #f3f4f6;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+}
+html.dark .forum-content code {
+    background: #1f2937;
+    color: #e5e7eb;
+}
+.forum-content h3, .forum-content h4 {
+    margin: 1.5rem 0 1rem 0;
+    font-weight: 600;
+}
+.forum-content h3 { font-size: 1.25rem; }
+.forum-content h4 { font-size: 1.1rem; }
+.forum-content ul, .forum-content ol {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+.forum-content li { margin: 0.5rem 0; }
+.forum-content a {
+    color: #3b82f6;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.forum-content a:hover { color: #2563eb; }
+html.dark .forum-content a { color: #60a5fa; }
+html.dark .forum-content a:hover { color: #3b82f6; }

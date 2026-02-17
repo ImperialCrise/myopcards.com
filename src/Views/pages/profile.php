@@ -46,8 +46,8 @@
                 <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">Cards</p>
             </div>
             <div class="glass rounded-xl p-4 text-center">
-                <p class="text-xl font-display font-bold text-gray-900">$<?= number_format($stats['total_value'] ?? 0, 2) ?></p>
-                <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">Value</p>
+                <p class="text-xl font-display font-bold text-gray-900"><?= \App\Core\Currency::format((float)($stats['total_value'] ?? 0)) ?></p>
+                <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">Value (<?= \App\Core\Currency::label() ?>)</p>
             </div>
             <div class="glass rounded-xl p-4 text-center">
                 <p class="text-xl font-display font-bold text-gray-900"><?= $friendCount ?></p>
@@ -157,8 +157,8 @@
                 <div class="grid grid-cols-3 gap-2">
                     <?php foreach ($recentCards as $card): ?>
                         <a href="/cards/<?= htmlspecialchars($card['card_set_id']) ?>" class="group relative" title="<?= htmlspecialchars($card['card_name']) ?>">
-                            <img src="<?= htmlspecialchars($card['card_image_url']) ?>" alt="<?= htmlspecialchars($card['card_name']) ?>"
-                                 class="w-full aspect-[5/7] object-cover rounded-lg border border-gray-100 group-hover:border-gold-500/50 transition group-hover:shadow-lg" loading="lazy">
+                            <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?: 'about:blank' ?>" alt="<?= htmlspecialchars($card['card_name']) ?>"
+                                 class="w-full aspect-[5/7] object-cover rounded-lg border border-gray-100 group-hover:border-gold-500/50 transition group-hover:shadow-lg" loading="lazy" onerror="cardImgErr(this)">
                             <?php if ($card['quantity'] > 1): ?>
                                 <span class="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 bg-gray-900 rounded-full flex items-center justify-center text-[10px] font-bold" style="color:#fff !important"><?= $card['quantity'] ?></span>
                             <?php endif; ?>

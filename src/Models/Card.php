@@ -65,12 +65,13 @@ class Card
         $whereClause = implode(' AND ', $where);
         $offset = ($page - 1) * $perPage;
 
+        $priceCol = \App\Core\Currency::column();
         $sortMap = [
             'set'        => 'set_id ASC, card_set_id ASC',
             'name'       => 'card_name ASC',
             'name_desc'  => 'card_name DESC',
-            'price'      => 'market_price DESC',
-            'price_asc'  => 'market_price ASC',
+            'price'      => "$priceCol DESC",
+            'price_asc'  => "$priceCol ASC",
             'rarity'     => "FIELD(rarity,'SEC','SP','L','SR','R','UC','C','P') ASC",
             'newest'     => 'id DESC',
         ];

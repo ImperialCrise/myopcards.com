@@ -156,6 +156,9 @@ $_r4 = array_slice($_bgCards, 36, 12);
                         <a href="/market" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
                             <i data-lucide="trending-up" class="w-4 h-4"></i> Market
                         </a>
+                        <a href="/forum" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
+                            <i data-lucide="message-square" class="w-4 h-4"></i> Forum
+                        </a>
                         <?php if ($isLoggedIn): ?>
                         <div class="relative" x-data="{ navDrop: false }" @click.outside="navDrop = false">
                             <button @click="navDrop = !navDrop" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
@@ -166,6 +169,10 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 <a href="/collection" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="folder-open" class="w-4 h-4"></i> Collection</a>
                                 <a href="/analytics" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics</a>
                                 <a href="/friends" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="users" class="w-4 h-4"></i> Friends</a>
+                                <?php if ($currentUser && !empty($currentUser['is_admin'])): ?>
+                                <div class="border-t my-1" style="border-color:var(--nav-border)"></div>
+                                <a href="/admin" class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition"><i data-lucide="shield" class="w-4 h-4"></i> Admin</a>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -187,9 +194,9 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Cards</div>
                                 <template x-for="(card, i) in results.cards" :key="'c'+card.id">
                                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition" :class="activeIdx === i ? 'search-result-active' : ''">
-                                        <img :src="card.card_image_url" class="w-8 h-11 rounded object-cover bg-gray-100" onerror="this.style.display='none'">
+                                        <img :src="card.card_image_url || __PLACEHOLDER" class="w-8 h-11 rounded object-cover bg-gray-100" onerror="cardImgErr(this)">
                                         <div class="flex-1 min-w-0"><p class="text-sm text-gray-900 truncate" x-text="card.display_name || card.card_name"></p><p class="text-xs text-gray-400" x-text="card.card_set_id + ' · ' + card.rarity"></p></div>
-                                        <span x-show="card.market_price" class="text-xs font-bold text-gray-900" x-text="'$' + parseFloat(card.market_price).toFixed(2)"></span>
+                                        <span x-show="getCardPrice(card) > 0" class="text-xs font-bold text-gray-900" x-text="formatCardPrice(card)"></span>
                                     </a>
                                 </template>
                             </div></template>
@@ -214,9 +221,41 @@ $_r4 = array_slice($_bgCards, 36, 12);
                         </div>
                     </div>
 
-                    <div class="relative hidden md:block" x-data="{ langOpen: false }">
-                        <button @click="langOpen = !langOpen" class="px-2 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition uppercase"><?= $currentLang ?></button>
-                        <div x-show="langOpen" @click.outside="langOpen = false" x-transition class="absolute right-0 mt-1 glass-strong rounded-lg shadow-xl py-1 min-w-[120px] z-50">
+                    <?php
+                    $currentCurrency = 'usd';
+                    if ($isLoggedIn && $currentUser) {
+                        $currentCurrency = $currentUser['preferred_currency'] ?? 'usd';
+                    } elseif (isset($_COOKIE['currency'])) {
+                        $currentCurrency = $_COOKIE['currency'];
+                    }
+                    $currencyMap = [
+                        'usd' => ['$', 'USD', 'TCGPlayer'],
+                        'eur_en' => ['€', 'EUR', 'EN Edition'],
+                        'eur_fr' => ['€', 'EUR', 'FR Edition'],
+                        'eur_jp' => ['€', 'EUR', 'JP Edition'],
+                    ];
+                    $curSymbol = $currencyMap[$currentCurrency][0] ?? '$';
+                    $curLabel = $currencyMap[$currentCurrency][1] ?? 'USD';
+                    ?>
+                    <div class="relative hidden md:block" x-data="{ curOpen: false }">
+                        <button @click="curOpen = !curOpen" class="px-2 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition flex items-center gap-1">
+                            <span class="text-sm"><?= $curSymbol ?></span> <?= $curLabel ?>
+                        </button>
+                        <div x-show="curOpen" @click.outside="curOpen = false" x-transition class="absolute right-0 mt-1 glass-strong rounded-lg shadow-xl py-1 min-w-[160px] z-50">
+                            <button onclick="setCurrency('usd')" class="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition <?= $currentCurrency === 'usd' ? 'font-bold text-gray-900' : '' ?>">
+                                <span class="inline-block w-5 text-center mr-1">$</span> USD <span class="text-xs text-gray-400">TCGPlayer</span>
+                            </button>
+                            <button onclick="setCurrency('eur_en')" class="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition <?= $currentCurrency === 'eur_en' ? 'font-bold text-gray-900' : '' ?>">
+                                <span class="inline-block w-5 text-center mr-1">€</span> EUR <span class="text-xs text-gray-400">EN Edition</span>
+                            </button>
+                            <button onclick="setCurrency('eur_fr')" class="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition <?= $currentCurrency === 'eur_fr' ? 'font-bold text-gray-900' : '' ?>">
+                                <span class="inline-block w-5 text-center mr-1">€</span> EUR <span class="text-xs text-gray-400">FR Edition</span>
+                            </button>
+                            <button onclick="setCurrency('eur_jp')" class="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition <?= $currentCurrency === 'eur_jp' ? 'font-bold text-gray-900' : '' ?>">
+                                <span class="inline-block w-5 text-center mr-1">€</span> EUR <span class="text-xs text-gray-400">JP Edition</span>
+                            </button>
+                            <div class="border-t my-1" style="border-color:var(--nav-border)"></div>
+                            <p class="px-3 py-1 text-[10px] text-gray-300 uppercase font-bold tracking-wider">Language</p>
                             <?php foreach ($langs as $code => $name): ?>
                                 <button onclick="setLanguage('<?= $code ?>')" class="block w-full text-left px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition <?= $currentLang === $code ? 'font-bold text-gray-900' : '' ?>"><?= $name ?></button>
                             <?php endforeach; ?>
@@ -270,6 +309,12 @@ $_r4 = array_slice($_bgCards, 36, 12);
                             <?php endif; ?>
                             <span class="text-sm font-medium text-gray-600 hidden lg:block"><?= htmlspecialchars($currentUser['username']) ?></span>
                         </a>
+                        <div class="relative">
+                            <a href="/notifications" class="p-2 text-gray-400 hover:text-gray-600 transition" title="Notifications">
+                                <i data-lucide="bell" class="w-4 h-4"></i>
+                                <span id="notification-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium"></span>
+                            </a>
+                        </div>
                         <a href="/logout" class="p-2 text-gray-400 hover:text-red-500 transition" title="Logout"><i data-lucide="log-out" class="w-4 h-4"></i></a>
                     <?php else: ?>
                         <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition hidden sm:block">Login</a>
@@ -293,7 +338,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
             <div x-show="open && results.cards.length > 0" class="mt-2 glass rounded-lg max-h-60 overflow-y-auto">
                 <template x-for="card in results.cards" :key="'mc'+card.id">
                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition">
-                        <img :src="card.card_image_url" class="w-6 h-8 rounded object-cover" onerror="this.style.display='none'">
+                        <img :src="card.card_image_url || __PLACEHOLDER" class="w-6 h-8 rounded object-cover" onerror="cardImgErr(this)">
                         <span class="text-sm text-gray-900 truncate" x-text="card.display_name || card.card_name"></span>
                     </a>
                 </template>
@@ -303,6 +348,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
         <div x-show="mobileMenu" x-transition class="md:hidden border-t border-gray-200 px-4 py-3 space-y-1">
             <a href="/cards" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layers" class="w-4 h-4"></i> Cards</a>
             <a href="/market" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trending-up" class="w-4 h-4"></i> Market</a>
+            <a href="/forum" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="message-square" class="w-4 h-4"></i> Forum</a>
             <?php if ($isLoggedIn): ?>
                 <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</a>
                 <a href="/collection" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="folder-open" class="w-4 h-4"></i> Collection</a>
@@ -316,6 +362,13 @@ $_r4 = array_slice($_bgCards, 36, 12);
             <?php endif; ?>
         </div>
     </nav>
+
+    <?php $__v = '20260209'; ?>
+    <script>
+    window.__NOTIF_ITEMS = <?= $isLoggedIn ? json_encode(array_values($_pendingReqs)) : '[]' ?>;
+    window.__CURRENCY = <?= json_encode(\App\Core\Currency::info()) ?>;
+    </script>
+    <script src="/assets/js/main.js?v=<?= $__v ?>"></script>
 
     <main id="main-content">
         <?php if (!empty($fullWidth)): ?>
@@ -335,13 +388,43 @@ $_r4 = array_slice($_bgCards, 36, 12);
                 Prices displayed may not reflect current market values. MyOPCards is a recently launched platform
                 and price data is still being collected. Always verify on official marketplaces before purchasing.
             </p>
+            <p class="pt-2">
+                <a href="https://discord.gg/m5k52GFQPQ" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+                    Join our Discord
+                </a>
+            </p>
         </div>
     </footer>
 
     </div>
 
-    <script>window.__NOTIF_ITEMS = <?= $isLoggedIn ? json_encode(array_values($_pendingReqs)) : '[]' ?>;</script>
-    <script src="/assets/js/main.js"></script>
-    <script src="/assets/js/app.js"></script>
+    <script src="/assets/js/app.js?v=<?= $__v ?>"></script>
+    
+    <?php if ($isLoggedIn): ?>
+    <script>
+    // Check for unread notifications
+    async function updateNotificationBadge() {
+        try {
+            const response = await fetch('/api/notifications/count');
+            const data = await response.json();
+            const badge = document.getElementById('notification-badge');
+            
+            if (data.count > 0) {
+                badge.textContent = data.count > 99 ? '99+' : data.count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Failed to fetch notification count:', error);
+        }
+    }
+    
+    // Update badge on page load and every 30 seconds
+    updateNotificationBadge();
+    setInterval(updateNotificationBadge, 30000);
+    </script>
+    <?php endif; ?>
 </body>
 </html>

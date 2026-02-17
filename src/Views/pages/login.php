@@ -22,6 +22,12 @@
                 <label class="block text-sm font-medium text-dark-300 mb-1">Password</label>
                 <input type="password" name="password" required class="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/20 transition text-sm" placeholder="Your password">
             </div>
+            <div class="flex items-center justify-between">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="remember" class="w-4 h-4 rounded border-dark-600 bg-dark-800 text-gold-500 focus:ring-gold-500/20">
+                    <span class="text-sm text-dark-300">Remember me for 30 days</span>
+                </label>
+            </div>
             <button type="submit" class="w-full py-3 bg-gradient-to-r from-gold-500 to-amber-600 text-dark-900 rounded-lg font-bold hover:from-gold-400 hover:to-amber-500 transition">Login</button>
         </form>
 

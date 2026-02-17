@@ -1,8 +1,13 @@
 <?php
 $cards = $result['cards'] ?? [];
 $collectionUser = $owner ?? [];
-$totalValueUsd = $result['total_value_usd'] ?? 0;
-$totalValueEur = $result['total_value_eur'] ?? 0;
+$curInfo = \App\Core\Currency::info();
+$curValues = [
+    'usd' => (float)($result['total_value_usd'] ?? 0),
+    'eur_en' => (float)($result['total_value_eur_en'] ?? 0),
+    'eur_fr' => (float)($result['total_value_eur_fr'] ?? 0),
+    'eur_jp' => (float)($result['total_value_eur_jp'] ?? 0),
+];
 $currentSort = $filters['sort'] ?? 'set';
 $sortOptions = [
     'set' => 'Set / Number',
@@ -40,12 +45,8 @@ $baseUrl = '/collection/' . urlencode($collectionUser['username'] ?? '');
             <p class="text-xl font-display font-bold text-white"><?= number_format($stats['total_cards'] ?? 0) ?></p>
         </div>
         <div class="glass rounded-xl p-4 text-center">
-            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1">Value (USD)</p>
-            <p class="text-xl font-display font-bold text-green-400">$<?= number_format($totalValueUsd, 2) ?></p>
-        </div>
-        <div class="glass rounded-xl p-4 text-center">
-            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1">Value (EUR)</p>
-            <p class="text-xl font-display font-bold text-blue-400">&euro;<?= number_format($totalValueEur, 2) ?></p>
+            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1">Value (<?= $curInfo['label'] ?>)</p>
+            <p class="text-xl font-display font-bold text-gold-400"><?= $curInfo['symbol'] . number_format($curValues[$curInfo['key']] ?? 0, 2) ?></p>
         </div>
     </div>
 
@@ -84,7 +85,7 @@ $baseUrl = '/collection/' . urlencode($collectionUser['username'] ?? '');
             <a href="/cards/<?= urlencode($card['card_set_id']) ?>" class="group card-hover">
                 <div class="glass rounded-xl overflow-hidden">
                     <div class="relative aspect-[5/7] bg-dark-700">
-                        <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.classList.add('skeleton');this.style.display='none'">
+                        <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?: 'about:blank' ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
                         <span class="absolute top-1.5 right-1.5 px-2 py-0.5 bg-dark-900/80 text-white text-xs font-bold rounded-full"><?= (int)($card['quantity'] ?? 1) ?>x</span>
                         <?php if (!empty($card['rarity'])): ?>
                             <?php
@@ -98,8 +99,12 @@ $baseUrl = '/collection/' . urlencode($collectionUser['username'] ?? '');
                         <p class="text-xs font-bold text-white truncate"><?= htmlspecialchars($card['card_name']) ?></p>
                         <div class="flex items-center justify-between mt-1">
                             <span class="text-[10px] text-dark-400"><?= htmlspecialchars($card['card_set_id']) ?></span>
-                            <?php if (!empty($card['market_price'])): ?>
-                                <span class="text-[10px] font-bold text-gold-400">$<?= number_format((float)$card['market_price'], 2) ?></span>
+                            <?php
+                                $cardPrice = \App\Core\Currency::priceFromCard($card);
+                                if ($cardPrice <= 0) $cardPrice = (float)($card['market_price'] ?? 0);
+                            ?>
+                            <?php if ($cardPrice > 0): ?>
+                                <span class="text-[10px] font-bold text-gold-400"><?= \App\Core\Currency::format($cardPrice) ?></span>
                             <?php endif; ?>
                         </div>
                     </div>

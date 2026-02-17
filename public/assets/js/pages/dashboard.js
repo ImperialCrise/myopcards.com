@@ -5,10 +5,14 @@ function dashValueChart() {
             var data = await res.json();
             var ctx = document.getElementById('dashValueChart').getContext('2d');
             if (data.length === 0) { ctx.font = '13px Inter'; ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.fillText('No data yet', ctx.canvas.width/2, ctx.canvas.height/2); return; }
+            var cur = window.__CURRENCY || {};
+            var valCol = cur.key === 'usd' ? 'total_value_usd' : 'total_value_eur';
+            var sym = cur.symbol || '$';
+            var lbl = cur.label || 'USD';
             new Chart(ctx, {
                 type: 'line',
-                data: { labels: data.map(function(d){ return d.snapshot_date; }), datasets: [{ label: 'Value (USD)', data: data.map(function(d){ return parseFloat(d.total_value_usd); }), borderColor: '#374151', backgroundColor: 'rgba(55,65,81,0.06)', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: true }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af', maxTicksLimit: 6 }, grid: { display: false } }, y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(0,0,0,0.06)' } } } }
+                data: { labels: data.map(function(d){ return d.snapshot_date; }), datasets: [{ label: 'Value (' + lbl + ')', data: data.map(function(d){ return parseFloat(d[valCol] || d.total_value_usd || 0); }), borderColor: '#374151', backgroundColor: 'rgba(55,65,81,0.06)', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: true }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af', maxTicksLimit: 6 }, grid: { display: false } }, y: { ticks: { color: '#9ca3af', callback: function(v) { return sym + v.toFixed(0); } }, grid: { color: 'rgba(0,0,0,0.06)' } } } }
             });
         }
     }

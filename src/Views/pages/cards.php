@@ -89,8 +89,8 @@ $filtersJson = json_encode($filters, JSON_HEX_APOS | JSON_HEX_TAG);
                     <a :href="'/cards/' + card.card_set_id" class="block">
                         <div class="glass rounded-xl overflow-hidden">
                             <div class="relative aspect-[5/7] bg-dark-700">
-                                <img :src="card.card_image_url || ''" alt="" class="w-full h-full object-cover" loading="lazy"
-                                     @error="$el.style.display='none'; $el.parentElement.classList.add('skeleton')">
+                                <img :src="card.card_image_url || __PLACEHOLDER" alt="" class="w-full h-full object-cover" loading="lazy"
+                                     onerror="cardImgErr(this)">
                                 <template x-if="ownedCards[card.id]">
                                     <div class="absolute top-1.5 right-1.5 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
                                         <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
@@ -105,7 +105,7 @@ $filtersJson = json_encode($filters, JSON_HEX_APOS | JSON_HEX_TAG);
                                 <p class="text-xs font-bold text-white truncate" x-text="card.card_name"></p>
                                 <div class="flex items-center justify-between mt-1">
                                     <span class="text-[10px] text-dark-400" x-text="card.card_set_id"></span>
-                                    <span x-show="card.market_price" class="text-[10px] font-bold text-gold-400" x-text="'$' + parseFloat(card.market_price || 0).toFixed(2)"></span>
+                                    <span x-show="getCardPrice(card) > 0" class="text-[10px] font-bold text-gold-400" x-text="formatCardPrice(card)"></span>
                                 </div>
                             </div>
                         </div>

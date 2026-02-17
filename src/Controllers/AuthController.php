@@ -23,6 +23,7 @@ class AuthController
 
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
+        $remember = isset($_POST['remember']);
 
         if (empty($email) || empty($password)) {
             View::render('pages/login', ['title' => 'Login', 'error' => 'All fields are required.']);
@@ -36,8 +37,11 @@ class AuthController
             return;
         }
 
-        Auth::login($user['id']);
-        header('Location: /dashboard');
+        Auth::login($user['id'], $remember);
+        
+        $redirect = $_SESSION['redirect_after_login'] ?? '/dashboard';
+        unset($_SESSION['redirect_after_login']);
+        header('Location: ' . $redirect);
         exit;
     }
 

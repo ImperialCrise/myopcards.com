@@ -15,8 +15,8 @@
             <p class="text-2xl font-display font-bold text-white"><?= number_format($stats['total_cards'] ?? 0) ?></p>
         </div>
         <div class="glass rounded-2xl p-5">
-            <div class="flex items-center gap-2 mb-2"><i data-lucide="dollar-sign" class="w-4 h-4 text-gold-400"></i><span class="text-xs font-bold text-dark-400 uppercase">USD Value</span></div>
-            <p class="text-2xl font-display font-bold text-white">$<?= number_format($stats['total_value'] ?? 0, 2) ?></p>
+            <div class="flex items-center gap-2 mb-2"><i data-lucide="banknote" class="w-4 h-4 text-gold-400"></i><span class="text-xs font-bold text-dark-400 uppercase"><?= ($stats['total_value_label'] ?? 'USD') ?> Value</span></div>
+            <p class="text-2xl font-display font-bold text-white"><?= ($stats['total_value_symbol'] ?? '$') . number_format((float)($stats['total_value'] ?? 0), 2) ?></p>
         </div>
         <div class="glass rounded-2xl p-5">
             <div class="flex items-center gap-2 mb-2"><i data-lucide="percent" class="w-4 h-4 text-purple-400"></i><span class="text-xs font-bold text-dark-400 uppercase">Completion</span></div>
@@ -94,7 +94,7 @@
                             <td class="py-3 pr-4 text-dark-400 font-bold"><?= $i + 1 ?></td>
                             <td class="py-3 pr-4">
                                 <a href="/cards/<?= urlencode($tc['card_set_id']) ?>" class="flex items-center gap-3 hover:text-gold-400 transition">
-                                    <img src="<?= htmlspecialchars($tc['card_image_url'] ?? '') ?>" class="w-7 h-10 rounded object-cover bg-dark-700" onerror="this.style.display='none'" loading="lazy">
+                                    <img src="<?= htmlspecialchars($tc['card_image_url'] ?? '') ?: 'about:blank' ?>" class="w-7 h-10 rounded object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
                                     <div>
                                         <p class="text-white font-medium"><?= htmlspecialchars($tc['card_name']) ?></p>
                                         <p class="text-xs text-dark-400"><?= htmlspecialchars($tc['card_set_id']) ?> &middot; <?= htmlspecialchars($tc['rarity'] ?? '') ?></p>
@@ -102,8 +102,9 @@
                                 </a>
                             </td>
                             <td class="py-3 pr-4 text-right text-dark-300"><?= $tc['quantity'] ?>x</td>
-                            <td class="py-3 pr-4 text-right text-gold-400 font-bold">$<?= number_format((float)$tc['market_price'], 2) ?></td>
-                            <td class="py-3 text-right text-white font-bold">$<?= number_format((float)$tc['total_value'], 2) ?></td>
+                            <?php $cardP = \App\Core\Currency::priceFromCard($tc); if ($cardP <= 0) $cardP = (float)($tc['market_price'] ?? 0); ?>
+                            <td class="py-3 pr-4 text-right text-gold-400 font-bold"><?= \App\Core\Currency::format($cardP) ?></td>
+                            <td class="py-3 text-right text-white font-bold"><?= \App\Core\Currency::format((float)$tc['total_value']) ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>

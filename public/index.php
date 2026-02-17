@@ -9,6 +9,14 @@ require BASE_PATH . '/vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable(BASE_PATH);
 $dotenv->load();
 
+ini_set('session.gc_maxlifetime', (string)(86400 * 7));
+session_set_cookie_params([
+    'lifetime' => 86400 * 7,
+    'path' => '/',
+    'secure' => true,
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 
 $router = new App\Core\Router();
@@ -68,7 +76,46 @@ $router->get('/api/market/movers', [App\Controllers\MarketController::class, 'mo
 $router->get('/api/search', [App\Controllers\SearchController::class, 'search']);
 $router->get('/api/cards/price-history/{id}', [App\Controllers\CardController::class, 'priceHistory']);
 
-$router->get('/sitemap.xml', [App\Controllers\SeoController::class, 'sitemap']);
+$router->get('/admin', [App\Controllers\AdminController::class, 'dashboard']);
+$router->get('/admin/users', [App\Controllers\AdminController::class, 'users']);
+$router->post('/admin/users/toggle-admin', [App\Controllers\AdminController::class, 'toggleAdmin']);
+$router->post('/admin/users/delete', [App\Controllers\AdminController::class, 'deleteUser']);
+$router->get('/admin/cards', [App\Controllers\AdminController::class, 'cards']);
+$router->get('/admin/prices', [App\Controllers\AdminController::class, 'prices']);
+$router->post('/admin/sync/cards', [App\Controllers\AdminController::class, 'syncCards']);
+$router->post('/admin/sync/prices-tcg', [App\Controllers\AdminController::class, 'syncPricesTcg']);
+$router->post('/admin/sync/prices-cardmarket', [App\Controllers\AdminController::class, 'syncPricesCardmarket']);
+$router->post('/admin/sync/snapshot', [App\Controllers\AdminController::class, 'syncSnapshot']);
+$router->get('/admin/logs', [App\Controllers\AdminController::class, 'logs']);
+$router->get('/admin/card-edit', [App\Controllers\AdminController::class, 'editCard']);
+$router->post('/admin/card-update', [App\Controllers\AdminController::class, 'updateCard']);
+$router->post('/admin/prices/import', [App\Controllers\AdminController::class, 'importPrices']);
+
+$router->get('/sitemap.xml', [App\Controllers\SeoController::class, 'sitemapIndex']);
+$router->get('/sitemap-static.xml', [App\Controllers\SeoController::class, 'sitemapStatic']);
+$router->get('/sitemap-cards-premium.xml', [App\Controllers\SeoController::class, 'sitemapCardsPremium']);
+$router->get('/sitemap-cards.xml', [App\Controllers\SeoController::class, 'sitemapCards']);
+$router->get('/sitemap-users.xml', [App\Controllers\SeoController::class, 'sitemapUsers']);
+$router->get('/sitemap-forum.xml', [App\Controllers\SeoController::class, 'sitemapForum']);
 $router->get('/robots.txt', [App\Controllers\SeoController::class, 'robots']);
+
+$router->get('/forum', [App\Controllers\ForumController::class, 'index']);
+$router->get('/forum/rules', [App\Controllers\ForumController::class, 'rules']);
+$router->get('/forum/search', [App\Controllers\ForumController::class, 'search']);
+$router->post('/forum/upload-image', [App\Controllers\ForumController::class, 'uploadImage']);
+$router->post('/forum/react', [App\Controllers\ForumController::class, 'react']);
+$router->get('/forum/{slug}', [App\Controllers\ForumController::class, 'category']);
+$router->get('/forum/{slug}/new', [App\Controllers\ForumController::class, 'newTopicForm']);
+$router->post('/forum/{slug}/create', [App\Controllers\ForumController::class, 'createTopic']);
+$router->get('/forum/{slug}/{id}-{topicSlug}', [App\Controllers\ForumController::class, 'topic']);
+$router->post('/forum/{slug}/{id}/reply', [App\Controllers\ForumController::class, 'reply']);
+$router->get('/forum/post/{id}/edit', [App\Controllers\ForumController::class, 'editPost']);
+$router->post('/forum/post/{id}/edit', [App\Controllers\ForumController::class, 'editPost']);
+$router->post('/forum/post/{id}/delete', [App\Controllers\ForumController::class, 'deletePost']);
+
+$router->get('/notifications', [App\Controllers\NotificationController::class, 'index']);
+$router->post('/notifications/read', [App\Controllers\NotificationController::class, 'markAsRead']);
+$router->post('/notifications/read-all', [App\Controllers\NotificationController::class, 'markAllAsRead']);
+$router->get('/api/notifications/count', [App\Controllers\NotificationController::class, 'getUnreadCount']);
 
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

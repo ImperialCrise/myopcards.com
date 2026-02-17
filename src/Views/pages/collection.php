@@ -1,7 +1,16 @@
 <?php
 $cards = $result['cards'] ?? [];
 $totalValueUsd = $result['total_value_usd'] ?? 0;
-$totalValueEur = $result['total_value_eur'] ?? 0;
+$totalValueEurEn = $result['total_value_eur_en'] ?? 0;
+$totalValueEurFr = $result['total_value_eur_fr'] ?? 0;
+$totalValueEurJp = $result['total_value_eur_jp'] ?? 0;
+$curInfo = \App\Core\Currency::info();
+$curValues = [
+    'usd' => $totalValueUsd,
+    'eur_en' => $totalValueEurEn,
+    'eur_fr' => $totalValueEurFr,
+    'eur_jp' => $totalValueEurJp,
+];
 $currentSort = $filters['sort'] ?? 'set';
 $sortOptions = [
     'set' => 'Set / Number',
@@ -66,9 +75,9 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
     </div>
 
     <!-- Value Summary -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div class="glass rounded-xl p-4 text-center">
-            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1">Cards</p>
+            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1">Unique Cards</p>
             <p class="text-xl font-display font-bold text-white"><?= number_format($result['total'] ?? 0) ?></p>
         </div>
         <div class="glass rounded-xl p-4 text-center">
@@ -76,12 +85,8 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
             <p class="text-xl font-display font-bold text-white"><?= number_format($stats['total_cards'] ?? 0) ?></p>
         </div>
         <div class="glass rounded-xl p-4 text-center">
-            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1">Value (USD)</p>
-            <p class="text-xl font-display font-bold text-green-400">$<?= number_format($totalValueUsd, 2) ?></p>
-        </div>
-        <div class="glass rounded-xl p-4 text-center">
-            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1">Value (EUR)</p>
-            <p class="text-xl font-display font-bold text-blue-400">&euro;<?= number_format($totalValueEur, 2) ?></p>
+            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1">Value (<?= $curInfo['label'] ?>)</p>
+            <p class="text-xl font-display font-bold text-gold-400"><?= $curInfo['symbol'] . number_format($curValues[$curInfo['key']] ?? 0, 2) ?></p>
         </div>
     </div>
 
@@ -135,7 +140,7 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
                 <div class="glass rounded-xl overflow-hidden relative">
                     <a href="/cards/<?= urlencode($card['card_set_id']) ?>">
                         <div class="relative aspect-[5/7] bg-dark-700">
-                            <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.classList.add('skeleton');this.style.display='none'">
+                            <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?: 'about:blank' ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
                             <span class="absolute top-1.5 right-1.5 px-2 py-0.5 bg-dark-900/80 text-white text-xs font-bold rounded-full" x-text="qty + 'x'"></span>
                             <?php if (!empty($card['rarity'])): ?>
                                 <?php
@@ -150,8 +155,12 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
                         <p class="text-xs font-bold text-white truncate"><?= htmlspecialchars($card['card_name']) ?></p>
                         <div class="flex items-center justify-between mt-1">
                             <span class="text-[10px] text-dark-400"><?= htmlspecialchars($card['card_set_id']) ?></span>
-                            <?php if (!empty($card['market_price'])): ?>
-                                <span class="text-[10px] font-bold text-gold-400">$<?= number_format((float)$card['market_price'], 2) ?></span>
+                            <?php
+                                $cardPrice = \App\Core\Currency::priceFromCard($card);
+                                if ($cardPrice <= 0) $cardPrice = (float)($card['market_price'] ?? 0);
+                            ?>
+                            <?php if ($cardPrice > 0): ?>
+                                <span class="text-[10px] font-bold text-gold-400"><?= \App\Core\Currency::format($cardPrice) ?></span>
                             <?php endif; ?>
                         </div>
                         <div class="flex gap-1 mt-2">

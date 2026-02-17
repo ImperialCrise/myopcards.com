@@ -19,7 +19,7 @@ $rarityBg = $rarityColors[$card['rarity']] ?? 'from-gray-500 to-gray-600';
     <div class="lg:col-span-1">
         <div class="glass rounded-2xl p-4 sticky top-24">
             <div class="aspect-[5/7] rounded-xl overflow-hidden bg-dark-700">
-                <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="<?= htmlspecialchars($card['card_name']) ?>" class="w-full h-full object-cover">
+                <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?: 'about:blank' ?>" alt="<?= htmlspecialchars($card['card_name']) ?>" class="w-full h-full object-cover" onerror="cardImgErr(this)">
             </div>
 
             <?php if ($isLoggedIn): ?>

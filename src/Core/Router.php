@@ -30,6 +30,10 @@ class Router
 
             if (preg_match($pattern, $uri, $matches)) {
                 $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+                $params = array_map(
+                    fn($v) => ctype_digit($v) ? (int)$v : $v,
+                    $params
+                );
                 [$controllerClass, $action] = $route['handler'];
 
                 $controller = new $controllerClass();
@@ -44,7 +48,15 @@ class Router
 
     private function convertToRegex(string $path): string
     {
-        $pattern = preg_replace('/\{(\w+)\}/', '(?P<$1>[^/]+)', $path);
+        // Special handling for forum topic IDs (should be numeric)
+        if (strpos($path, '/forum/') !== false && strpos($path, '/{id}') !== false) {
+            $pattern = preg_replace('/\{id\}/', '(?P<id>\d+)', $path);
+        } else {
+            // Default handling for other IDs (like card IDs which can contain letters, numbers, underscores, hyphens)
+            $pattern = preg_replace('/\{id\}/', '(?P<id>[^/]+)', $path);
+        }
+        
+        $pattern = preg_replace('/\{(\w+)\}/', '(?P<$1>[^/]+)', $pattern);
         return '#^' . $pattern . '$#';
     }
 }

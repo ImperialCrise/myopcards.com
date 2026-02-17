@@ -14,13 +14,13 @@
                 <template x-if="gainers.length === 0"><p class="text-sm text-dark-400 text-center py-4">No price data yet. Check back after price sync runs.</p></template>
                 <template x-for="card in gainers" :key="card.id">
                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition">
-                        <img :src="card.card_image_url" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="this.style.display='none'">
+                        <img :src="card.card_image_url || __PLACEHOLDER" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="cardImgErr(this)">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-white truncate" x-text="card.card_name"></p>
                             <p class="text-xs text-dark-400" x-text="card.card_set_id"></p>
                         </div>
                         <div class="text-right">
-                            <p class="text-sm font-bold text-green-400" x-text="'+$' + parseFloat(card.price_change).toFixed(2)"></p>
+                            <p class="text-sm font-bold text-green-400" x-text="'+' + formatPrice(parseFloat(card.price_change))"></p>
                             <p class="text-xs text-green-400/70" x-text="'+' + card.pct_change + '%'"></p>
                         </div>
                     </a>
@@ -35,13 +35,13 @@
                 <template x-if="losers.length === 0"><p class="text-sm text-dark-400 text-center py-4">No price data yet.</p></template>
                 <template x-for="card in losers" :key="card.id">
                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition">
-                        <img :src="card.card_image_url" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="this.style.display='none'">
+                        <img :src="card.card_image_url || __PLACEHOLDER" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="cardImgErr(this)">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-white truncate" x-text="card.card_name"></p>
                             <p class="text-xs text-dark-400" x-text="card.card_set_id"></p>
                         </div>
                         <div class="text-right">
-                            <p class="text-sm font-bold text-red-400" x-text="'$' + parseFloat(card.price_change).toFixed(2)"></p>
+                            <p class="text-sm font-bold text-red-400" x-text="formatPrice(parseFloat(card.price_change))"></p>
                             <p class="text-xs text-red-400/70" x-text="card.pct_change + '%'"></p>
                         </div>
                     </a>
@@ -63,14 +63,15 @@
                     <a href="/cards/<?= urlencode($card['card_set_id']) ?>" class="group card-hover">
                         <div class="glass rounded-xl overflow-hidden">
                             <div class="relative aspect-[5/7] bg-dark-700">
-                                <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.classList.add('skeleton');this.style.display='none'">
+                                <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?: 'about:blank' ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
                                 <span class="absolute top-1.5 left-1.5 px-2 py-0.5 bg-dark-900/80 text-gold-400 text-xs font-bold rounded">#<?= $i + 1 ?></span>
                             </div>
                             <div class="p-2.5">
                                 <p class="text-xs font-bold text-white truncate"><?= htmlspecialchars($card['card_name']) ?></p>
                                 <div class="flex items-center justify-between mt-1">
                                     <span class="text-[10px] text-dark-400"><?= htmlspecialchars($card['card_set_id']) ?></span>
-                                    <span class="text-xs font-bold text-gold-400">$<?= number_format((float)$card['market_price'], 2) ?></span>
+                                    <?php $mp = \App\Core\Currency::priceFromCard($card); if ($mp <= 0) $mp = (float)($card['market_price'] ?? 0); ?>
+                                    <span class="text-xs font-bold text-gold-400"><?= $mp > 0 ? \App\Core\Currency::format($mp) : '' ?></span>
                                 </div>
                             </div>
                         </div>
@@ -99,13 +100,14 @@
                             <td class="py-3 pr-4 text-dark-400 font-bold"><?= $i + 1 ?></td>
                             <td class="py-3 pr-4">
                                 <a href="/cards/<?= urlencode($c['card_set_id']) ?>" class="flex items-center gap-3 hover:text-gold-400 transition">
-                                    <img src="<?= htmlspecialchars($c['card_image_url'] ?? '') ?>" class="w-7 h-10 rounded object-cover bg-dark-700" onerror="this.style.display='none'" loading="lazy">
+                                    <img src="<?= htmlspecialchars($c['card_image_url'] ?? '') ?: 'about:blank' ?>" class="w-7 h-10 rounded object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
                                     <div><p class="text-white font-medium"><?= htmlspecialchars($c['card_name']) ?></p><p class="text-xs text-dark-400"><?= htmlspecialchars($c['card_set_id']) ?></p></div>
                                 </a>
                             </td>
                             <td class="py-3 pr-4 text-right text-blue-400 font-bold"><?= $c['collector_count'] ?></td>
                             <td class="py-3 pr-4 text-right text-dark-300"><?= number_format($c['total_owned']) ?></td>
-                            <td class="py-3 text-right text-gold-400 font-bold"><?= $c['market_price'] ? '$' . number_format((float)$c['market_price'], 2) : '-' ?></td>
+                            <?php $mp2 = \App\Core\Currency::priceFromCard($c); if ($mp2 <= 0) $mp2 = (float)($c['market_price'] ?? 0); ?>
+                            <td class="py-3 text-right text-gold-400 font-bold"><?= $mp2 > 0 ? \App\Core\Currency::format($mp2) : '-' ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -121,8 +123,9 @@
         </h2>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
+                <?php $curSym = \App\Core\Currency::symbol(); $curLbl = \App\Core\Currency::label(); ?>
                 <thead><tr class="text-xs text-dark-400 uppercase border-b border-dark-600">
-                    <th class="text-left pb-3 pr-4">Set</th><th class="text-right pb-3 pr-4">Cards</th><th class="text-right pb-3 pr-4">Total (USD)</th><th class="text-right pb-3 pr-4">Total (EUR)</th><th class="text-right pb-3">Avg Price</th>
+                    <th class="text-left pb-3 pr-4">Set</th><th class="text-right pb-3 pr-4">Cards</th><th class="text-right pb-3 pr-4">Total (<?= $curLbl ?>)</th><th class="text-right pb-3">Avg Price</th>
                 </tr></thead>
                 <tbody>
                 <?php foreach ($setSummary as $ss): ?>
@@ -134,9 +137,8 @@
                             <span class="text-xs text-dark-500 ml-1"><?= htmlspecialchars($ss['set_id']) ?></span>
                         </td>
                         <td class="py-3 pr-4 text-right text-dark-300"><?= $ss['card_count_actual'] ?></td>
-                        <td class="py-3 pr-4 text-right text-gold-400 font-bold">$<?= number_format((float)$ss['total_value_usd'], 2) ?></td>
-                        <td class="py-3 pr-4 text-right text-blue-400 font-bold">&euro;<?= number_format((float)$ss['total_value_eur'], 2) ?></td>
-                        <td class="py-3 text-right text-dark-300">$<?= number_format((float)$ss['avg_price_usd'], 2) ?></td>
+                        <td class="py-3 pr-4 text-right text-gold-400 font-bold"><?= $curSym . number_format((float)$ss['total_value'], 2) ?></td>
+                        <td class="py-3 text-right text-dark-300"><?= $curSym . number_format((float)$ss['avg_price'], 2) ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

@@ -96,12 +96,28 @@ class User
             'SELECT
                 COUNT(DISTINCT uc.card_id) as unique_cards,
                 SUM(uc.quantity) as total_cards,
-                COALESCE(SUM(c.market_price * uc.quantity), 0) as total_value
+                COALESCE(SUM(c.market_price * uc.quantity), 0) as total_value_usd,
+                COALESCE(SUM(COALESCE(c.price_en, c.cardmarket_price, 0) * uc.quantity), 0) as total_value_eur_en,
+                COALESCE(SUM(COALESCE(c.price_fr, 0) * uc.quantity), 0) as total_value_eur_fr,
+                COALESCE(SUM(COALESCE(c.price_jp, 0) * uc.quantity), 0) as total_value_eur_jp
              FROM user_cards uc
              JOIN cards c ON c.id = uc.card_id
              WHERE uc.user_id = :user_id AND uc.is_wishlist = 0'
         );
         $stmt->execute(['user_id' => $userId]);
-        return $stmt->fetch() ?: ['unique_cards' => 0, 'total_cards' => 0, 'total_value' => 0];
+        $row = $stmt->fetch() ?: ['unique_cards' => 0, 'total_cards' => 0, 'total_value_usd' => 0, 'total_value_eur_en' => 0, 'total_value_eur_fr' => 0, 'total_value_eur_jp' => 0];
+
+        $cur = \App\Core\Currency::current();
+        $valueMap = [
+            'usd' => (float)$row['total_value_usd'],
+            'eur_en' => (float)$row['total_value_eur_en'],
+            'eur_fr' => (float)$row['total_value_eur_fr'],
+            'eur_jp' => (float)$row['total_value_eur_jp'],
+        ];
+        $row['total_value'] = $valueMap[$cur] ?? $valueMap['usd'];
+        $row['total_value_symbol'] = \App\Core\Currency::symbol();
+        $row['total_value_label'] = \App\Core\Currency::label();
+
+        return $row;
     }
 }

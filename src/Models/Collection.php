@@ -60,16 +60,20 @@ class Collection
         ]);
     }
 
-    private const SORT_MAP = [
-        'set'        => 'c.set_id ASC, c.card_set_id ASC',
-        'name'       => 'c.card_name ASC',
-        'name_desc'  => 'c.card_name DESC',
-        'price'      => 'c.market_price DESC',
-        'price_asc'  => 'c.market_price ASC',
-        'rarity'     => "FIELD(c.rarity,'SEC','SP','L','SR','R','UC','C','P') ASC",
-        'added'      => 'uc.added_at DESC',
-        'qty'        => 'uc.quantity DESC',
-    ];
+    private static function getSortMap(): array
+    {
+        $priceCol = 'c.' . \App\Core\Currency::column();
+        return [
+            'set'        => 'c.set_id ASC, c.card_set_id ASC',
+            'name'       => 'c.card_name ASC',
+            'name_desc'  => 'c.card_name DESC',
+            'price'      => "$priceCol DESC",
+            'price_asc'  => "$priceCol ASC",
+            'rarity'     => "FIELD(c.rarity,'SEC','SP','L','SR','R','UC','C','P') ASC",
+            'added'      => 'uc.added_at DESC',
+            'qty'        => 'uc.quantity DESC',
+        ];
+    }
 
     public static function getUserCollection(int $userId, bool $wishlist = false, array $filters = [], int $page = 1, int $perPage = 40): array
     {
@@ -102,7 +106,8 @@ class Collection
         $offset = ($page - 1) * $perPage;
 
         $sortKey = $filters['sort'] ?? 'set';
-        $orderBy = self::SORT_MAP[$sortKey] ?? self::SORT_MAP['set'];
+        $sortMap = self::getSortMap();
+        $orderBy = $sortMap[$sortKey] ?? $sortMap['set'];
 
         $countStmt = $db->prepare("SELECT COUNT(*) FROM user_cards uc JOIN cards c ON c.id = uc.card_id WHERE $whereClause");
         $countStmt->execute($params);
@@ -110,7 +115,9 @@ class Collection
 
         $valueStmt = $db->prepare(
             "SELECT COALESCE(SUM(c.market_price * uc.quantity), 0) as total_usd,
-                    COALESCE(SUM(COALESCE(c.price_en, c.cardmarket_price, 0) * uc.quantity), 0) as total_eur
+                    COALESCE(SUM(COALESCE(c.price_en, c.cardmarket_price, 0) * uc.quantity), 0) as total_eur_en,
+                    COALESCE(SUM(COALESCE(c.price_fr, 0) * uc.quantity), 0) as total_eur_fr,
+                    COALESCE(SUM(COALESCE(c.price_jp, 0) * uc.quantity), 0) as total_eur_jp
              FROM user_cards uc JOIN cards c ON c.id = uc.card_id WHERE $whereClause"
         );
         $valueStmt->execute($params);
@@ -140,7 +147,9 @@ class Collection
             'per_page' => $perPage,
             'total_pages' => (int)ceil($total / $perPage),
             'total_value_usd' => (float)($values['total_usd'] ?? 0),
-            'total_value_eur' => (float)($values['total_eur'] ?? 0),
+            'total_value_eur_en' => (float)($values['total_eur_en'] ?? 0),
+            'total_value_eur_fr' => (float)($values['total_eur_fr'] ?? 0),
+            'total_value_eur_jp' => (float)($values['total_eur_jp'] ?? 0),
         ];
     }
 

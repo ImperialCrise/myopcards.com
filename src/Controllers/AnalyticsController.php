@@ -64,13 +64,14 @@ class AnalyticsController
     private function getTopValueCards(int $userId, int $limit): array
     {
         $db = Database::getConnection();
+        $priceCol = \App\Core\Currency::column();
         $stmt = $db->prepare(
             "SELECT c.id, c.card_set_id, c.card_name, c.card_image_url, c.rarity, c.set_name,
-                    c.market_price, c.cardmarket_price, uc.quantity,
-                    (c.market_price * uc.quantity) as total_value
+                    c.market_price, c.cardmarket_price, c.price_en, c.price_fr, c.price_jp, uc.quantity,
+                    (c.$priceCol * uc.quantity) as total_value
              FROM user_cards uc
              JOIN cards c ON c.id = uc.card_id
-             WHERE uc.user_id = :uid AND uc.is_wishlist = 0 AND c.market_price > 0
+             WHERE uc.user_id = :uid AND uc.is_wishlist = 0 AND c.$priceCol > 0
              ORDER BY total_value DESC
              LIMIT :lim"
         );

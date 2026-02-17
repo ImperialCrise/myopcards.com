@@ -54,8 +54,8 @@
             <p class="text-xs text-gray-400 mt-1">Cards</p>
         </div>
         <div class="glass rounded-xl p-5 text-center">
-            <p class="text-2xl font-display font-bold text-gray-900">$<?= number_format($stats['total_value'] ?? 0, 2) ?></p>
-            <p class="text-xs text-gray-400 mt-1">Value</p>
+            <p class="text-2xl font-display font-bold text-gray-900"><?= \App\Core\Currency::format((float)($stats['total_value'] ?? 0)) ?></p>
+            <p class="text-xs text-gray-400 mt-1">Value (<?= \App\Core\Currency::label() ?>)</p>
         </div>
         <div class="glass rounded-xl p-5 text-center">
             <p class="text-2xl font-display font-bold text-gray-900"><?= $friendCount ?></p>

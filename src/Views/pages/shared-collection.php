@@ -109,7 +109,7 @@ $baseUrl = '/s/' . urlencode($token);
                 <div class="glass rounded-xl overflow-hidden">
                     <a href="/cards/<?= urlencode($card['card_set_id']) ?>">
                         <div class="relative aspect-[5/7] bg-dark-700">
-                            <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.classList.add('skeleton');this.style.display='none'">
+                            <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?: 'about:blank' ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
                             <span class="absolute top-1.5 right-1.5 px-2 py-0.5 bg-dark-900/80 text-white text-xs font-bold rounded-full"><?= (int)($card['quantity'] ?? 1) ?>x</span>
                             <?php if (!empty($card['rarity'])): ?>
                                 <?php
