@@ -18,13 +18,41 @@ class DashboardController
     {
         Auth::requireAuth();
 
+        $userId = Auth::id();
         $user = Auth::user();
-        $stats = User::getCollectionStats(Auth::id());
-        $recent = Collection::getRecentAdditions(Auth::id(), 8);
-        $friendCount = Friendship::getFriendCount(Auth::id());
-        $pending = Friendship::getPendingRequests(Auth::id());
-        $setCompletion = CardSet::getCompletionForUser(Auth::id());
-        $viewCounts = PageView::getCounts(Auth::id());
+        if (!$user) {
+            Auth::logout();
+            header('Location: /login');
+            exit;
+        }
+
+        try {
+            $stats = User::getCollectionStats($userId);
+        } catch (\Throwable $e) {
+            $stats = ['unique_cards' => 0, 'total_cards' => 0, 'total_value' => 0, 'total_value_symbol' => '$', 'total_value_label' => 'USD'];
+        }
+
+        try {
+            $recent = Collection::getRecentAdditions($userId, 8);
+        } catch (\Throwable $e) {
+            $recent = [];
+        }
+
+        try {
+            $friendCount = Friendship::getFriendCount($userId);
+            $pending = Friendship::getPendingRequests($userId);
+        } catch (\Throwable $e) {
+            $friendCount = 0;
+            $pending = [];
+        }
+
+        try {
+            $setCompletion = CardSet::getCompletionForUser($userId);
+        } catch (\Throwable $e) {
+            $setCompletion = [];
+        }
+
+        $viewCounts = PageView::getCounts($userId);
 
         View::render('pages/dashboard', [
             'title' => 'Dashboard',

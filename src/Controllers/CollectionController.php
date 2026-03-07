@@ -34,6 +34,7 @@ class CollectionController
         $stats = User::getCollectionStats(Auth::id());
         $user = Auth::user();
         $viewCounts = PageView::getCounts(Auth::id());
+        $featuredCard = User::getFeaturedCard(Auth::id());
 
         View::render('pages/collection', [
             'title' => $wishlist ? 'My Wishlist' : 'My Collection',
@@ -47,6 +48,7 @@ class CollectionController
             'shareToken' => $user['share_token'] ?? null,
             'viewCounts' => $viewCounts,
             'user' => $user,
+            'featuredCard' => User::getFeaturedCard(Auth::id()),
         ]);
     }
 

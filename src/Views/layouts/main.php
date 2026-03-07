@@ -3,7 +3,10 @@ $currentUser = \App\Core\Auth::user();
 $isLoggedIn = \App\Core\Auth::check();
 $_pendingReqs = [];
 if ($isLoggedIn) {
-    $_pendingReqs = \App\Models\Friendship::getPendingRequests(\App\Core\Auth::id());
+    try {
+        $_pendingReqs = \App\Models\Friendship::getPendingRequests(\App\Core\Auth::id());
+    } catch (\Throwable $e) {
+    }
 }
 $pendingCount = count($_pendingReqs);
 $currentLang = 'en';
@@ -234,8 +237,11 @@ $_r4 = array_slice($_bgCards, 36, 12);
                         'eur_fr' => ['€', 'EUR', 'FR Edition'],
                         'eur_jp' => ['€', 'EUR', 'JP Edition'],
                     ];
-                    $curSymbol = $currencyMap[$currentCurrency][0] ?? '$';
-                    $curLabel = $currencyMap[$currentCurrency][1] ?? 'USD';
+                    if (!isset($currencyMap[$currentCurrency])) {
+                        $currentCurrency = 'usd';
+                    }
+                    $curSymbol = $currencyMap[$currentCurrency][0];
+                    $curLabel = $currencyMap[$currentCurrency][1];
                     ?>
                     <div class="relative hidden md:block" x-data="{ curOpen: false }">
                         <button @click="curOpen = !curOpen" class="px-2 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition flex items-center gap-1">
@@ -263,30 +269,69 @@ $_r4 = array_slice($_bgCards, 36, 12);
                     </div>
 
                     <?php if ($isLoggedIn): ?>
-                    <div class="relative hidden md:block" x-data="notifBell()" @click.outside="open = false">
+                    <div class="relative hidden md:block" x-data="unifiedNotifications()" @click.outside="open = false" x-init="loadNotifications()">
                         <button @click="toggle()" class="relative p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
                             <i data-lucide="bell" class="w-4 h-4"></i>
-                            <span id="nav-notif-dot" class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" <?= $pendingCount === 0 ? 'style="display:none"' : '' ?>></span>
-                            <span id="nav-notif-count" class="absolute -top-0.5 -right-1 min-w-[16px] h-4 px-0.5 bg-red-500 rounded-full flex items-center justify-center" style="color:#fff !important;font-size:10px;font-weight:700;<?= $pendingCount === 0 ? 'display:none' : '' ?>"><?= $pendingCount ?></span>
+                            <span id="unified-notif-dot" class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" x-show="totalCount > 0"></span>
+                            <span id="unified-notif-count" class="absolute -top-0.5 -right-1 min-w-[16px] h-4 px-0.5 bg-red-500 rounded-full flex items-center justify-center" 
+                                  style="color:#fff !important;font-size:10px;font-weight:700;" x-show="totalCount > 0" x-text="totalCount"></span>
                         </button>
                         <div x-show="open" x-transition x-cloak class="absolute top-full right-0 mt-1 glass-strong rounded-xl shadow-2xl w-80 z-50 overflow-hidden">
                             <div class="px-4 py-3 border-b" style="border-color:var(--nav-border)">
-                                <p class="text-sm font-display font-bold text-gray-900">Notifications</p>
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-display font-bold text-gray-900">Notifications</p>
+                                    <a href="/notifications" class="text-xs text-blue-600 hover:text-blue-800">View All</a>
+                                </div>
                             </div>
                             <div class="max-h-80 overflow-y-auto">
-                                <template x-if="items.length === 0">
-                                    <div class="px-4 py-6 text-center text-gray-400 text-sm">No pending requests</div>
+                                <!-- Friend Requests Section -->
+                                <template x-if="friendRequests.length > 0">
+                                    <div>
+                                        <div class="px-4 py-2 bg-gray-50 border-b" style="border-color:var(--nav-border)">
+                                            <p class="text-xs font-medium text-gray-600">Friend Requests</p>
+                                        </div>
+                                        <template x-for="req in friendRequests" :key="'fr-' + req.id">
+                                            <div class="px-4 py-3 border-b hover:bg-gray-50 transition" style="border-color:var(--nav-border)">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0" x-text="req.username.charAt(0).toUpperCase()"></div>
+                                                    <p class="text-sm text-gray-900 flex-1 min-w-0"><span class="font-bold" x-text="req.username"></span> <span class="text-gray-500">wants to be friends</span></p>
+                                                </div>
+                                                <div class="flex gap-2 mt-2 ml-11">
+                                                    <button @click="acceptFriend(req)" class="flex-1 px-3 py-1.5 bg-green-500 rounded-lg text-xs font-bold hover:bg-green-600 transition" style="color:#fff !important">Accept</button>
+                                                    <button @click="declineFriend(req)" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-200 transition">Decline</button>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
                                 </template>
-                                <template x-for="req in items" :key="req.id">
-                                    <div class="px-4 py-3 border-b last:border-0 hover:bg-gray-50 transition" style="border-color:var(--nav-border)">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0" x-text="req.username.charAt(0).toUpperCase()"></div>
-                                            <p class="text-sm text-gray-900 flex-1 min-w-0"><span class="font-bold" x-text="req.username"></span> <span class="text-gray-500">wants to be friends</span></p>
+                                
+                                <!-- Forum Notifications Section -->
+                                <template x-if="forumNotifications.length > 0">
+                                    <div>
+                                        <div class="px-4 py-2 bg-gray-50 border-b" style="border-color:var(--nav-border)">
+                                            <p class="text-xs font-medium text-gray-600">Forum Activity</p>
                                         </div>
-                                        <div class="flex gap-2 mt-2 ml-11">
-                                            <button @click="accept(req)" class="flex-1 px-3 py-1.5 bg-green-500 rounded-lg text-xs font-bold hover:bg-green-600 transition" style="color:#fff !important">Accept</button>
-                                            <button @click="decline(req)" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-200 transition">Decline</button>
-                                        </div>
+                                        <template x-for="item in forumNotifications.slice(0, 3)" :key="'fn-' + item.id">
+                                            <div class="p-3 border-b hover:bg-gray-50 transition cursor-pointer" style="border-color:var(--nav-border)" @click="markAsRead(item.id)">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                                                        <i :data-lucide="item.type === 'forum_reply' ? 'message-circle' : 'heart'" class="w-3 h-3 text-blue-500"></i>
+                                                    </div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-xs text-gray-900 font-medium" x-text="item.title"></p>
+                                                        <p class="text-xs text-gray-500 truncate" x-text="item.message"></p>
+                                                    </div>
+                                                    <div x-show="!item.is_read" class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                
+                                <template x-if="totalCount === 0">
+                                    <div class="px-4 py-8 text-center text-gray-400 text-sm">
+                                        <i data-lucide="bell-off" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                                        <p>No new notifications</p>
                                     </div>
                                 </template>
                             </div>
@@ -309,12 +354,6 @@ $_r4 = array_slice($_bgCards, 36, 12);
                             <?php endif; ?>
                             <span class="text-sm font-medium text-gray-600 hidden lg:block"><?= htmlspecialchars($currentUser['username']) ?></span>
                         </a>
-                        <div class="relative">
-                            <a href="/notifications" class="p-2 text-gray-400 hover:text-gray-600 transition" title="Notifications">
-                                <i data-lucide="bell" class="w-4 h-4"></i>
-                                <span id="notification-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium"></span>
-                            </a>
-                        </div>
                         <a href="/logout" class="p-2 text-gray-400 hover:text-red-500 transition" title="Logout"><i data-lucide="log-out" class="w-4 h-4"></i></a>
                     <?php else: ?>
                         <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition hidden sm:block">Login</a>
@@ -403,27 +442,15 @@ $_r4 = array_slice($_bgCards, 36, 12);
     
     <?php if ($isLoggedIn): ?>
     <script>
-    // Check for unread notifications
-    async function updateNotificationBadge() {
-        try {
-            const response = await fetch('/api/notifications/count');
-            const data = await response.json();
-            const badge = document.getElementById('notification-badge');
-            
-            if (data.count > 0) {
-                badge.textContent = data.count > 99 ? '99+' : data.count;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
+    // Auto-refresh unified notifications every 30 seconds
+    if (typeof Alpine !== 'undefined' && Alpine.store && Alpine.store('unifiedNotifications')) {
+        setInterval(() => {
+            const store = Alpine.store('unifiedNotifications');
+            if (store && store.loadNotifications) {
+                store.loadNotifications();
             }
-        } catch (error) {
-            console.error('Failed to fetch notification count:', error);
-        }
+        }, 30000);
     }
-    
-    // Update badge on page load and every 30 seconds
-    updateNotificationBadge();
-    setInterval(updateNotificationBadge, 30000);
     </script>
     <?php endif; ?>
 </body>

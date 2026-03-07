@@ -58,9 +58,14 @@ class CardController
         }
 
         $userOwns = 0;
+        $isFeatured = false;
         if (Auth::check()) {
             $userCards = Collection::getUserCardIds(Auth::id());
             $userOwns = $userCards[$card['id']] ?? 0;
+            
+            // Check if this card is the user's featured card
+            $user = \App\Models\User::findById(Auth::id());
+            $isFeatured = ($user && $user['featured_card_id'] == $card['id']);
         }
 
         $priceStr = !empty($card['market_price']) ? ' | $' . number_format((float)$card['market_price'], 2) : '';
@@ -97,6 +102,7 @@ class CardController
             'title' => $cardTitle,
             'card' => $card,
             'userOwns' => $userOwns,
+            'isFeatured' => $isFeatured,
             'seoDescription' => $cardDesc,
             'seoImage' => $card['card_image_url'] ?? '',
             'seoOgType' => 'product',
@@ -145,5 +151,40 @@ class CardController
             'cardmarket_fr' => $cmFr,
             'cardmarket_jp' => $cmJp,
         ]);
+    }
+
+    public function setFeatured(string $id): void
+    {
+        Auth::requireAuth();
+        header('Content-Type: application/json');
+
+        $card = Card::findBySetCardId($id);
+        if (!$card) {
+            echo json_encode(['success' => false, 'error' => 'Card not found']);
+            return;
+        }
+        
+        // Check if this card is already featured
+        $user = \App\Models\User::findById(Auth::id());
+        $currentlyFeatured = ($user && $user['featured_card_id'] == $card['id']);
+        
+        if ($currentlyFeatured) {
+            // Unfeatured the card
+            $success = \App\Models\User::setFeaturedCard(Auth::id(), null);
+            if ($success) {
+                echo json_encode(['success' => true, 'message' => 'Featured card removed', 'featured' => false]);
+            } else {
+                echo json_encode(['success' => false, 'error' => 'Failed to remove featured card']);
+            }
+        } else {
+            // Set as featured
+            $success = \App\Models\User::setFeaturedCard(Auth::id(), $card['id']);
+            
+            if ($success) {
+                echo json_encode(['success' => true, 'message' => 'Featured card updated', 'featured' => true]);
+            } else {
+                echo json_encode(['success' => false, 'error' => 'You must own this card to feature it']);
+            }
+        }
     }
 }

@@ -81,34 +81,98 @@ function formatCardPrice(card) {
     return formatPrice(getCardPrice(card));
 }
 
-function notifBell() {
+function unifiedNotifications() {
     return {
         open: false,
-        items: window.__NOTIF_ITEMS || [],
-        toggle() { this.open = !this.open; },
-        async accept(req) {
+        friendRequests: window.__NOTIF_ITEMS || [],
+        forumNotifications: [],
+        totalCount: 0,
+        
+        toggle() { 
+            this.open = !this.open; 
+            if (this.open) {
+                lucide.createIcons();
+            }
+        },
+        
+        async loadNotifications() {
+            // Load friend requests (already loaded via PHP)
+            this.friendRequests = window.__NOTIF_ITEMS || [];
+            
+            // Load forum notifications
+            try {
+                const response = await fetch('/api/notifications/count');
+                const data = await response.json();
+                
+                if (data.count > 0) {
+                    const notifResponse = await fetch('/notifications');
+                    // For now, just show the count in forum notifications
+                    this.forumNotifications = data.count > 0 ? [{ 
+                        id: 'forum-count',
+                        type: 'forum_reply',
+                        title: `${data.count} new notification${data.count > 1 ? 's' : ''}`,
+                        message: 'View all forum notifications',
+                        is_read: false,
+                        created_at: new Date().toISOString()
+                    }] : [];
+                } else {
+                    this.forumNotifications = [];
+                }
+            } catch (error) {
+                console.error('Failed to load forum notifications:', error);
+                this.forumNotifications = [];
+            }
+            
+            this.updateTotalCount();
+        },
+        
+        updateTotalCount() {
+            this.totalCount = this.friendRequests.length + this.forumNotifications.filter(n => !n.is_read).length;
+        },
+        
+        async acceptFriend(req) {
             var res = await apiPost('/friends/accept', { user_id: req.user_id });
             if (res.success) {
                 showToast(req.username + ' is now your friend');
-                this.items = this.items.filter(function(r){ return r.id !== req.id; });
-                this.syncBadge();
+                this.friendRequests = this.friendRequests.filter(function(r){ return r.id !== req.id; });
+                this.updateTotalCount();
             }
         },
-        async decline(req) {
+        
+        async declineFriend(req) {
             var res = await apiPost('/friends/decline', { user_id: req.user_id });
             if (res.success) {
                 showToast('Request declined');
-                this.items = this.items.filter(function(r){ return r.id !== req.id; });
-                this.syncBadge();
+                this.friendRequests = this.friendRequests.filter(function(r){ return r.id !== req.id; });
+                this.updateTotalCount();
             }
         },
-        syncBadge() {
-            var c = this.items.length;
-            var dot = document.getElementById('nav-notif-dot');
-            var badge = document.getElementById('nav-notif-count');
-            if (dot) dot.style.display = c > 0 ? '' : 'none';
-            if (badge) { badge.textContent = c; badge.style.display = c > 0 ? '' : 'none'; }
-            if (typeof updateNavBadge === 'function') updateNavBadge(c);
+        
+        async markAsRead(notificationId) {
+            if (notificationId === 'forum-count') {
+                // Navigate to full notifications page
+                window.location.href = '/notifications';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/notifications/read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `notification_id=${notificationId}`
+                });
+                
+                if (response.ok) {
+                    this.forumNotifications = this.forumNotifications.map(n => 
+                        n.id === notificationId ? {...n, is_read: true} : n
+                    );
+                    this.updateTotalCount();
+                }
+            } catch (error) {
+                console.error('Failed to mark notification as read:', error);
+            }
         }
     }
 }

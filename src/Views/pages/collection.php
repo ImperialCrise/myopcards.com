@@ -74,6 +74,62 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
         </template>
     </div>
 
+    <!-- Featured Card -->
+    <?php if (isset($featuredCard) && $featuredCard): ?>
+    <div class="glass rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-4">
+            <i data-lucide="star" class="w-6 h-6 text-yellow-400 fill-current"></i>
+            <h2 class="text-xl font-display font-bold text-white">Your Featured Card</h2>
+        </div>
+        <div class="flex items-center gap-6 p-4 bg-gradient-to-r from-yellow-900/20 to-amber-900/20 rounded-xl border border-yellow-700/30">
+            <div class="relative flex-shrink-0">
+                <img src="<?= htmlspecialchars($featuredCard['card_image_url']) ?>" 
+                     alt="<?= htmlspecialchars($featuredCard['card_name']) ?>"
+                     class="w-20 h-28 object-cover rounded-lg shadow-lg border-2 border-yellow-300/50">
+                <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                    <i data-lucide="star" class="w-4 h-4 text-white fill-current"></i>
+                </div>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h3 class="text-lg font-bold text-white mb-1"><?= htmlspecialchars($featuredCard['card_name']) ?></h3>
+                <p class="text-sm text-gray-400 mb-2"><?= htmlspecialchars($featuredCard['card_set_id']) ?> • <?= htmlspecialchars($featuredCard['set_name'] ?? 'Unknown Set') ?></p>
+                
+                <div class="flex items-center gap-4 text-xs">
+                    <?php if ($featuredCard['rarity']): ?>
+                    <span class="px-2 py-1 bg-purple-900/30 text-purple-400 rounded-full font-medium">
+                        <?= htmlspecialchars($featuredCard['rarity']) ?>
+                    </span>
+                    <?php endif; ?>
+                    
+                    <?php if ($featuredCard['card_color']): ?>
+                    <span class="px-2 py-1 bg-blue-900/30 text-blue-400 rounded-full font-medium">
+                        <?= htmlspecialchars($featuredCard['card_color']) ?>
+                    </span>
+                    <?php endif; ?>
+                    
+                    <?php if ($featuredCard['market_price']): ?>
+                    <span class="px-2 py-1 bg-green-900/30 text-green-400 rounded-full font-bold">
+                        $<?= number_format((float)$featuredCard['market_price'], 2) ?>
+                    </span>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <div class="flex-shrink-0 flex flex-col gap-2">
+                <a href="/cards/<?= htmlspecialchars($featuredCard['card_set_id']) ?>" 
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-medium rounded-lg transition">
+                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                    View Card
+                </a>
+                <button onclick="removeFeaturedCard()" 
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 font-medium rounded-lg transition border border-red-600/30">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                    Remove
+                </button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Value Summary -->
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div class="glass rounded-xl p-4 text-center">
@@ -148,6 +204,11 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
                                     $rb = $rc[$card['rarity']] ?? 'from-gray-500 to-gray-600';
                                 ?>
                                 <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-bold text-white bg-gradient-to-r <?= $rb ?> rounded shadow"><?= htmlspecialchars($card['rarity']) ?></span>
+                            <?php endif; ?>
+                            <?php if (isset($featuredCard) && $featuredCard && $featuredCard['id'] == $cardId): ?>
+                                <div class="absolute bottom-1.5 left-1.5 w-6 h-6 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white/50" title="Featured Card">
+                                    <i data-lucide="star" class="w-3 h-3 text-white fill-current"></i>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </a>
@@ -238,5 +299,28 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
     </div>
 </div>
 
-<script>window.__PAGE_DATA = { shareUrl: <?= json_encode($shareToken ? $appUrl . '/s/' . $shareToken : '') ?> };</script>
+<script>
+window.__PAGE_DATA = { shareUrl: <?= json_encode($shareToken ? $appUrl . '/s/' . $shareToken : '') ?> };
+
+function removeFeaturedCard() {
+    if (confirm('Remove this card from being featured?')) {
+        fetch('/api/cards/remove-featured', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Failed to remove featured card');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to remove featured card');
+        });
+    }
+}
+</script>
 <script src="/assets/js/pages/collection.js"></script>

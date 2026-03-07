@@ -8,6 +8,7 @@
             <a href="/admin/users" class="px-3 py-2 glass rounded-lg text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-1.5"><i data-lucide="users" class="w-4 h-4"></i> Users</a>
             <a href="/admin/cards" class="px-3 py-2 glass rounded-lg text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-1.5"><i data-lucide="layers" class="w-4 h-4"></i> Cards</a>
             <a href="/admin/prices" class="px-3 py-2 glass rounded-lg text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-1.5"><i data-lucide="banknote" class="w-4 h-4"></i> Prices</a>
+            <a href="/admin/forum-categories" class="px-3 py-2 glass rounded-lg text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-1.5"><i data-lucide="message-square" class="w-4 h-4"></i> Forum</a>
             <a href="/admin/logs" class="px-3 py-2 glass rounded-lg text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-1.5"><i data-lucide="file-text" class="w-4 h-4"></i> Logs</a>
         </div>
     </div>
@@ -21,8 +22,8 @@
             ['Cards Owned', $stats['total_cards_owned'], 'folder-open', 'amber'],
             ['USD Prices', $stats['cards_with_price'], 'dollar-sign', 'emerald'],
             ['EUR Prices', $stats['cards_with_eur'], 'euro', 'blue'],
-            ['Price Records', $stats['price_history_count'], 'bar-chart-3', 'indigo'],
-            ['New Today', $stats['new_users_today'], 'user-plus', 'rose'],
+            ['Forum Topics', $stats['forum_topics'], 'message-circle', 'cyan'],
+            ['Forum Posts', $stats['forum_posts'], 'message-square', 'pink'],
         ];
         foreach ($tiles as [$label, $value, $icon, $color]): ?>
         <div class="glass rounded-xl p-4">

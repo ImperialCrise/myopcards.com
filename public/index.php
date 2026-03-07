@@ -75,6 +75,7 @@ $router->get('/api/market/movers', [App\Controllers\MarketController::class, 'mo
 
 $router->get('/api/search', [App\Controllers\SearchController::class, 'search']);
 $router->get('/api/cards/price-history/{id}', [App\Controllers\CardController::class, 'priceHistory']);
+$router->post('/api/cards/{id}/set-featured', [App\Controllers\CardController::class, 'setFeatured']);
 
 $router->get('/admin', [App\Controllers\AdminController::class, 'dashboard']);
 $router->get('/admin/users', [App\Controllers\AdminController::class, 'users']);
@@ -90,6 +91,12 @@ $router->get('/admin/logs', [App\Controllers\AdminController::class, 'logs']);
 $router->get('/admin/card-edit', [App\Controllers\AdminController::class, 'editCard']);
 $router->post('/admin/card-update', [App\Controllers\AdminController::class, 'updateCard']);
 $router->post('/admin/prices/import', [App\Controllers\AdminController::class, 'importPrices']);
+$router->get('/admin/forum-categories', [App\Controllers\AdminController::class, 'forumCategories']);
+$router->get('/admin/forum-categories/create', [App\Controllers\AdminController::class, 'createForumCategory']);
+$router->post('/admin/forum-categories/create', [App\Controllers\AdminController::class, 'createForumCategory']);
+$router->get('/admin/forum-categories/{id}/edit', [App\Controllers\AdminController::class, 'editForumCategory']);
+$router->post('/admin/forum-categories/{id}/edit', [App\Controllers\AdminController::class, 'editForumCategory']);
+$router->post('/admin/forum-categories/{id}/delete', [App\Controllers\AdminController::class, 'deleteForumCategory']);
 
 $router->get('/sitemap.xml', [App\Controllers\SeoController::class, 'sitemapIndex']);
 $router->get('/sitemap-static.xml', [App\Controllers\SeoController::class, 'sitemapStatic']);
@@ -112,6 +119,9 @@ $router->post('/forum/{slug}/{id}/reply', [App\Controllers\ForumController::clas
 $router->get('/forum/post/{id}/edit', [App\Controllers\ForumController::class, 'editPost']);
 $router->post('/forum/post/{id}/edit', [App\Controllers\ForumController::class, 'editPost']);
 $router->post('/forum/post/{id}/delete', [App\Controllers\ForumController::class, 'deletePost']);
+$router->get('/forum/topic/{id}/edit', [App\Controllers\ForumController::class, 'editTopic']);
+$router->post('/forum/topic/{id}/edit', [App\Controllers\ForumController::class, 'editTopic']);
+$router->post('/forum/topic/{id}/delete', [App\Controllers\ForumController::class, 'deleteTopic']);
 
 $router->get('/notifications', [App\Controllers\NotificationController::class, 'index']);
 $router->post('/notifications/read', [App\Controllers\NotificationController::class, 'markAsRead']);

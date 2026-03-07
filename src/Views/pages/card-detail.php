@@ -40,6 +40,16 @@ $rarityBg = $rarityColors[$card['rarity']] ?? 'from-gray-500 to-gray-600';
                             <i data-lucide="plus" class="w-4 h-4 mx-auto"></i>
                         </button>
                     </div>
+                    
+                    <!-- Featured Card Button -->
+                    <div class="mt-3" x-show="qty > 0" x-data="{ isFeatured: <?= $isFeatured ? 'true' : 'false' ?>, updating: false }">
+                        <button @click="setFeatured()" :disabled="updating"
+                            class="w-full py-2 px-4 glass rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+                            :class="isFeatured ? 'text-yellow-400 border border-yellow-400/30' : 'text-dark-300 hover:text-yellow-400'">
+                            <i data-lucide="star" class="w-4 h-4" :class="isFeatured ? 'fill-current' : ''"></i>
+                            <span x-text="isFeatured ? 'Remove Featured' : 'Set as Featured'"></span>
+                        </button>
+                    </div>
                 </div>
             <?php endif; ?>
         </div>
@@ -151,5 +161,43 @@ $rarityBg = $rarityColors[$card['rarity']] ?? 'from-gray-500 to-gray-600';
     </div>
 </div>
 
-<script>window.__PAGE_DATA = { cardSetId: <?= json_encode($card['card_set_id']) ?> };</script>
+<script>
+window.__PAGE_DATA = { cardSetId: <?= json_encode($card['card_set_id']) ?> };
+
+// Featured card functionality
+function setFeatured() {
+    const cardSetId = window.__PAGE_DATA.cardSetId;
+    this.updating = true;
+    
+    fetch(`/api/cards/${cardSetId}/set-featured`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        this.updating = false;
+        if (data.success) {
+            this.isFeatured = data.featured;
+            const message = data.featured ? 'Card set as featured!' : 'Featured card removed!';
+            showToast(message);
+            
+            // Re-render lucide icons for the updated star
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }, 100);
+        } else {
+            showToast(data.error || 'Failed to update featured card', 'error');
+        }
+    })
+    .catch(error => {
+        this.updating = false;
+        console.error('Error:', error);
+        showToast('Failed to update featured card', 'error');
+    });
+}
+</script>
 <script src="/assets/js/pages/card-detail.js"></script>

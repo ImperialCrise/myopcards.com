@@ -48,7 +48,7 @@ class ForumController
             )->fetch();
         }, 600); // Cache for 10 minutes
 
-        $onlineUsers = Auth::getOnlineUsers(15);
+        $onlineUsers = Auth::getOnlineUsers(15000);
         $onlineCount = count($onlineUsers);
 
         View::render('pages/forum/index', [
@@ -165,6 +165,51 @@ class ForumController
             }
         }
 
+        // Fetch attachments for the topic
+        $topicAttachments = [];
+        $attachStmt = $db->prepare(
+            "SELECT * FROM forum_attachments WHERE topic_id = :tid AND post_id IS NULL ORDER BY created_at ASC"
+        );
+        $attachStmt->execute(['tid' => $topicId]);
+        $topicAttachments = $attachStmt->fetchAll();
+
+        // Fetch attachments for posts
+        $postAttachments = [];
+        if (!empty($posts)) {
+            $postIds = array_column($posts, 'id');
+            $attachStmt = $db->prepare(
+                "SELECT * FROM forum_attachments WHERE post_id IN (" . str_repeat('?,', count($postIds) - 1) . "?) ORDER BY created_at ASC"
+            );
+            $attachStmt->execute($postIds);
+            foreach ($attachStmt->fetchAll() as $attachment) {
+                $postAttachments[$attachment['post_id']][] = $attachment;
+            }
+        }
+
+        // Fetch featured cards for topic author and post authors
+        $featuredCards = [];
+        
+        // Get all unique user IDs (topic author + post authors)
+        $userIds = [$topic['user_id']];
+        foreach ($posts as $post) {
+            $userIds[] = $post['user_id'];
+        }
+        $userIds = array_unique($userIds);
+        
+        if (!empty($userIds)) {
+            $placeholders = str_repeat('?,', count($userIds) - 1) . '?';
+            $featuredStmt = $db->prepare(
+                "SELECT u.id as user_id, c.card_image_url, c.card_name, c.card_set_id
+                 FROM users u 
+                 JOIN cards c ON c.id = u.featured_card_id 
+                 WHERE u.id IN ($placeholders) AND u.featured_card_id IS NOT NULL"
+            );
+            $featuredStmt->execute($userIds);
+            foreach ($featuredStmt->fetchAll() as $featured) {
+                $featuredCards[$featured['user_id']] = $featured;
+            }
+        }
+
         View::render('pages/forum/topic', [
             'title' => $topic['title'] . ' - Forum',
             'topic' => $topic,
@@ -173,6 +218,9 @@ class ForumController
             'totalPages' => $totalPages,
             'totalPosts' => $totalPosts,
             'userReactions' => $userReactions,
+            'topicAttachments' => $topicAttachments,
+            'postAttachments' => $postAttachments,
+            'featuredCards' => $featuredCards,
         ]);
     }
 
@@ -400,6 +448,118 @@ class ForumController
            ->execute(['tid' => $post['topic_id']]);
 
         header('Location: /forum/' . $post['category_slug'] . '/' . $post['topic_id'] . '-' . $post['topic_slug']);
+        exit;
+    }
+
+    public function editTopic(int $topicId): void
+    {
+        Auth::requireAuth();
+        $db = Database::getConnection();
+
+        $topic = $db->prepare(
+            "SELECT t.*, c.slug as category_slug, c.name as category_name
+             FROM forum_topics t
+             JOIN forum_categories c ON c.id = t.category_id
+             WHERE t.id = :id"
+        );
+        $topic->execute(['id' => $topicId]);
+        $topic = $topic->fetch();
+
+        if (!$topic || ($topic['user_id'] != Auth::id() && !Auth::isAdmin())) {
+            http_response_code(403);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $title = trim($_POST['title'] ?? '');
+            $content = trim($_POST['content'] ?? '');
+
+            if (strlen($title) < 5 || strlen($title) > 255) {
+                $_SESSION['forum_error'] = 'Title must be between 5 and 255 characters.';
+                header('Location: /forum/topic/' . $topicId . '/edit');
+                exit;
+            }
+
+            if (strlen($content) < 10) {
+                $_SESSION['forum_error'] = 'Content must be at least 10 characters.';
+                header('Location: /forum/topic/' . $topicId . '/edit');
+                exit;
+            }
+
+            if ($this->containsProfanity($content) || $this->containsProfanity($title)) {
+                $_SESSION['forum_error'] = 'Your post contains inappropriate language. Please keep discussions respectful.';
+                header('Location: /forum/topic/' . $topicId . '/edit');
+                exit;
+            }
+
+            $slug = $this->createSlug($title);
+            $content = $this->processContent($content);
+
+            $db->prepare(
+                "UPDATE forum_topics SET title = :title, slug = :slug, content = :content, 
+                 updated_at = NOW() WHERE id = :id"
+            )->execute([
+                'title' => $title,
+                'slug' => $slug,
+                'content' => $content,
+                'id' => $topicId
+            ]);
+
+            // Clear forum cache
+            Cache::forget('forum_categories');
+            Cache::forget('forum_stats');
+
+            header('Location: /forum/' . $topic['category_slug'] . '/' . $topicId . '-' . $slug);
+            exit;
+        }
+
+        View::render('pages/forum/edit-topic', [
+            'title' => 'Edit Topic - ' . $topic['title'],
+            'topic' => $topic,
+        ]);
+    }
+
+    public function deleteTopic(int $topicId): void
+    {
+        Auth::requireAuth();
+        
+        if (!Auth::isAdmin()) {
+            http_response_code(403);
+            return;
+        }
+        
+        $db = Database::getConnection();
+        
+        $topic = $db->prepare(
+            "SELECT t.*, c.slug as category_slug FROM forum_topics t
+             JOIN forum_categories c ON c.id = t.category_id
+             WHERE t.id = :id"
+        );
+        $topic->execute(['id' => $topicId]);
+        $topic = $topic->fetch();
+        
+        if (!$topic) {
+            http_response_code(404);
+            return;
+        }
+        
+        // Delete all posts in the topic first (due to foreign key constraints)
+        $db->prepare("DELETE FROM forum_reactions WHERE post_id IN (SELECT id FROM forum_posts WHERE topic_id = :tid)")
+           ->execute(['tid' => $topicId]);
+        $db->prepare("DELETE FROM forum_attachments WHERE post_id IN (SELECT id FROM forum_posts WHERE topic_id = :tid)")
+           ->execute(['tid' => $topicId]);
+        $db->prepare("DELETE FROM forum_posts WHERE topic_id = :tid")
+           ->execute(['tid' => $topicId]);
+        
+        // Delete the topic itself
+        $db->prepare("DELETE FROM forum_topics WHERE id = :id")
+           ->execute(['id' => $topicId]);
+        
+        // Clear forum cache
+        Cache::forget('forum_categories');
+        Cache::forget('forum_stats');
+        
+        header('Location: /forum/' . $topic['category_slug']);
         exit;
     }
 

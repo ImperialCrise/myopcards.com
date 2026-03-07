@@ -48,15 +48,31 @@ class Auth
         }
 
         self::createSession($userId);
-        NotificationService::ensureUserSettings($userId);
+        
+        try {
+            NotificationService::ensureUserSettings($userId);
+        } catch (\Throwable $e) {
+            error_log('Failed to create notification settings for user ' . $userId . ': ' . $e->getMessage());
+        }
     }
 
     public static function logout(): void
     {
         $userId = self::id();
+        $sessionId = session_id();
         
         if ($userId && isset($_COOKIE[self::REMEMBER_COOKIE])) {
             self::deleteRememberToken($_COOKIE[self::REMEMBER_COOKIE]);
+        }
+        
+        // Clean up session record
+        if ($userId) {
+            try {
+                $db = Database::getConnection();
+                $db->prepare("DELETE FROM user_sessions WHERE user_id = :uid AND session_id = :sid")
+                   ->execute(['uid' => $userId, 'sid' => $sessionId]);
+            } catch (\Throwable $e) {
+            }
         }
 
         setcookie(self::REMEMBER_COOKIE, '', time() - 3600, '/', '', true, true);
@@ -170,10 +186,20 @@ class Auth
 
     private static function createSession(int $userId): void
     {
-        $db = Database::getConnection();
-        $db->prepare(
-            "DELETE FROM user_sessions WHERE user_id = :uid AND expires_at < NOW()"
-        )->execute(['uid' => $userId]);
+        try {
+            $db = Database::getConnection();
+            $sessionId = session_id();
+            $db->prepare(
+                "DELETE FROM user_sessions WHERE user_id = :uid AND expires_at < NOW()"
+            )->execute(['uid' => $userId]);
+            $db->prepare(
+                "INSERT INTO user_sessions (user_id, session_id, last_activity, expires_at) 
+                 VALUES (:uid, :sid, NOW(), DATE_ADD(NOW(), INTERVAL :days DAY))
+                 ON DUPLICATE KEY UPDATE last_activity = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL :days DAY)"
+            )->execute(['uid' => $userId, 'sid' => $sessionId, 'days' => self::REMEMBER_DAYS]);
+        } catch (\Throwable $e) {
+            error_log('Auth createSession: ' . $e->getMessage());
+        }
     }
 
     private static function updateActivity(): void
@@ -186,12 +212,37 @@ class Auth
         if (time() - $_SESSION['last_activity'] > 300) {
             $_SESSION['last_activity'] = time();
             
-            if (isset($_COOKIE[self::REMEMBER_COOKIE])) {
+            // Update activity for all logged-in users (not just those with remember tokens)
+            $userId = self::id();
+            if ($userId) {
                 try {
-                    $tokenHash = hash('sha256', $_COOKIE[self::REMEMBER_COOKIE]);
                     $db = Database::getConnection();
-                    $db->prepare("UPDATE user_sessions SET last_activity = NOW() WHERE token_hash = :hash")
-                       ->execute(['hash' => $tokenHash]);
+                    $sessionId = session_id();
+                    
+                    // Update session record by session_id or user_id
+                    $updated = $db->prepare(
+                        "UPDATE user_sessions SET last_activity = NOW() WHERE session_id = :sid"
+                    )->execute(['sid' => $sessionId]);
+                    
+                    // If no session record exists, create one
+                    if (!$updated) {
+                        $db->prepare(
+                            "INSERT INTO user_sessions (user_id, session_id, last_activity, expires_at) 
+                             VALUES (:uid, :sid, NOW(), DATE_ADD(NOW(), INTERVAL :days DAY))
+                             ON DUPLICATE KEY UPDATE last_activity = NOW()"
+                        )->execute([
+                            'uid' => $userId,
+                            'sid' => $sessionId,
+                            'days' => self::REMEMBER_DAYS
+                        ]);
+                    }
+                    
+                    // Also update remember token sessions if they exist
+                    if (isset($_COOKIE[self::REMEMBER_COOKIE])) {
+                        $tokenHash = hash('sha256', $_COOKIE[self::REMEMBER_COOKIE]);
+                        $db->prepare("UPDATE user_sessions SET last_activity = NOW() WHERE token_hash = :hash")
+                           ->execute(['hash' => $tokenHash]);
+                    }
                 } catch (\Throwable $e) {
                 }
             }

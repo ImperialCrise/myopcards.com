@@ -24,13 +24,31 @@ $isAdmin = \App\Core\Auth::isAdmin();
         <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700 overflow-hidden mb-6">
             <div class="p-6 border-b border-gray-100 dark:border-dark-700">
                 <div class="flex items-start gap-4">
-                    <?php if ($topic['avatar']): ?>
-                    <img src="<?= htmlspecialchars($topic['avatar']) ?>" alt="" class="w-12 h-12 rounded-full flex-shrink-0">
-                    <?php else: ?>
-                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-                        <?= strtoupper(substr($topic['username'], 0, 1)) ?>
+                    <div class="relative flex-shrink-0">
+                        <?php if ($topic['avatar']): ?>
+                        <img src="<?= htmlspecialchars($topic['avatar']) ?>" alt="" class="w-12 h-12 rounded-full">
+                        <?php else: ?>
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
+                            <?= strtoupper(substr($topic['username'], 0, 1)) ?>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <?php if (isset($featuredCards[$topic['user_id']])): ?>
+                        <div class="absolute -bottom-1 -right-1 group">
+                            <div class="relative">
+                                <img src="<?= htmlspecialchars($featuredCards[$topic['user_id']]['card_image_url']) ?>" 
+                                     alt="<?= htmlspecialchars($featuredCards[$topic['user_id']]['card_name']) ?>"
+                                     class="w-6 h-8 object-cover rounded border-2 border-white shadow-lg">
+                                <div class="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full flex items-center justify-center">
+                                    <i data-lucide="star" class="w-2 h-2 text-white fill-current"></i>
+                                </div>
+                            </div>
+                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                                Featured: <?= htmlspecialchars($featuredCards[$topic['user_id']]['card_name']) ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                     </div>
-                    <?php endif; ?>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 flex-wrap mb-2">
                             <?php if ($topic['is_pinned']): ?>
@@ -61,6 +79,41 @@ $isAdmin = \App\Core\Auth::isAdmin();
                 <div class="prose dark:prose-invert max-w-none forum-content">
                     <?= $topic['content'] ?>
                 </div>
+                
+                <?php if (!empty($topicAttachments)): ?>
+                <div class="mt-4 pt-4 border-t border-gray-100 dark:border-dark-600">
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Attachments</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <?php foreach ($topicAttachments as $attachment): ?>
+                        <div class="relative group">
+                            <a href="/uploads/forum/<?= htmlspecialchars($attachment['filename']) ?>" target="_blank" class="block">
+                                <img src="/uploads/forum/<?= htmlspecialchars($attachment['filename']) ?>" 
+                                     alt="<?= htmlspecialchars($attachment['original_name']) ?>"
+                                     class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-dark-600 hover:border-blue-500 dark:hover:border-blue-400 transition">
+                            </a>
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
+                                <i data-lucide="expand" class="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition"></i>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <?php if ($isLoggedIn && ($topic['user_id'] == $currentUserId || $isAdmin)): ?>
+                <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-dark-600">
+                    <a href="/forum/topic/<?= $topic['id'] ?>/edit" class="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition">
+                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                        Edit Topic
+                    </a>
+                    <?php if ($isAdmin): ?>
+                    <button onclick="deleteTopic(<?= $topic['id'] ?>)" class="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        Delete Topic
+                    </button>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -71,13 +124,31 @@ $isAdmin = \App\Core\Auth::isAdmin();
                 <div class="flex">
                     <div class="w-48 flex-shrink-0 bg-gray-50 dark:bg-dark-700 p-4 text-center border-r border-gray-100 dark:border-dark-600 hidden md:block">
                         <a href="/user/<?= htmlspecialchars($post['username']) ?>">
-                            <?php if ($post['avatar']): ?>
-                            <img src="<?= htmlspecialchars($post['avatar']) ?>" alt="" class="w-16 h-16 rounded-full mx-auto mb-2">
-                            <?php else: ?>
-                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-2">
-                                <?= strtoupper(substr($post['username'], 0, 1)) ?>
+                            <div class="relative inline-block mb-2">
+                                <?php if ($post['avatar']): ?>
+                                <img src="<?= htmlspecialchars($post['avatar']) ?>" alt="" class="w-16 h-16 rounded-full">
+                                <?php else: ?>
+                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
+                                    <?= strtoupper(substr($post['username'], 0, 1)) ?>
+                                </div>
+                                <?php endif; ?>
+                                
+                                <?php if (isset($featuredCards[$post['user_id']])): ?>
+                                <div class="absolute -bottom-1 -right-1 group">
+                                    <div class="relative">
+                                        <img src="<?= htmlspecialchars($featuredCards[$post['user_id']]['card_image_url']) ?>" 
+                                             alt="<?= htmlspecialchars($featuredCards[$post['user_id']]['card_name']) ?>"
+                                             class="w-8 h-10 object-cover rounded border-2 border-white shadow-lg">
+                                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+                                            <i data-lucide="star" class="w-2.5 h-2.5 text-white fill-current"></i>
+                                        </div>
+                                    </div>
+                                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                        Featured: <?= htmlspecialchars($featuredCards[$post['user_id']]['card_name']) ?>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
                             </div>
-                            <?php endif; ?>
                             <p class="font-semibold text-gray-900 dark:text-white hover:text-blue-600 transition"><?= htmlspecialchars($post['username']) ?></p>
                         </a>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1"><?= number_format($post['user_post_count']) ?> posts</p>
@@ -111,19 +182,54 @@ $isAdmin = \App\Core\Auth::isAdmin();
                             </div>
                         </div>
                         <div class="p-4 md:hidden flex items-center gap-3 border-b border-gray-100 dark:border-dark-600">
-                            <?php if ($post['avatar']): ?>
-                            <img src="<?= htmlspecialchars($post['avatar']) ?>" alt="" class="w-8 h-8 rounded-full">
-                            <?php else: ?>
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                                <?= strtoupper(substr($post['username'], 0, 1)) ?>
+                            <div class="relative">
+                                <?php if ($post['avatar']): ?>
+                                <img src="<?= htmlspecialchars($post['avatar']) ?>" alt="" class="w-8 h-8 rounded-full">
+                                <?php else: ?>
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                                    <?= strtoupper(substr($post['username'], 0, 1)) ?>
+                                </div>
+                                <?php endif; ?>
+                                
+                                <?php if (isset($featuredCards[$post['user_id']])): ?>
+                                <div class="absolute -bottom-0.5 -right-0.5 group">
+                                    <div class="relative">
+                                        <img src="<?= htmlspecialchars($featuredCards[$post['user_id']]['card_image_url']) ?>" 
+                                             alt="<?= htmlspecialchars($featuredCards[$post['user_id']]['card_name']) ?>"
+                                             class="w-4 h-5 object-cover rounded border border-white shadow">
+                                        <div class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-400 rounded-full flex items-center justify-center">
+                                            <i data-lucide="star" class="w-1.5 h-1.5 text-white fill-current"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
                             </div>
-                            <?php endif; ?>
                             <a href="/user/<?= htmlspecialchars($post['username']) ?>" class="font-medium text-gray-900 dark:text-white"><?= htmlspecialchars($post['username']) ?></a>
                         </div>
                         <div class="p-4">
                             <div class="prose dark:prose-invert max-w-none forum-content">
                                 <?= $post['content'] ?>
                             </div>
+                            
+                            <?php if (isset($postAttachments[$post['id']]) && !empty($postAttachments[$post['id']])): ?>
+                            <div class="mt-4 pt-4 border-t border-gray-100 dark:border-dark-600">
+                                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Attachments</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    <?php foreach ($postAttachments[$post['id']] as $attachment): ?>
+                                    <div class="relative group">
+                                        <a href="/uploads/forum/<?= htmlspecialchars($attachment['filename']) ?>" target="_blank" class="block">
+                                            <img src="/uploads/forum/<?= htmlspecialchars($attachment['filename']) ?>" 
+                                                 alt="<?= htmlspecialchars($attachment['original_name']) ?>"
+                                                 class="w-full h-20 object-cover rounded-lg border border-gray-200 dark:border-dark-600 hover:border-blue-500 dark:hover:border-blue-400 transition">
+                                        </a>
+                                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
+                                            <i data-lucide="expand" class="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition"></i>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -342,5 +448,15 @@ function reactToPost(postId) {
             el.textContent = parseInt(el.textContent) + (data.action === 'added' ? 1 : -1);
         }
     });
+}
+
+function deleteTopic(topicId) {
+    if (confirm('Are you sure you want to delete this entire topic? This action cannot be undone.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/forum/topic/${topicId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
 }
 </script>

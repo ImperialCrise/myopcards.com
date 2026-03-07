@@ -22,6 +22,8 @@ class UserController
         $recentViewers = PageView::getRecentViewers(Auth::id(), 5);
         $friends = Friendship::getFriends(Auth::id());
         $recentCollection = \App\Models\Collection::getUserCollection(Auth::id(), false, ['sort' => 'added'], 1, 12);
+        $featuredCard = User::getFeaturedCard(Auth::id());
+        $recentActivity = User::getRecentForumActivity(Auth::id(), 8);
 
         View::render('pages/profile', [
             'title' => 'My Profile',
@@ -32,6 +34,8 @@ class UserController
             'recentViewers' => $recentViewers,
             'friends' => $friends,
             'recentCards' => $recentCollection['cards'] ?? [],
+            'featuredCard' => $featuredCard,
+            'recentActivity' => $recentActivity,
         ]);
     }
 
@@ -75,6 +79,8 @@ class UserController
             }
         }
         $viewCounts = PageView::getCounts($user['id']);
+        $featuredCard = User::getFeaturedCard($user['id']);
+        $recentActivity = User::getRecentForumActivity($user['id'], 8);
 
         $profileDesc = $user['username'] . "'s One Piece TCG collection on MyOPCards. "
             . number_format((int)($stats['unique_cards'] ?? 0)) . ' unique cards, valued at $'
@@ -89,6 +95,8 @@ class UserController
             'pendingSent' => $pendingSent,
             'pendingReceived' => $pendingReceived,
             'viewCounts' => $viewCounts,
+            'featuredCard' => $featuredCard,
+            'recentActivity' => $recentActivity,
             'seoDescription' => $profileDesc,
             'seoImage' => $user['avatar'] ?? '',
             'seoOgType' => 'profile',

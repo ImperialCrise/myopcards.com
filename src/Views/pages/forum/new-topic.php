@@ -170,8 +170,37 @@ function uploadImage(file) {
     fetch('/forum/upload-image', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
-            if (data.success) document.execCommand('insertImage', false, data.url);
-            else alert(data.error || 'Upload failed');
+            if (data.success) {
+                // Use modern approach instead of deprecated execCommand
+                const editor = document.getElementById('editor');
+                const img = document.createElement('img');
+                img.src = data.url;
+                img.style.maxWidth = '100%';
+                img.style.height = 'auto';
+                img.style.borderRadius = '8px';
+                img.style.margin = '1rem 0';
+                
+                // Insert at cursor position or end of content
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0 && editor.contains(selection.anchorNode)) {
+                    const range = selection.getRangeAt(0);
+                    range.deleteContents();
+                    range.insertNode(img);
+                    range.collapse(false);
+                } else {
+                    editor.appendChild(img);
+                }
+                
+                // Add a line break after the image
+                const br = document.createElement('br');
+                img.parentNode.insertBefore(br, img.nextSibling);
+            } else {
+                alert(data.error || 'Upload failed');
+            }
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            alert('Upload failed: ' + error.message);
         });
 }
 

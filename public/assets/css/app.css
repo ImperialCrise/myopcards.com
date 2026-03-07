@@ -252,3 +252,48 @@ html.dark .forum-content code {
 .forum-content a:hover { color: #2563eb; }
 html.dark .forum-content a { color: #60a5fa; }
 html.dark .forum-content a:hover { color: #3b82f6; }
+
+/* ===== LIGHT MODE: FORUM FIXES ===== */
+.forum-content * { color: inherit !important; }
+.forum-content { color: #374151 !important; }
+html.dark .forum-content { color: #b8cfe0 !important; }
+
+/* Force proper text colors in forum content */
+.forum-content p, 
+.forum-content div, 
+.forum-content span,
+.forum-content blockquote { 
+    color: #374151 !important; 
+}
+html.dark .forum-content p, 
+html.dark .forum-content div, 
+html.dark .forum-content span,
+html.dark .forum-content blockquote { 
+    color: #b8cfe0 !important; 
+}
+
+/* Ensure headings are visible */
+.forum-content h1, .forum-content h2, .forum-content h3, 
+.forum-content h4, .forum-content h5, .forum-content h6 {
+    color: #1f2937 !important;
+}
+html.dark .forum-content h1, html.dark .forum-content h2, html.dark .forum-content h3,
+html.dark .forum-content h4, html.dark .forum-content h5, html.dark .forum-content h6 {
+    color: #f3f4f6 !important;
+}
+
+/* ===== ADDITIONAL FORUM VISIBILITY FIXES ===== */
+/* Ensure text in topic titles and user info is always visible */
+.text-gray-900 { color: #1f2937 !important; }
+.text-gray-800 { color: #374151 !important; }
+.text-gray-700 { color: #4b5563 !important; }
+.text-gray-600 { color: #6b7280 !important; }
+.text-gray-500 { color: #9ca3af !important; }
+
+/* Override for forum-specific elements */
+.bg-white .text-gray-900,
+.bg-gray-50 .text-gray-900 { color: #1f2937 !important; }
+
+/* Fix for content editable areas */
+[contenteditable="true"] { color: #374151 !important; }
+html.dark [contenteditable="true"] { color: #e5e7eb !important; }

@@ -27,6 +27,9 @@ class AdminController
             'cards_with_eur' => (int)$db->query('SELECT COUNT(*) FROM cards WHERE price_en > 0 OR price_fr > 0')->fetchColumn(),
             'price_history_count' => (int)$db->query('SELECT COUNT(*) FROM price_history')->fetchColumn(),
             'new_users_today' => (int)$db->query("SELECT COUNT(*) FROM users WHERE DATE(created_at) = CURDATE()")->fetchColumn(),
+            'forum_categories' => (int)$db->query("SELECT COUNT(*) FROM forum_categories")->fetchColumn(),
+            'forum_topics' => (int)$db->query("SELECT COUNT(*) FROM forum_topics")->fetchColumn(),
+            'forum_posts' => (int)$db->query("SELECT COUNT(*) FROM forum_posts")->fetchColumn(),
             'last_sync' => $db->query("SELECT MAX(last_synced_at) FROM cards")->fetchColumn(),
             'last_price_update' => $db->query("SELECT MAX(price_updated_at) FROM cards WHERE price_updated_at IS NOT NULL")->fetchColumn(),
         ];
@@ -385,5 +388,183 @@ class AdminController
         fclose($file);
 
         header("Location: /admin/prices?imported=$updated");
+    }
+
+    public function forumCategories(): void
+    {
+        Auth::requireAdmin();
+        $db = Database::getConnection();
+
+        $stmt = $db->prepare(
+            "SELECT c.*, 
+                    COUNT(DISTINCT t.id) as topic_count,
+                    COUNT(DISTINCT p.id) as post_count
+             FROM forum_categories c
+             LEFT JOIN forum_topics t ON t.category_id = c.id
+             LEFT JOIN forum_posts p ON p.topic_id = t.id
+             GROUP BY c.id
+             ORDER BY c.sort_order ASC, c.name ASC"
+        );
+        $stmt->execute();
+        $categories = $stmt->fetchAll();
+
+        View::render('pages/admin/forum-categories', [
+            'title' => 'Forum Categories - Admin',
+            'categories' => $categories,
+        ]);
+    }
+
+    public function createForumCategory(): void
+    {
+        Auth::requireAdmin();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $name = trim($_POST['name'] ?? '');
+            $description = trim($_POST['description'] ?? '');
+            $sortOrder = (int)($_POST['sort_order'] ?? 0);
+
+            if (empty($name)) {
+                $_SESSION['admin_error'] = 'Category name is required.';
+                header('Location: /admin/forum-categories');
+                exit;
+            }
+
+            $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $name));
+            $slug = trim($slug, '-');
+
+            $db = Database::getConnection();
+
+            // Check if slug already exists
+            $exists = $db->prepare("SELECT id FROM forum_categories WHERE slug = :slug");
+            $exists->execute(['slug' => $slug]);
+            if ($exists->fetch()) {
+                $_SESSION['admin_error'] = 'A category with this name already exists.';
+                header('Location: /admin/forum-categories');
+                exit;
+            }
+
+            $stmt = $db->prepare(
+                "INSERT INTO forum_categories (name, slug, description, sort_order) 
+                 VALUES (:name, :slug, :description, :sort_order)"
+            );
+            $stmt->execute([
+                'name' => $name,
+                'slug' => $slug,
+                'description' => $description,
+                'sort_order' => $sortOrder,
+            ]);
+
+            // Clear cache
+            \App\Core\Cache::forget('forum_categories');
+
+            $_SESSION['admin_success'] = 'Category created successfully.';
+            header('Location: /admin/forum-categories');
+            exit;
+        }
+
+        View::render('pages/admin/create-forum-category', [
+            'title' => 'Create Forum Category - Admin',
+        ]);
+    }
+
+    public function editForumCategory(int $id): void
+    {
+        Auth::requireAdmin();
+        $db = Database::getConnection();
+
+        $stmt = $db->prepare("SELECT * FROM forum_categories WHERE id = :id");
+        $stmt->execute(['id' => $id]);
+        $category = $stmt->fetch();
+
+        if (!$category) {
+            $_SESSION['admin_error'] = 'Category not found.';
+            header('Location: /admin/forum-categories');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $name = trim($_POST['name'] ?? '');
+            $description = trim($_POST['description'] ?? '');
+            $sortOrder = (int)($_POST['sort_order'] ?? 0);
+
+            if (empty($name)) {
+                $_SESSION['admin_error'] = 'Category name is required.';
+                header('Location: /admin/forum-categories/' . $id . '/edit');
+                exit;
+            }
+
+            $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $name));
+            $slug = trim($slug, '-');
+
+            // Check if slug already exists (excluding current category)
+            $exists = $db->prepare("SELECT id FROM forum_categories WHERE slug = :slug AND id != :id");
+            $exists->execute(['slug' => $slug, 'id' => $id]);
+            if ($exists->fetch()) {
+                $_SESSION['admin_error'] = 'A category with this name already exists.';
+                header('Location: /admin/forum-categories/' . $id . '/edit');
+                exit;
+            }
+
+            $stmt = $db->prepare(
+                "UPDATE forum_categories 
+                 SET name = :name, slug = :slug, description = :description, sort_order = :sort_order 
+                 WHERE id = :id"
+            );
+            $stmt->execute([
+                'name' => $name,
+                'slug' => $slug,
+                'description' => $description,
+                'sort_order' => $sortOrder,
+                'id' => $id,
+            ]);
+
+            // Clear cache
+            \App\Core\Cache::forget('forum_categories');
+
+            $_SESSION['admin_success'] = 'Category updated successfully.';
+            header('Location: /admin/forum-categories');
+            exit;
+        }
+
+        View::render('pages/admin/edit-forum-category', [
+            'title' => 'Edit Forum Category - Admin',
+            'category' => $category,
+        ]);
+    }
+
+    public function deleteForumCategory(int $id): void
+    {
+        Auth::requireAdmin();
+        $db = Database::getConnection();
+
+        $stmt = $db->prepare("SELECT * FROM forum_categories WHERE id = :id");
+        $stmt->execute(['id' => $id]);
+        $category = $stmt->fetch();
+
+        if (!$category) {
+            $_SESSION['admin_error'] = 'Category not found.';
+            header('Location: /admin/forum-categories');
+            exit;
+        }
+
+        // Check if category has topics
+        $topicCount = $db->prepare("SELECT COUNT(*) FROM forum_topics WHERE category_id = :id");
+        $topicCount->execute(['id' => $id]);
+        $count = (int)$topicCount->fetchColumn();
+
+        if ($count > 0) {
+            $_SESSION['admin_error'] = 'Cannot delete category with existing topics. Move or delete topics first.';
+            header('Location: /admin/forum-categories');
+            exit;
+        }
+
+        $db->prepare("DELETE FROM forum_categories WHERE id = :id")->execute(['id' => $id]);
+
+        // Clear cache
+        \App\Core\Cache::forget('forum_categories');
+
+        $_SESSION['admin_success'] = 'Category deleted successfully.';
+        header('Location: /admin/forum-categories');
+        exit;
     }
 }

@@ -49,17 +49,23 @@ class PageView
 
     public static function getCounts(int $userId): array
     {
-        $db = Database::getConnection();
-        $stmt = $db->prepare(
-            "SELECT profile_views, collection_views FROM users WHERE id = :uid"
-        );
-        $stmt->execute(['uid' => $userId]);
-        $row = $stmt->fetch();
-        return [
-            'profile' => (int)($row['profile_views'] ?? 0),
-            'collection' => (int)($row['collection_views'] ?? 0),
-            'total' => (int)($row['profile_views'] ?? 0) + (int)($row['collection_views'] ?? 0),
-        ];
+        $default = ['profile' => 0, 'collection' => 0, 'total' => 0];
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare(
+                "SELECT profile_views, collection_views FROM users WHERE id = :uid"
+            );
+            $stmt->execute(['uid' => $userId]);
+            $row = $stmt->fetch();
+            if (!$row) {
+                return $default;
+            }
+            $p = (int)($row['profile_views'] ?? 0);
+            $c = (int)($row['collection_views'] ?? 0);
+            return ['profile' => $p, 'collection' => $c, 'total' => $p + $c];
+        } catch (\Throwable $e) {
+            return $default;
+        }
     }
 
     public static function getRecentViewers(int $userId, int $limit = 10): array

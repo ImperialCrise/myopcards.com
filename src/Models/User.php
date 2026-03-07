@@ -120,4 +120,77 @@ class User
 
         return $row;
     }
+
+    public static function getFeaturedCard(int $userId): ?array
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare(
+            'SELECT c.*, u.featured_card_id 
+             FROM users u
+             LEFT JOIN cards c ON c.id = u.featured_card_id
+             WHERE u.id = :user_id AND u.featured_card_id IS NOT NULL'
+        );
+        $stmt->execute(['user_id' => $userId]);
+        return $stmt->fetch() ?: null;
+    }
+
+    public static function setFeaturedCard(int $userId, ?int $cardId): bool
+    {
+        $db = Database::getConnection();
+        
+        // Validate that the user owns the card if cardId is not null
+        if ($cardId !== null) {
+            $ownsCard = $db->prepare(
+                'SELECT 1 FROM user_cards WHERE user_id = :user_id AND card_id = :card_id AND is_wishlist = 0'
+            );
+            $ownsCard->execute(['user_id' => $userId, 'card_id' => $cardId]);
+            
+            if (!$ownsCard->fetch()) {
+                return false; // User doesn't own this card
+            }
+        }
+        
+        $stmt = $db->prepare('UPDATE users SET featured_card_id = :card_id WHERE id = :user_id');
+        return $stmt->execute(['card_id' => $cardId, 'user_id' => $userId]);
+    }
+
+    public static function getRecentForumActivity(int $userId, int $limit = 10): array
+    {
+        $db = Database::getConnection();
+        
+        // Get recent topics created by user
+        $topics = $db->prepare(
+            "SELECT 'topic' as type, t.id, t.title, t.slug, t.created_at, c.slug as category_slug
+             FROM forum_topics t
+             JOIN forum_categories c ON c.id = t.category_id
+             WHERE t.user_id = :user_id
+             ORDER BY t.created_at DESC
+             LIMIT :limit"
+        );
+        $topics->bindValue('user_id', $userId, PDO::PARAM_INT);
+        $topics->bindValue('limit', $limit, PDO::PARAM_INT);
+        $topics->execute();
+        $topicResults = $topics->fetchAll();
+
+        // Get recent posts by user
+        $posts = $db->prepare(
+            "SELECT 'post' as type, p.id, t.title, t.slug, t.id as topic_id, p.created_at, c.slug as category_slug
+             FROM forum_posts p
+             JOIN forum_topics t ON t.id = p.topic_id
+             JOIN forum_categories c ON c.id = t.category_id
+             WHERE p.user_id = :user_id
+             ORDER BY p.created_at DESC
+             LIMIT :limit"
+        );
+        $posts->bindValue('user_id', $userId, PDO::PARAM_INT);
+        $posts->bindValue('limit', $limit, PDO::PARAM_INT);
+        $posts->execute();
+        $postResults = $posts->fetchAll();
+
+        // Merge and sort by creation date
+        $activities = array_merge($topicResults, $postResults);
+        usort($activities, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_at']));
+
+        return array_slice($activities, 0, $limit);
+    }
 }

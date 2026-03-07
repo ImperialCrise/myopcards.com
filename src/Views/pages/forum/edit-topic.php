@@ -4,9 +4,9 @@
         <nav class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-6">
             <a href="/forum" class="hover:text-gray-900 dark:hover:text-white transition">Forum</a>
             <i data-lucide="chevron-right" class="w-4 h-4"></i>
-            <a href="/forum/<?= htmlspecialchars($post['category_slug']) ?>" class="hover:text-gray-900 dark:hover:text-white transition"><?= htmlspecialchars($post['category_slug']) ?></a>
+            <a href="/forum/<?= htmlspecialchars($topic['category_slug']) ?>" class="hover:text-gray-900 dark:hover:text-white transition"><?= htmlspecialchars($topic['category_name']) ?></a>
             <i data-lucide="chevron-right" class="w-4 h-4"></i>
-            <span class="text-gray-900 dark:text-white">Edit Post</span>
+            <span class="text-gray-900 dark:text-white">Edit Topic</span>
         </nav>
 
         <?php if (isset($_SESSION['forum_error'])): ?>
@@ -16,9 +16,16 @@
         <?php unset($_SESSION['forum_error']); endif; ?>
 
         <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700 p-6">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Post</h1>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Topic</h1>
 
-            <form action="/forum/post/<?= $post['id'] ?>/edit" method="POST">
+            <form action="/forum/topic/<?= $topic['id'] ?>/edit" method="POST">
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Topic Title</label>
+                    <input type="text" name="title" value="<?= htmlspecialchars($topic['title']) ?>" 
+                           class="w-full px-4 py-3 border border-gray-200 dark:border-dark-600 rounded-xl bg-white dark:bg-dark-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" 
+                           placeholder="Enter topic title..." required>
+                </div>
+
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Content</label>
                     <div class="border border-gray-200 dark:border-dark-600 rounded-xl overflow-hidden">
@@ -43,13 +50,13 @@
                                 <i data-lucide="video" class="w-4 h-4"></i>
                             </button>
                         </div>
-                        <div id="editor" contenteditable="true" class="min-h-[200px] p-4 focus:outline-none bg-white dark:bg-dark-800 text-gray-900 dark:text-white" onpaste="handlePaste(event)"><?= $post['content'] ?></div>
+                        <div id="editor" contenteditable="true" class="min-h-[200px] p-4 focus:outline-none bg-white dark:bg-dark-800 text-gray-900 dark:text-white" onpaste="handlePaste(event)"><?= $topic['content'] ?></div>
                     </div>
                     <input type="hidden" name="content" id="content-input">
                 </div>
 
                 <div class="flex items-center justify-end gap-3">
-                    <a href="/forum/<?= htmlspecialchars($post['category_slug']) ?>/<?= $post['topic_id'] ?>-<?= htmlspecialchars($post['topic_slug']) ?>" class="px-6 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700 rounded-xl transition">
+                    <a href="/forum/<?= htmlspecialchars($topic['category_slug']) ?>/<?= $topic['id'] ?>-<?= htmlspecialchars($topic['slug']) ?>" class="px-6 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700 rounded-xl transition">
                         Cancel
                     </a>
                     <button type="submit" onclick="prepareSubmit()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition">
@@ -63,7 +70,7 @@
 </div>
 
 <style>
-#editor:empty:before { content: 'Edit your post content here...'; color: #9CA3AF; }
+#editor:empty:before { content: 'Edit your topic content here...'; color: #9CA3AF; }
 #editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0; }
 #editor iframe { max-width: 100%; border-radius: 8px; margin: 1rem 0; }
 </style>
