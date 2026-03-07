@@ -1,17 +1,17 @@
 <div class="space-y-6">
     <div>
-        <h1 class="text-2xl font-display font-bold text-white">Collection Analytics</h1>
-        <p class="text-sm text-dark-400 mt-1">Deep dive into your collection stats</p>
+        <h1 class="text-2xl font-display font-bold text-white"><?= t('analytics.title') ?></h1>
+        <p class="text-sm text-dark-400 mt-1"><?= t('analytics.subtitle') ?></p>
     </div>
 
     <!-- Quick Stats -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="glass rounded-2xl p-5">
-            <div class="flex items-center gap-2 mb-2"><i data-lucide="layers" class="w-4 h-4 text-blue-400"></i><span class="text-xs font-bold text-dark-400 uppercase">Unique</span></div>
+            <div class="flex items-center gap-2 mb-2"><i data-lucide="layers" class="w-4 h-4 text-blue-400"></i><span class="text-xs font-bold text-dark-400 uppercase"><?= t('analytics.unique') ?></span></div>
             <p class="text-2xl font-display font-bold text-white"><?= number_format($stats['unique_cards'] ?? 0) ?></p>
         </div>
         <div class="glass rounded-2xl p-5">
-            <div class="flex items-center gap-2 mb-2"><i data-lucide="copy" class="w-4 h-4 text-green-400"></i><span class="text-xs font-bold text-dark-400 uppercase">Total</span></div>
+            <div class="flex items-center gap-2 mb-2"><i data-lucide="copy" class="w-4 h-4 text-green-400"></i><span class="text-xs font-bold text-dark-400 uppercase"><?= t('analytics.total') ?></span></div>
             <p class="text-2xl font-display font-bold text-white"><?= number_format($stats['total_cards'] ?? 0) ?></p>
         </div>
         <div class="glass rounded-2xl p-5">
@@ -19,7 +19,7 @@
             <p class="text-2xl font-display font-bold text-white"><?= ($stats['total_value_symbol'] ?? '$') . number_format((float)($stats['total_value'] ?? 0), 2) ?></p>
         </div>
         <div class="glass rounded-2xl p-5">
-            <div class="flex items-center gap-2 mb-2"><i data-lucide="percent" class="w-4 h-4 text-purple-400"></i><span class="text-xs font-bold text-dark-400 uppercase">Completion</span></div>
+            <div class="flex items-center gap-2 mb-2"><i data-lucide="percent" class="w-4 h-4 text-purple-400"></i><span class="text-xs font-bold text-dark-400 uppercase"><?= t('analytics.completion') ?></span></div>
             <?php $totalInDb = \App\Models\Card::getTotalCount(); $pct = $totalInDb > 0 ? round(($stats['unique_cards'] ?? 0) / $totalInDb * 100, 1) : 0; ?>
             <p class="text-2xl font-display font-bold text-white"><?= $pct ?>%</p>
         </div>
@@ -29,7 +29,7 @@
     <div class="glass rounded-2xl p-6" x-data="valueTimeline()" x-init="load()">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-display font-bold text-white flex items-center gap-2">
-                <i data-lucide="trending-up" class="w-5 h-5 text-gold-400"></i> Value Over Time
+                <i data-lucide="trending-up" class="w-5 h-5 text-gold-400"></i> <?= t('analytics.value_over_time') ?>
             </h2>
             <div class="flex gap-1">
                 <template x-for="d in [30, 90, 365]" :key="d">
@@ -45,7 +45,7 @@
         <!-- Color Distribution -->
         <div class="glass rounded-2xl p-6">
             <h2 class="text-lg font-display font-bold text-white flex items-center gap-2 mb-4">
-                <i data-lucide="palette" class="w-5 h-5 text-red-400"></i> By Color
+                <i data-lucide="palette" class="w-5 h-5 text-red-400"></i> <?= t('analytics.by_color') ?>
             </h2>
             <div class="h-56 flex items-center justify-center"><canvas id="analyticsColorChart"></canvas></div>
         </div>
@@ -53,7 +53,7 @@
         <!-- Rarity Distribution -->
         <div class="glass rounded-2xl p-6">
             <h2 class="text-lg font-display font-bold text-white flex items-center gap-2 mb-4">
-                <i data-lucide="gem" class="w-5 h-5 text-blue-400"></i> By Rarity
+                <i data-lucide="gem" class="w-5 h-5 text-blue-400"></i> <?= t('analytics.by_rarity') ?>
             </h2>
             <div class="h-56"><canvas id="analyticsRarityChart"></canvas></div>
         </div>
@@ -61,7 +61,7 @@
         <!-- Type Distribution -->
         <div class="glass rounded-2xl p-6">
             <h2 class="text-lg font-display font-bold text-white flex items-center gap-2 mb-4">
-                <i data-lucide="shapes" class="w-5 h-5 text-green-400"></i> By Type
+                <i data-lucide="shapes" class="w-5 h-5 text-green-400"></i> <?= t('analytics.by_type') ?>
             </h2>
             <div class="h-56 flex items-center justify-center"><canvas id="analyticsTypeChart"></canvas></div>
         </div>
@@ -69,7 +69,7 @@
         <!-- Set Distribution -->
         <div class="glass rounded-2xl p-6">
             <h2 class="text-lg font-display font-bold text-white flex items-center gap-2 mb-4">
-                <i data-lucide="package" class="w-5 h-5 text-amber-400"></i> By Set
+                <i data-lucide="package" class="w-5 h-5 text-amber-400"></i> <?= t('analytics.by_set') ?>
             </h2>
             <div class="h-56"><canvas id="analyticsSetChart"></canvas></div>
         </div>
@@ -78,15 +78,15 @@
     <!-- Top 10 Most Valuable -->
     <div class="glass rounded-2xl p-6">
         <h2 class="text-lg font-display font-bold text-white flex items-center gap-2 mb-4">
-            <i data-lucide="trophy" class="w-5 h-5 text-gold-400"></i> Top 10 Most Valuable Cards
+            <i data-lucide="trophy" class="w-5 h-5 text-gold-400"></i> <?= t('analytics.top_valuable') ?>
         </h2>
         <?php if (empty($topCards)): ?>
-            <p class="text-sm text-dark-400 text-center py-4">No valued cards in your collection yet.</p>
+            <p class="text-sm text-dark-400 text-center py-4"><?= t('analytics.no_valued') ?></p>
         <?php else: ?>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead><tr class="text-xs text-dark-400 uppercase border-b border-dark-600">
-                        <th class="text-left pb-3 pr-4">#</th><th class="text-left pb-3 pr-4">Card</th><th class="text-right pb-3 pr-4">Qty</th><th class="text-right pb-3 pr-4">Price</th><th class="text-right pb-3">Total</th>
+                        <th class="text-left pb-3 pr-4">#</th><th class="text-left pb-3 pr-4"><?= t('market.card') ?></th><th class="text-right pb-3 pr-4"><?= t('analytics.qty') ?></th><th class="text-right pb-3 pr-4"><?= t('market.price') ?></th><th class="text-right pb-3"><?= t('analytics.total') ?></th>
                     </tr></thead>
                     <tbody>
                     <?php foreach ($topCards as $i => $tc): ?>
@@ -116,7 +116,7 @@
     <!-- Completion Matrix -->
     <div class="glass rounded-2xl p-6">
         <h2 class="text-lg font-display font-bold text-white flex items-center gap-2 mb-4">
-            <i data-lucide="grid-3x3" class="w-5 h-5 text-cyan-400"></i> Set Completion Matrix
+            <i data-lucide="grid-3x3" class="w-5 h-5 text-cyan-400"></i> <?= t('analytics.set_matrix') ?>
         </h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             <?php foreach ($setCompletion as $sc): ?>

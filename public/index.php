@@ -9,6 +9,8 @@ require BASE_PATH . '/vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable(BASE_PATH);
 $dotenv->load();
 
+require BASE_PATH . '/src/helpers.php';
+
 ini_set('session.gc_maxlifetime', (string)(86400 * 7));
 session_set_cookie_params([
     'lifetime' => 86400 * 7,

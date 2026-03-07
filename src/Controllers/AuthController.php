@@ -26,14 +26,14 @@ class AuthController
         $remember = isset($_POST['remember']);
 
         if (empty($email) || empty($password)) {
-            View::render('pages/login', ['title' => 'Login', 'error' => 'All fields are required.']);
+            View::render('pages/login', ['title' => 'Login', 'error' => t('auth.all_fields_required')]);
             return;
         }
 
         $user = User::findByEmail($email);
 
         if (!$user || !password_verify($password, $user['password_hash'])) {
-            View::render('pages/login', ['title' => 'Login', 'error' => 'Invalid email or password.']);
+            View::render('pages/login', ['title' => 'Login', 'error' => t('auth.invalid_email_or_password')]);
             return;
         }
 
@@ -63,35 +63,35 @@ class AuthController
         $errors = [];
 
         if (empty($username) || empty($email) || empty($password)) {
-            $errors[] = 'All fields are required.';
+            $errors[] = t('auth.all_fields_required');
         }
 
         if (strlen($username) < 3 || strlen($username) > 50) {
-            $errors[] = 'Username must be between 3 and 50 characters.';
+            $errors[] = t('auth.username_length');
         }
 
         if (!preg_match('/^[a-zA-Z0-9_-]+$/', $username)) {
-            $errors[] = 'Username can only contain letters, numbers, hyphens and underscores.';
+            $errors[] = t('auth.username_chars');
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Invalid email address.';
+            $errors[] = t('auth.invalid_email');
         }
 
         if (strlen($password) < 8) {
-            $errors[] = 'Password must be at least 8 characters.';
+            $errors[] = t('auth.password_min');
         }
 
         if ($password !== $passwordConfirm) {
-            $errors[] = 'Passwords do not match.';
+            $errors[] = t('auth.passwords_match');
         }
 
         if (User::findByEmail($email)) {
-            $errors[] = 'This email is already registered.';
+            $errors[] = t('auth.email_taken');
         }
 
         if (User::findByUsername($username)) {
-            $errors[] = 'This username is already taken.';
+            $errors[] = t('auth.username_taken');
         }
 
         if (!empty($errors)) {

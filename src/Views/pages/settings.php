@@ -3,7 +3,7 @@ $currentUser = \App\Core\Auth::user();
 $langs = \App\Services\OfficialSiteScraper::getAvailableLanguages();
 ?>
 <div class="max-w-2xl mx-auto space-y-6">
-    <h1 class="text-2xl font-display font-bold text-white">Settings</h1>
+    <h1 class="text-2xl font-display font-bold text-white"><?= t('settings.title') ?></h1>
 
     <?php if (!empty($errors)): ?>
         <div class="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
@@ -14,19 +14,19 @@ $langs = \App\Services\OfficialSiteScraper::getAvailableLanguages();
     <?php endif; ?>
     <?php if (isset($_GET['updated'])): ?>
         <div class="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
-            <i data-lucide="check-circle" class="w-4 h-4"></i> Settings saved.
+            <i data-lucide="check-circle" class="w-4 h-4"></i> <?= t('settings.saved') ?>
         </div>
     <?php endif; ?>
 
     <!-- Language & Currency -->
     <div class="glass rounded-2xl p-6">
         <h2 class="text-lg font-display font-bold text-white flex items-center gap-2 mb-4">
-            <i data-lucide="globe" class="w-5 h-5 text-blue-400"></i> Preferences
+            <i data-lucide="globe" class="w-5 h-5 text-blue-400"></i> <?= t('settings.preferences') ?>
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                <label class="block text-sm font-medium text-dark-300 mb-1">Card Language</label>
-                <select onchange="apiPost('/settings/language', { lang: this.value }).then(() => showToast('Language updated'))"
+                <label class="block text-sm font-medium text-dark-300 mb-1"><?= t('settings.card_language') ?></label>
+                <select onchange="apiPost('/settings/language', { lang: this.value }).then(() => location.reload())"
                     class="w-full px-3 py-2.5 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
                     <?php foreach ($langs as $code => $name): ?>
                         <option value="<?= $code ?>" <?= ($currentUser['preferred_lang'] ?? 'en') === $code ? 'selected' : '' ?>><?= $name ?></option>
@@ -34,35 +34,34 @@ $langs = \App\Services\OfficialSiteScraper::getAvailableLanguages();
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-dark-300 mb-1">Preferred Currency</label>
-                <select onchange="apiPost('/settings/currency', { currency: this.value }).then(() => showToast('Currency updated'))"
+                <label class="block text-sm font-medium text-dark-300 mb-1"><?= t('settings.currency') ?></label>
+                <select onchange="apiPost('/settings/currency', { currency: this.value }).then(() => location.reload())"
                     class="w-full px-3 py-2.5 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
-                    <option value="usd" <?= ($currentUser['preferred_currency'] ?? 'usd') === 'usd' ? 'selected' : '' ?>>USD (TCGPlayer)</option>
-                    <option value="eur" <?= ($currentUser['preferred_currency'] ?? 'usd') === 'eur' ? 'selected' : '' ?>>EUR (Cardmarket)</option>
+                    <option value="usd" <?= ($currentUser['preferred_currency'] ?? 'usd') === 'usd' ? 'selected' : '' ?>><?= t('settings.usd') ?></option>
+                    <option value="eur" <?= ($currentUser['preferred_currency'] ?? 'usd') === 'eur' ? 'selected' : '' ?>><?= t('settings.eur') ?></option>
                 </select>
             </div>
         </div>
     </div>
 
-    <!-- Change Password -->
     <div class="glass rounded-2xl p-6">
         <h2 class="text-lg font-display font-bold text-white flex items-center gap-2 mb-4">
-            <i data-lucide="lock" class="w-5 h-5 text-amber-400"></i> Change Password
+            <i data-lucide="lock" class="w-5 h-5 text-amber-400"></i> <?= t('settings.change_password') ?>
         </h2>
         <form method="POST" action="/settings/password" class="space-y-4">
             <div>
-                <label class="block text-sm font-medium text-dark-300 mb-1">Current Password</label>
+                <label class="block text-sm font-medium text-dark-300 mb-1"><?= t('settings.current_password') ?></label>
                 <input type="password" name="current_password" class="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-lg text-white focus:outline-none focus:border-gold-500/50 transition text-sm">
             </div>
             <div>
-                <label class="block text-sm font-medium text-dark-300 mb-1">New Password</label>
+                <label class="block text-sm font-medium text-dark-300 mb-1"><?= t('settings.new_password') ?></label>
                 <input type="password" name="new_password" required minlength="8" class="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-lg text-white focus:outline-none focus:border-gold-500/50 transition text-sm">
             </div>
             <div>
-                <label class="block text-sm font-medium text-dark-300 mb-1">Confirm New Password</label>
+                <label class="block text-sm font-medium text-dark-300 mb-1"><?= t('settings.confirm_password') ?></label>
                 <input type="password" name="confirm_password" required class="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-lg text-white focus:outline-none focus:border-gold-500/50 transition text-sm">
             </div>
-            <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-gold-500 to-amber-600 text-dark-900 rounded-lg font-bold text-sm hover:from-gold-400 hover:to-amber-500 transition">Update Password</button>
+            <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-gold-500 to-amber-600 text-dark-900 rounded-lg font-bold text-sm hover:from-gold-400 hover:to-amber-500 transition"><?= t('settings.update_password') ?></button>
         </form>
     </div>
 </div>

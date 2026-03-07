@@ -12,47 +12,47 @@ $filtersJson = json_encode($filters, JSON_HEX_APOS | JSON_HEX_TAG);
     <!-- Sidebar Filters -->
     <aside class="lg:w-64 flex-shrink-0 lg:sticky lg:top-24 lg:self-start">
         <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden w-full flex items-center justify-between glass rounded-xl px-4 py-3 mb-2">
-            <span class="text-sm font-medium text-white flex items-center gap-2"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Filters</span>
+            <span class="text-sm font-medium text-white flex items-center gap-2"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i> <?= t('cards.filters') ?></span>
             <i data-lucide="chevron-down" class="w-4 h-4 text-dark-400 transition" :class="sidebarOpen && 'rotate-180'"></i>
         </button>
         <div x-show="sidebarOpen || window.innerWidth >= 1024" x-transition class="glass rounded-xl p-5 space-y-4">
             <div>
-                <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5">Search</label>
+                <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5"><?= t('cards.search') ?></label>
                 <div class="relative">
                     <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-dark-400"></i>
-                    <input type="text" x-model="f.q" @input.debounce.350ms="doSearch()" placeholder="Card name or ID..."
+                    <input type="text" x-model="f.q" @input.debounce.350ms="doSearch()" placeholder="<?= htmlspecialchars(t('cards.placeholder')) ?>"
                         class="w-full pl-9 pr-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white placeholder-dark-400 focus:outline-none focus:border-gold-500/50 transition">
                 </div>
             </div>
             <div>
-                <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5">Set</label>
+                <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5"><?= t('cards.set') ?></label>
                 <select x-model="f.set_id" @change="doSearch()" class="w-full px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
-                    <option value="">All Sets</option>
+                    <option value=""><?= t('collection.all_sets') ?></option>
                     <template x-for="s in sets" :key="s"><option :value="s" x-text="s"></option></template>
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5">Color</label>
+                <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5"><?= t('cards.color') ?></label>
                 <select x-model="f.color" @change="doSearch()" class="w-full px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
-                    <option value="">All Colors</option>
+                    <option value=""><?= t('collection.all_colors') ?></option>
                     <template x-for="c in colors" :key="c"><option :value="c" x-text="c"></option></template>
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5">Rarity</label>
+                <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5"><?= t('cards.rarity') ?></label>
                 <select x-model="f.rarity" @change="doSearch()" class="w-full px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
-                    <option value="">All Rarities</option>
+                    <option value=""><?= t('collection.all_rarities') ?></option>
                     <template x-for="r in rarities" :key="r"><option :value="r" x-text="r"></option></template>
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5">Type</label>
+                <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5"><?= t('cards.type') ?></label>
                 <select x-model="f.type" @change="doSearch()" class="w-full px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
-                    <option value="">All Types</option>
+                    <option value=""><?= t('cards.all_types') ?></option>
                     <template x-for="t in types" :key="t"><option :value="t" x-text="t"></option></template>
                 </select>
             </div>
-            <button @click="resetFilters()" class="block w-full text-center text-xs text-dark-400 hover:text-gold-400 transition py-1">Reset all filters</button>
+            <button @click="resetFilters()" class="block w-full text-center text-xs text-dark-400 hover:text-gold-400 transition py-1"><?= t('cards.reset_filters') ?></button>
         </div>
     </aside>
 
@@ -60,8 +60,8 @@ $filtersJson = json_encode($filters, JSON_HEX_APOS | JSON_HEX_TAG);
     <div class="flex-1 min-w-0">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
             <div>
-                <h1 class="text-2xl font-display font-bold text-white">Card Database</h1>
-                <p class="text-sm text-dark-400 mt-1"><span x-text="totalFormatted"></span> cards found</p>
+                <h1 class="text-2xl font-display font-bold text-white"><?= t('cards.database') ?></h1>
+                <p class="text-sm text-dark-400 mt-1"><span x-text="totalFormatted"></span> <?= t('cards.found') ?></p>
             </div>
             <div class="flex items-center gap-3">
                 <div x-show="loading" class="flex items-center gap-2 text-dark-400 text-sm">
@@ -71,13 +71,13 @@ $filtersJson = json_encode($filters, JSON_HEX_APOS | JSON_HEX_TAG);
                     <i data-lucide="arrow-up-down" class="w-4 h-4 text-dark-400"></i>
                     <select x-model="f.sort" @change="doSearch()"
                         class="px-3 py-1.5 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
-                        <option value="set">Set / Number</option>
-                        <option value="price">Price (High)</option>
-                        <option value="price_asc">Price (Low)</option>
-                        <option value="rarity">Rarity</option>
-                        <option value="name">Name (A-Z)</option>
-                        <option value="name_desc">Name (Z-A)</option>
-                        <option value="newest">Newest</option>
+                        <option value="set"><?= t('collection.set_number') ?></option>
+                        <option value="price"><?= t('collection.price_high') ?></option>
+                        <option value="price_asc"><?= t('collection.price_low') ?></option>
+                        <option value="rarity"><?= t('cards.rarity') ?></option>
+                        <option value="name"><?= t('collection.sort_name_az') ?></option>
+                        <option value="name_desc"><?= t('collection.sort_name_za') ?></option>
+                        <option value="newest"><?= t('cards.newest') ?></option>
                     </select>
                 </div>
             </div>

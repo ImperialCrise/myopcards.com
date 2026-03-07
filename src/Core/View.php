@@ -8,6 +8,8 @@ class View
 {
     public static function render(string $view, array $data = [], string $layout = 'main'): void
     {
+        \App\Services\Lang::load();
+        $data['t'] = \App\Services\Lang::getAll();
         extract($data);
 
         ob_start();

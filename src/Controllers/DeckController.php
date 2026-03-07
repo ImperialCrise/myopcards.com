@@ -67,7 +67,7 @@ class DeckController
         $raw = file_get_contents('php://input');
         $payload = json_decode($raw, true);
         if (!is_array($payload)) {
-            echo json_encode(['success' => false, 'error' => 'Invalid request.']);
+            echo json_encode(['success' => false, 'error' => t('deck.invalid_request')]);
             return;
         }
 
@@ -84,7 +84,7 @@ class DeckController
         $body = json_decode($raw, true);
         $id = (int)($body['id'] ?? 0);
         if ($id <= 0) {
-            echo json_encode(['success' => false, 'error' => 'Invalid deck.']);
+            echo json_encode(['success' => false, 'error' => t('deck.invalid_deck')]);
             return;
         }
 
@@ -100,7 +100,7 @@ class DeckController
         $deck = Deck::getById($id, Auth::id());
         if (!$deck) {
             http_response_code(404);
-            echo json_encode(['error' => 'Deck not found.']);
+            echo json_encode(['error' => t('deck.not_found')]);
             return;
         }
 

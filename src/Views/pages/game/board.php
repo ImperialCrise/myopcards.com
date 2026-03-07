@@ -11,32 +11,32 @@
         <div class="game-tutorial-card">
             <template x-if="tutorialStep === 1">
                 <div class="tutorial-step">
-                    <h3>Welcome to One Piece TCG</h3>
-                    <p>Reduce your opponent's life to 0 by attacking their Leader. Use DON!! to play cards and boost attacks. You win when their life reaches 0.</p>
+                    <h3><?= htmlspecialchars(t('game.tutorial_welcome_title')) ?></h3>
+                    <p><?= htmlspecialchars(t('game.tutorial_welcome')) ?></p>
                 </div>
             </template>
             <template x-if="tutorialStep === 2">
                 <div class="tutorial-step">
-                    <h3>Your Hand</h3>
-                    <p>Click a card to play it. Each card has a cost — you need that many active DON!! in your DON!! area. Green border = playable.</p>
+                    <h3><?= htmlspecialchars(t('game.tutorial_hand_title')) ?></h3>
+                    <p><?= htmlspecialchars(t('game.tutorial_hand')) ?></p>
                 </div>
             </template>
             <template x-if="tutorialStep === 3">
                 <div class="tutorial-step">
-                    <h3>Attacking</h3>
-                    <p>Click your Leader or an active (non-rested) character, then click the opponent's Leader or a rested character to attack. Rested characters can be attacked for a KO.</p>
+                    <h3><?= htmlspecialchars(t('game.tutorial_attack_title')) ?></h3>
+                    <p><?= htmlspecialchars(t('game.tutorial_attack')) ?></p>
                 </div>
             </template>
             <template x-if="tutorialStep === 4">
                 <div class="tutorial-step">
-                    <h3>Your Turn Flow</h3>
-                    <p>Refresh → Draw → DON!! (add 2) → Main phase: play cards, attack, attach DON!!. When done, click "End Turn".</p>
+                    <h3><?= htmlspecialchars(t('game.tutorial_flow_title')) ?></h3>
+                    <p><?= htmlspecialchars(t('game.tutorial_flow')) ?></p>
                 </div>
             </template>
             <template x-if="tutorialStep === 5">
                 <div class="tutorial-step">
-                    <h3>First Turn Rule</h3>
-                    <p>Neither player can attack on their first turn (Rule 6-5-6-1). Player 1 also draws only 1 DON!! and doesn't draw a card. DON!! power boost (+1000 each) only applies during your turn.</p>
+                    <h3><?= htmlspecialchars(t('game.tutorial_first_turn_title')) ?></h3>
+                    <p><?= htmlspecialchars(t('game.tutorial_first_turn')) ?></p>
                 </div>
             </template>
             <div class="tutorial-dots">
@@ -47,8 +47,8 @@
                 <span class="tutorial-dot" :class="{ active: tutorialStep === 5 }"></span>
             </div>
             <div class="tutorial-actions">
-                <button type="button" class="tutorial-btn secondary" @click="closeTutorial()">Skip</button>
-                <button type="button" class="tutorial-btn primary" @click="tutorialStep < 5 ? nextTutorial() : closeTutorial()" x-text="tutorialStep < 5 ? 'Next' : 'Got it'"></button>
+                <button type="button" class="tutorial-btn secondary" @click="closeTutorial()"><?= t('game.tutorial_skip') ?></button>
+                <button type="button" class="tutorial-btn primary" @click="tutorialStep < 5 ? nextTutorial() : closeTutorial()" x-text="tutorialStep < 5 ? (typeof __LANG !== 'undefined' && __LANG['game.tutorial_next'] || 'Next') : (typeof __LANG !== 'undefined' && __LANG['game.tutorial_got_it'] || 'Got it')"></button>
             </div>
         </div>
     </div>
@@ -79,7 +79,7 @@
             <div class="sb-row"><span>ID</span><span x-text="'#' + gameId"></span></div>
             <div class="sb-row"><span>Turn</span><span x-text="turnCount()"></span></div>
             <div class="sb-row"><span>Duration</span><span x-text="gameDuration()"></span></div>
-            <div class="sb-row"><span>Status</span><span class="sb-status" :class="isMyTurn() ? 'your-turn' : 'opp-turn'" x-text="isMyTurn() ? 'Your Turn' : 'Opponent'"></span></div>
+            <div class="sb-row"><span>Status</span><span class="sb-status" :class="isMyTurn() ? 'your-turn' : 'opp-turn'" x-text="isMyTurn() ? (typeof __LANG !== 'undefined' && __LANG['game.your_turn']) || 'Your Turn' : (typeof __LANG !== 'undefined' && __LANG['game.opponent']) || 'Opponent'"></span></div>
         </div>
         <div class="sb-section">
             <div class="sb-label" x-text="me() && me().username ? me().username : 'You'"></div>
@@ -109,7 +109,7 @@
         </div>
         <div class="sb-section">
             <button type="button" class="sb-help" @click="reopenTutorial()" title="Tutorial">?</button>
-            <a href="/play" class="sb-link">Back to Lobby</a>
+            <a href="/play" class="sb-link"><?= t('game.back_lobby') ?></a>
         </div>
     </aside>
 
@@ -165,7 +165,7 @@
         <div class="center-bar">
             <span class="turn-num" x-text="'Turn ' + turnCount()"></span>
             <span class="phase-tag" :class="{ 'my-turn': isMyTurn() }"
-                x-text="isMyTurn() ? 'Your Turn — Main Phase' : 'Opponent\'s Turn'"></span>
+                x-text="isMyTurn() ? ((typeof __LANG !== 'undefined' && __LANG['game.your_turn']) || 'Your Turn') + ' — Main Phase' : ((typeof __LANG !== 'undefined' && __LANG['game.opponent_turn']) || 'Opponent')"></span>
             <span class="log-msg" x-show="lastAction" x-text="lastAction"></span>
         </div>
 
@@ -232,7 +232,7 @@
         <div class="hand-actions">
             <button class="end-turn-btn" :class="{ 'active': isMyTurn() }"
                 :disabled="!isMyTurn()" @click.stop="endTurn()"
-                x-text="isMyTurn() ? 'End Turn' : 'Waiting...'">
+                x-text="isMyTurn() ? (typeof __LANG !== 'undefined' && __LANG['game.end_turn']) || 'End Turn' : (typeof __LANG !== 'undefined' && __LANG['game.waiting']) || 'Waiting...'">
             </button>
         </div>
     </div>
@@ -252,7 +252,7 @@
     <div class="game-over-overlay" x-show="state && state.status === 'finished'" x-transition x-cloak>
         <div class="go-box" :class="gameOverData && gameOverData.won ? 'go-win' : 'go-lose'">
             <div class="go-result-icon" x-text="gameOverData && gameOverData.won ? '&#127942;' : '&#128148;'"></div>
-            <h2 class="go-title" x-text="gameOverData && gameOverData.won ? 'VICTORY' : 'DEFEAT'"></h2>
+            <h2 class="go-title" x-text="gameOverData && gameOverData.won ? (typeof __LANG !== 'undefined' && __LANG['game.victory']) || 'VICTORY' : (typeof __LANG !== 'undefined' && __LANG['game.defeat']) || 'DEFEAT'"></h2>
 
             <div class="go-elo-section" x-show="gameOverData && gameOverData.you">
                 <div class="go-elo-row">
@@ -293,8 +293,8 @@
             </div>
 
             <div class="go-actions">
-                <a href="/play" class="go-btn go-btn-primary">Play Again</a>
-                <a href="/leaderboard" class="go-btn go-btn-secondary">Leaderboard</a>
+                <a href="/play" class="go-btn go-btn-primary"><?= t('game.play_again') ?></a>
+                <a href="/leaderboard" class="go-btn go-btn-secondary"><?= t('nav.leaderboard') ?></a>
             </div>
         </div>
     </div>

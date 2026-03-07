@@ -63,7 +63,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
     <meta name="keywords" content="<?= htmlspecialchars($seoKeywords ?? 'One Piece TCG, card collection, OPTCG, trading cards, card tracker, card prices, Cardmarket, TCGPlayer, One Piece cards, collection manager') ?>">
     <meta name="author" content="MyOPCards">
     <meta name="robots" content="<?= htmlspecialchars($seoRobots ?? 'index, follow') ?>">
-    <meta name="theme-color" content="#ffffff" id="tc-meta">
+    <meta name="theme-color" content="#06080d" id="tc-meta">
     <meta property="og:type" content="<?= htmlspecialchars($seoOgType ?? 'website') ?>">
     <meta property="og:site_name" content="MyOPCards">
     <meta property="og:title" content="<?= htmlspecialchars($seoTitle) ?>">
@@ -79,7 +79,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
     <script type="application/ld+json"><?= json_encode($seoJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?></script>
     <?php endif; ?>
 
-    <script>if(localStorage.getItem('darkMode')==='true')document.documentElement.classList.add('dark')</script>
+    <script>document.documentElement.classList.add('dark');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#06080d';</script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -166,32 +166,32 @@ $_r4 = array_slice($_bgCards, 36, 12);
                     </a>
                     <div class="hidden md:flex items-center gap-0.5">
                         <a href="/cards" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
-                            <i data-lucide="layers" class="w-4 h-4"></i> Cards
+                            <i data-lucide="layers" class="w-4 h-4"></i> <?= t('nav.cards') ?>
                         </a>
                         <a href="/market" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
-                            <i data-lucide="trending-up" class="w-4 h-4"></i> Market
+                            <i data-lucide="trending-up" class="w-4 h-4"></i> <?= t('nav.market') ?>
                         </a>
                         <a href="/forum" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
-                            <i data-lucide="message-square" class="w-4 h-4"></i> Forum
+                            <i data-lucide="message-square" class="w-4 h-4"></i> <?= t('nav.forum') ?>
                         </a>
                         <a href="/play" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
-                            <i data-lucide="gamepad-2" class="w-4 h-4"></i> Play
+                            <i data-lucide="gamepad-2" class="w-4 h-4"></i> <?= t('nav.play') ?>
                         </a>
                         <?php if ($isLoggedIn): ?>
                         <div class="relative" x-data="{ navDrop: false }" @click.outside="navDrop = false">
                             <button @click="navDrop = !navDrop" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
-                                <i data-lucide="compass" class="w-4 h-4"></i> My Space <i data-lucide="chevron-down" class="w-3 h-3 transition" :class="navDrop && 'rotate-180'"></i>
+                                <i data-lucide="compass" class="w-4 h-4"></i> <?= t('nav.my_space') ?> <i data-lucide="chevron-down" class="w-3 h-3 transition" :class="navDrop && 'rotate-180'"></i>
                             </button>
                             <div x-show="navDrop" x-transition.opacity x-cloak class="absolute top-full left-0 mt-1 glass-strong rounded-xl shadow-2xl py-1 w-48 z-50">
-                                <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="home" class="w-4 h-4"></i> Dashboard</a>
-                                <a href="/collection" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="folder-open" class="w-4 h-4"></i> Collection</a>
-                                <a href="/decks" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="layers" class="w-4 h-4"></i> Decks</a>
-                                <a href="/analytics" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics</a>
-                                <a href="/friends" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="users" class="w-4 h-4"></i> Friends</a>
-                                <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="trophy" class="w-4 h-4"></i> Leaderboard <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?></span></a>
+                                <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="home" class="w-4 h-4"></i> <?= t('nav.dashboard') ?></a>
+                                <a href="/collection" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="folder-open" class="w-4 h-4"></i> <?= t('nav.collection') ?></a>
+                                <a href="/decks" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="layers" class="w-4 h-4"></i> <?= t('nav.decks') ?></a>
+                                <a href="/analytics" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> <?= t('nav.analytics') ?></a>
+                                <a href="/friends" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="users" class="w-4 h-4"></i> <?= t('nav.friends') ?></a>
+                                <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="trophy" class="w-4 h-4"></i> <?= t('nav.leaderboard') ?> <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?></span></a>
                                 <?php if ($currentUser && !empty($currentUser['is_admin'])): ?>
                                 <div class="border-t my-1" style="border-color:var(--nav-border)"></div>
-                                <a href="/admin" class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition"><i data-lucide="shield" class="w-4 h-4"></i> Admin</a>
+                                <a href="/admin" class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition"><i data-lucide="shield" class="w-4 h-4"></i> <?= t('nav.admin') ?></a>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -204,14 +204,14 @@ $_r4 = array_slice($_bgCards, 36, 12);
                         <div class="relative">
                             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             <input type="text" x-model="query" @input.debounce.250ms="search()" @keydown.escape="close()" @keydown.arrow-down.prevent="moveDown()" @keydown.arrow-up.prevent="moveUp()" @keydown.enter.prevent="go()" @focus="open = query.length >= 2"
-                                placeholder="Search cards, users, sets..."
+                                placeholder="<?= htmlspecialchars(t('nav.search_placeholder')) ?>"
                                 class="w-56 lg:w-72 pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-300/30 transition">
                         </div>
                         <div x-show="open && query.length >= 2" x-transition class="absolute top-full left-0 right-0 mt-2 glass-strong rounded-xl shadow-2xl overflow-hidden max-h-96 overflow-y-auto z-50">
                             <div x-show="loading" class="p-4 text-center"><i data-lucide="loader-2" class="w-5 h-5 animate-spin text-gray-400 mx-auto"></i></div>
-                            <div x-show="!loading && results.cards.length === 0 && results.users.length === 0 && results.sets.length === 0" class="p-4 text-center text-gray-400 text-sm">No results found</div>
+                            <div x-show="!loading && results.cards.length === 0 && results.users.length === 0 && results.sets.length === 0" class="p-4 text-center text-gray-400 text-sm" x-text="typeof __LANG !== 'undefined' && __LANG['nav.no_results'] ? __LANG['nav.no_results'] : 'No results found'"></div>
                             <template x-if="results.cards.length > 0"><div>
-                                <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Cards</div>
+                                <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider" x-text="typeof __LANG !== 'undefined' && __LANG['nav.cards_label'] ? __LANG['nav.cards_label'] : 'Cards'"></div>
                                 <template x-for="(card, i) in results.cards" :key="'c'+card.id">
                                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition" :class="activeIdx === i ? 'search-result-active' : ''">
                                         <img :src="card.card_image_url || __PLACEHOLDER" class="w-8 h-11 rounded object-cover bg-gray-100" onerror="cardImgErr(this)">
@@ -221,7 +221,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 </template>
                             </div></template>
                             <template x-if="results.users.length > 0"><div>
-                                <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider border-t border-gray-200">Users</div>
+                                <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider border-t border-gray-200" x-text="typeof __LANG !== 'undefined' && __LANG['nav.users_label'] ? __LANG['nav.users_label'] : 'Users'"></div>
                                 <template x-for="u in results.users" :key="'u'+u.id">
                                     <a :href="'/user/' + u.username" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition">
                                         <div class="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center font-bold text-xs" style="color:#fff !important" x-text="u.username.charAt(0).toUpperCase()"></div>
@@ -230,7 +230,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 </template>
                             </div></template>
                             <template x-if="results.sets.length > 0"><div>
-                                <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider border-t border-gray-200">Sets</div>
+                                <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider border-t border-gray-200" x-text="typeof __LANG !== 'undefined' && __LANG['nav.sets_label'] ? __LANG['nav.sets_label'] : 'Sets'"></div>
                                 <template x-for="s in results.sets" :key="'s'+s.set_id">
                                     <a :href="'/cards?set_id=' + s.set_id" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition">
                                         <div class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center"><i data-lucide="package" class="w-4 h-4 text-gray-500"></i></div>
@@ -278,7 +278,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 <span class="inline-block w-5 text-center mr-1">€</span> EUR <span class="text-xs text-gray-400">JP Edition</span>
                             </button>
                             <div class="border-t my-1" style="border-color:var(--nav-border)"></div>
-                            <p class="px-3 py-1 text-[10px] text-gray-300 uppercase font-bold tracking-wider">Language</p>
+                            <p class="px-3 py-1 text-[10px] text-gray-300 uppercase font-bold tracking-wider"><?= t('nav.language') ?></p>
                             <?php foreach ($langs as $code => $name): ?>
                                 <button onclick="setLanguage('<?= $code ?>')" class="block w-full text-left px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition <?= $currentLang === $code ? 'font-bold text-gray-900' : '' ?>"><?= $name ?></button>
                             <?php endforeach; ?>
@@ -296,8 +296,8 @@ $_r4 = array_slice($_bgCards, 36, 12);
                         <div x-show="open" x-transition x-cloak class="absolute top-full right-0 mt-1 glass-strong rounded-xl shadow-2xl w-80 z-50 overflow-hidden">
                             <div class="px-4 py-3 border-b" style="border-color:var(--nav-border)">
                                 <div class="flex items-center justify-between">
-                                    <p class="text-sm font-display font-bold text-gray-900">Notifications</p>
-                                    <a href="/notifications" class="text-xs text-blue-600 hover:text-blue-800">View All</a>
+                                    <p class="text-sm font-display font-bold text-gray-900"><?= t('nav.notifications') ?></p>
+                                    <a href="/notifications" class="text-xs text-blue-600 hover:text-blue-800"><?= t('nav.view_all') ?></a>
                                 </div>
                             </div>
                             <div class="max-h-80 overflow-y-auto">
@@ -305,17 +305,17 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 <template x-if="friendRequests.length > 0">
                                     <div>
                                         <div class="px-4 py-2 bg-gray-50 border-b" style="border-color:var(--nav-border)">
-                                            <p class="text-xs font-medium text-gray-600">Friend Requests</p>
+                                            <p class="text-xs font-medium text-gray-600"><?= t('nav.friend_requests') ?></p>
                                         </div>
                                         <template x-for="req in friendRequests" :key="'fr-' + req.id">
                                             <div class="px-4 py-3 border-b hover:bg-gray-50 transition" style="border-color:var(--nav-border)">
                                                 <div class="flex items-center gap-3">
                                                     <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0" x-text="req.username.charAt(0).toUpperCase()"></div>
-                                                    <p class="text-sm text-gray-900 flex-1 min-w-0"><span class="font-bold" x-text="req.username"></span> <span class="text-gray-500">wants to be friends</span></p>
+                                                    <p class="text-sm text-gray-900 flex-1 min-w-0"><span class="font-bold" x-text="req.username"></span> <span class="text-gray-500" x-text="typeof __LANG !== 'undefined' && __LANG['nav.wants_to_be_friends'] ? __LANG['nav.wants_to_be_friends'] : 'wants to be friends'"></span></p>
                                                 </div>
                                                 <div class="flex gap-2 mt-2 ml-11">
-                                                    <button @click="acceptFriend(req)" class="flex-1 px-3 py-1.5 bg-green-500 rounded-lg text-xs font-bold hover:bg-green-600 transition" style="color:#fff !important">Accept</button>
-                                                    <button @click="declineFriend(req)" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-200 transition">Decline</button>
+                                                    <button @click="acceptFriend(req)" class="flex-1 px-3 py-1.5 bg-green-500 rounded-lg text-xs font-bold hover:bg-green-600 transition" style="color:#fff !important" x-text="typeof __LANG !== 'undefined' && __LANG['nav.accept'] ? __LANG['nav.accept'] : 'Accept'"></button>
+                                                    <button @click="declineFriend(req)" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-200 transition" x-text="typeof __LANG !== 'undefined' && __LANG['nav.decline'] ? __LANG['nav.decline'] : 'Decline'"></button>
                                                 </div>
                                             </div>
                                         </template>
@@ -326,7 +326,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 <template x-if="forumNotifications.length > 0">
                                     <div>
                                         <div class="px-4 py-2 bg-gray-50 border-b" style="border-color:var(--nav-border)">
-                                            <p class="text-xs font-medium text-gray-600">Forum Activity</p>
+                                            <p class="text-xs font-medium text-gray-600"><?= t('nav.forum_activity') ?></p>
                                         </div>
                                         <template x-for="item in forumNotifications.slice(0, 3)" :key="'fn-' + item.id">
                                             <div class="p-3 border-b hover:bg-gray-50 transition cursor-pointer" style="border-color:var(--nav-border)" @click="markAsRead(item.id)">
@@ -348,19 +348,14 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 <template x-if="totalCount === 0">
                                     <div class="px-4 py-8 text-center text-gray-400 text-sm">
                                         <i data-lucide="bell-off" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-                                        <p>No new notifications</p>
+                                        <p x-text="typeof __LANG !== 'undefined' && __LANG['nav.no_new_notifications'] ? __LANG['nav.no_new_notifications'] : 'No new notifications'"></p>
                                     </div>
                                 </template>
                             </div>
-                            <a href="/friends" class="block px-4 py-2.5 text-center text-xs font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition" style="border-top:1px solid var(--nav-border)">View all friends</a>
+                            <a href="/friends" class="block px-4 py-2.5 text-center text-xs font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition" style="border-top:1px solid var(--nav-border)" x-text="typeof __LANG !== 'undefined' && __LANG['nav.view_all_friends'] ? __LANG['nav.view_all_friends'] : 'View all friends'"></a>
                         </div>
                     </div>
                     <?php endif; ?>
-
-                    <button onclick="toggleDark()" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition" title="Toggle dark mode" id="dm-btn">
-                        <svg id="dm-moon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"></path></svg>
-                        <svg id="dm-sun" class="w-4 h-4 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><path stroke-linecap="round" d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.73 12.73l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
-                    </button>
 
                     <?php if ($isLoggedIn): ?>
                         <a href="/profile" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition">
@@ -372,10 +367,10 @@ $_r4 = array_slice($_bgCards, 36, 12);
                             <span class="text-sm font-medium text-gray-600 hidden lg:block"><?= htmlspecialchars($currentUser['username']) ?></span>
                             <span class="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));color:#f59e0b;border:1px solid rgba(245,158,11,0.2);" title="ELO Rating<?= $_userRank ? ' — Rank #' . $_userRank : '' ?>"><?= $_userElo ?></span>
                         </a>
-                        <a href="/logout" class="p-2 text-gray-400 hover:text-red-500 transition" title="Logout"><i data-lucide="log-out" class="w-4 h-4"></i></a>
+                        <a href="/logout" class="p-2 text-gray-400 hover:text-red-500 transition" title="<?= htmlspecialchars(t('nav.logout')) ?>"><i data-lucide="log-out" class="w-4 h-4"></i></a>
                     <?php else: ?>
-                        <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition hidden sm:block">Login</a>
-                        <a href="/register" class="px-4 py-2 bg-gray-900 rounded-lg text-sm font-bold transition hover:bg-gray-800 shadow-sm" style="color:#fff !important">Sign Up</a>
+                        <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition hidden sm:block"><?= t('nav.login') ?></a>
+                        <a href="/register" class="px-4 py-2 bg-gray-900 rounded-lg text-sm font-bold transition hover:bg-gray-800 shadow-sm" style="color:#fff !important"><?= t('nav.sign_up') ?></a>
                     <?php endif; ?>
 
                     <button @click="mobileSearch = !mobileSearch" class="md:hidden p-2 text-gray-500 hover:text-gray-900"><i data-lucide="search" class="w-5 h-5"></i></button>
@@ -389,7 +384,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
         <div x-show="mobileSearch" x-transition class="md:hidden px-4 pb-3" x-data="globalSearch()" @click.outside="mobileSearch = false">
             <div class="relative">
                 <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                <input type="text" x-model="query" @input.debounce.250ms="search()" placeholder="Search..."
+                <input type="text" x-model="query" @input.debounce.250ms="search()" placeholder="<?= htmlspecialchars(t('nav.search')) ?>"
                     class="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400">
             </div>
             <div x-show="open && results.cards.length > 0" class="mt-2 glass rounded-lg max-h-60 overflow-y-auto">
@@ -403,20 +398,20 @@ $_r4 = array_slice($_bgCards, 36, 12);
         </div>
 
         <div x-show="mobileMenu" x-transition class="md:hidden border-t border-gray-200 px-4 py-3 space-y-1">
-            <a href="/cards" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layers" class="w-4 h-4"></i> Cards</a>
-            <a href="/market" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trending-up" class="w-4 h-4"></i> Market</a>
-            <a href="/forum" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="message-square" class="w-4 h-4"></i> Forum</a>
+            <a href="/cards" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layers" class="w-4 h-4"></i> <?= t('nav.cards') ?></a>
+            <a href="/market" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trending-up" class="w-4 h-4"></i> <?= t('nav.market') ?></a>
+            <a href="/forum" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="message-square" class="w-4 h-4"></i> <?= t('nav.forum') ?></a>
             <?php if ($isLoggedIn): ?>
-                <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</a>
-                <a href="/collection" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="folder-open" class="w-4 h-4"></i> Collection</a>
-                <a href="/analytics" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics</a>
-                <a href="/friends" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="users" class="w-4 h-4"></i> Friends <?php if ($pendingCount > 0): ?><span class="ml-auto px-1.5 py-0.5 bg-red-500 rounded-full text-xs font-bold" style="color:#fff !important"><?= $pendingCount ?></span><?php endif; ?></a>
-                <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trophy" class="w-4 h-4"></i> Leaderboard <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?> ELO</span></a>
-                <a href="/profile" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="user" class="w-4 h-4"></i> Profile</a>
-                <a href="/logout" class="flex items-center gap-2 px-3 py-2 rounded text-red-500 text-sm"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</a>
+                <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> <?= t('nav.dashboard') ?></a>
+                <a href="/collection" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="folder-open" class="w-4 h-4"></i> <?= t('nav.collection') ?></a>
+                <a href="/analytics" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> <?= t('nav.analytics') ?></a>
+                <a href="/friends" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="users" class="w-4 h-4"></i> <?= t('nav.friends') ?> <?php if ($pendingCount > 0): ?><span class="ml-auto px-1.5 py-0.5 bg-red-500 rounded-full text-xs font-bold" style="color:#fff !important"><?= $pendingCount ?></span><?php endif; ?></a>
+                <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trophy" class="w-4 h-4"></i> <?= t('nav.leaderboard') ?> <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?> ELO</span></a>
+                <a href="/profile" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="user" class="w-4 h-4"></i> <?= t('nav.profile') ?></a>
+                <a href="/logout" class="flex items-center gap-2 px-3 py-2 rounded text-red-500 text-sm"><i data-lucide="log-out" class="w-4 h-4"></i> <?= t('nav.logout') ?></a>
             <?php else: ?>
-                <a href="/login" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 text-sm">Login</a>
-                <a href="/register" class="flex items-center gap-2 px-3 py-2 rounded text-gray-900 font-bold text-sm">Sign Up</a>
+                <a href="/login" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 text-sm"><?= t('nav.login') ?></a>
+                <a href="/register" class="flex items-center gap-2 px-3 py-2 rounded text-gray-900 font-bold text-sm"><?= t('nav.sign_up') ?></a>
             <?php endif; ?>
         </div>
     </nav>
@@ -425,6 +420,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
     <script>
     window.__NOTIF_ITEMS = <?= $isLoggedIn ? json_encode(array_values($_pendingReqs)) : '[]' ?>;
     window.__CURRENCY = <?= json_encode(\App\Core\Currency::info()) ?>;
+    window.__LANG = <?= isset($t) ? json_encode($t, JSON_UNESCAPED_UNICODE) : '{}' ?>;
     </script>
     <script src="/assets/js/main.js?v=<?= $__v ?>"></script>
 
@@ -440,16 +436,13 @@ $_r4 = array_slice($_bgCards, 36, 12);
 
     <footer class="mt-16" style="border-top:1px solid var(--nav-border)">
         <div class="max-w-7xl mx-auto px-4 py-8 text-center text-gray-400 text-sm space-y-2">
-            <p class="font-display text-gray-500">&copy; <?= date('Y') ?> MyOPCards</p>
-            <p>Not affiliated with Bandai or One Piece. Card data via OPTCG API. Prices from TCGPlayer &amp; Cardmarket.</p>
-            <p class="text-gray-300 text-xs max-w-xl mx-auto">
-                Prices displayed may not reflect current market values. MyOPCards is a recently launched platform
-                and price data is still being collected. Always verify on official marketplaces before purchasing.
-            </p>
+            <p class="font-display text-gray-500">&copy; <?= date('Y') ?> <?= t('footer.copyright') ?></p>
+            <p><?= t('footer.disclaimer') ?></p>
+            <p class="text-gray-300 text-xs max-w-xl mx-auto"><?= t('footer.prices_note') ?></p>
             <p class="pt-2">
                 <a href="https://discord.gg/m5k52GFQPQ" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
-                    Join our Discord
+                    <?= t('footer.join_discord') ?>
                 </a>
             </p>
         </div>

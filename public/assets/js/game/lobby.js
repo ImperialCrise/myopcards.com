@@ -32,23 +32,23 @@
               if (data && data.gameId) window.location.href = '/play/game/' + data.gameId;
             });
             this.socket.on('customRoomCreated', function (data) {
-              this.message = 'Room created! Share this code: ' + (data && data.code ? data.code : '');
+              this.message = (typeof t === 'function' ? t('game.room_created') : 'Room created! Share this code: ') + (data && data.code ? data.code : '');
               this.messageType = 'info';
               this.roomCode = (data && data.code) ? data.code : '';
             }.bind(this));
             this.socket.on('error', function (err) {
               this.queueing = false;
-              this.message = err && err.message ? err.message : 'Connection error';
+              this.message = err && err.message ? err.message : (typeof t === 'function' ? t('game.connection_error') : 'Connection error');
               this.messageType = 'error';
             }.bind(this));
             this.socket.on('connect_error', function () {
               this.queueing = false;
-              this.message = 'Game server unreachable. Is the game server running?';
+              this.message = typeof t === 'function' ? t('game.server_unreachable') : 'Game server unreachable. Is the game server running?';
               this.messageType = 'error';
             }.bind(this));
           } catch (e) {
             this.queueing = false;
-            this.message = 'Could not connect to game server.';
+            this.message = typeof t === 'function' ? t('game.could_not_connect') : 'Could not connect to game server.';
             this.messageType = 'error';
           }
         },
@@ -57,7 +57,7 @@
           if (this.queueing || !this.selectedDeckId) return;
           this.queueing = true;
           this.queueMode = mode;
-          this.message = 'Searching for ' + mode + ' match...';
+          this.message = (typeof t === 'function' ? t('game.searching_for_match', { '%mode%': mode }) : 'Searching for ' + mode + ' match...');
           this.messageType = '';
           if (this.socket) this.socket.emit('findMatch', { userId: this.userId, username: this.username, deckId: parseInt(this.selectedDeckId, 10), mode: mode });
         },
@@ -65,12 +65,12 @@
         vsBot: function (difficulty) {
           if (this.queueing || !this.selectedDeckId) return;
           if (!this.socket || !this.socket.connected) {
-            this.message = 'Game server unreachable. Is the game server running?';
+            this.message = typeof t === 'function' ? t('game.server_unreachable') : 'Game server unreachable. Is the game server running?';
             this.messageType = 'error';
             return;
           }
           this.queueing = true;
-          this.message = 'Starting vs Bot (' + difficulty + ')...';
+          this.message = (typeof t === 'function' ? t('game.starting_vs_bot', { '%difficulty%': difficulty }) : 'Starting vs Bot (' + difficulty + ')...');
           this.messageType = '';
           this.socket.emit('vsBot', { userId: this.userId, username: this.username, deckId: parseInt(this.selectedDeckId, 10), difficulty: difficulty });
         },

@@ -150,8 +150,8 @@ $streak = (int)($elo['streak'] ?? 0);
 <div class="lobby-wrap" x-data='lobbyPage(<?= $userId ?>, <?= $safeUsername ?>, <?= $safeDecks ?>)' x-init="init()">
 
     <div class="lobby-hero">
-        <h1>Play Online</h1>
-        <p><span class="status-dot"></span>Find a match, challenge a bot, or play with friends</p>
+        <h1><?= t('game.play_online') ?></h1>
+        <p><span class="status-dot"></span><?= t('game.lobby_subtitle') ?></p>
     </div>
 
     <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:center;margin-bottom:36px;">
@@ -175,16 +175,16 @@ $streak = (int)($elo['streak'] ?? 0);
 
     <template x-if="!decks.length">
         <div class="no-deck-card">
-            <h2>You need a deck to play</h2>
-            <p>Build your first deck: pick a Leader and add 50 cards of matching colors. It only takes a minute.</p>
-            <a href="/decks/create" class="cta">Create my first deck</a>
+            <h2><?= t('game.need_deck') ?></h2>
+            <p><?= t('game.need_deck_desc') ?></p>
+            <a href="/decks/create" class="cta"><?= t('game.create_first_deck') ?></a>
         </div>
     </template>
 
     <template x-if="decks.length">
         <div>
             <div class="deck-picker">
-                <label>Select your deck</label>
+                <label><?= t('game.select_deck') ?></label>
                 <div class="deck-cards-row">
                     <template x-for="d in decks" :key="d.id">
                         <button type="button" class="deck-card" :class="{ selected: selectedDeckId == d.id }" @click="selectedDeckId = String(d.id)">
@@ -201,34 +201,34 @@ $streak = (int)($elo['streak'] ?? 0);
             <div class="mode-grid">
                 <div class="mode-card">
                     <span class="mode-icon">&#9876;</span>
-                    <h2>Ranked</h2>
-                    <p class="mode-desc">Climb the ELO ladder against real players</p>
-                    <button class="mode-btn primary" @click="findMatch('ranked')" :disabled="queueing || !selectedDeckId">Find Ranked Match</button>
-                    <button class="mode-btn secondary" @click="findMatch('casual')" :disabled="queueing || !selectedDeckId">Casual Match</button>
+                    <h2><?= t('game.ranked') ?></h2>
+                    <p class="mode-desc"><?= t('game.ranked_desc') ?></p>
+                    <button class="mode-btn primary" @click="findMatch('ranked')" :disabled="queueing || !selectedDeckId"><?= t('game.find_ranked') ?></button>
+                    <button class="mode-btn secondary" @click="findMatch('casual')" :disabled="queueing || !selectedDeckId"><?= t('game.casual_match') ?></button>
                 </div>
 
                 <div class="mode-card">
                     <span class="mode-icon">&#129302;</span>
-                    <h2>VS Bot</h2>
-                    <p class="mode-desc">Practice and test your deck against AI</p>
-                    <button class="mode-btn primary" @click="vsBot('easy')" :disabled="queueing || !selectedDeckId">Easy Bot</button>
-                    <button class="mode-btn secondary" @click="vsBot('medium')" :disabled="queueing || !selectedDeckId">Medium Bot</button>
-                    <button class="mode-btn secondary" @click="vsBot('hard')" :disabled="queueing || !selectedDeckId">Hard Bot</button>
+                    <h2><?= t('game.vs_bot') ?></h2>
+                    <p class="mode-desc"><?= t('game.vs_bot_desc') ?></p>
+                    <button class="mode-btn primary" @click="vsBot('easy')" :disabled="queueing || !selectedDeckId"><?= t('game.easy_bot') ?></button>
+                    <button class="mode-btn secondary" @click="vsBot('medium')" :disabled="queueing || !selectedDeckId"><?= t('game.medium_bot') ?></button>
+                    <button class="mode-btn secondary" @click="vsBot('hard')" :disabled="queueing || !selectedDeckId"><?= t('game.hard_bot') ?></button>
                 </div>
 
                 <div class="mode-card">
                     <span class="mode-icon">&#128279;</span>
-                    <h2>Custom Game</h2>
-                    <p class="mode-desc">Create a room or join a friend's game</p>
-                    <button class="mode-btn primary" @click="createCustom()" :disabled="queueing || !selectedDeckId">Create Room</button>
+                    <h2><?= t('game.custom') ?></h2>
+                    <p class="mode-desc"><?= t('game.custom_desc') ?></p>
+                    <button class="mode-btn primary" @click="createCustom()" :disabled="queueing || !selectedDeckId"><?= t('game.create_room') ?></button>
                     <div x-show="roomCode" class="room-code-box" x-transition>
-                        <span class="room-code-label">Share this code:</span>
+                        <span class="room-code-label"><?= t('game.share_code') ?></span>
                         <div class="room-code-value" x-text="roomCode"></div>
-                        <button type="button" class="mode-btn secondary" @click="navigator.clipboard && navigator.clipboard.writeText(roomCode)">Copy</button>
+                        <button type="button" class="mode-btn secondary" @click="navigator.clipboard && navigator.clipboard.writeText(roomCode)"><?= t('game.copy') ?></button>
                     </div>
-                    <div class="custom-or">or</div>
-                    <input type="text" x-model="joinCode" placeholder="Enter room code..." maxlength="8" class="custom-join-input">
-                    <button class="mode-btn primary custom-join-full" @click="joinCustom()" :disabled="!joinCode.trim() || !selectedDeckId">Join Room</button>
+                    <div class="custom-or"><?= t('game.or') ?></div>
+                    <input type="text" x-model="joinCode" placeholder="<?= htmlspecialchars(t('game.enter_code')) ?>" maxlength="8" class="custom-join-input">
+                    <button class="mode-btn primary custom-join-full" @click="joinCustom()" :disabled="!joinCode.trim() || !selectedDeckId"><?= t('game.join_room') ?></button>
                 </div>
             </div>
 

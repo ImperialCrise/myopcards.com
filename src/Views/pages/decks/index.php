@@ -4,11 +4,11 @@ $decks = $decks ?? [];
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-display font-bold text-white">My Decks</h1>
-            <p class="text-sm text-dark-400 mt-1">Build and manage decks for online play</p>
+            <h1 class="text-2xl font-display font-bold text-white"><?= t('decks.my_decks') ?></h1>
+            <p class="text-sm text-dark-400 mt-1"><?= t('decks.subtitle') ?></p>
         </div>
         <a href="/decks/create" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gold-500 text-dark-900 rounded-lg font-semibold hover:bg-gold-400 transition">
-            <i data-lucide="plus" class="w-4 h-4"></i> New Deck
+            <i data-lucide="plus" class="w-4 h-4"></i> <?= t('decks.new_deck') ?>
         </a>
     </div>
 
@@ -17,10 +17,10 @@ $decks = $decks ?? [];
         <div class="w-16 h-16 rounded-2xl bg-dark-700 flex items-center justify-center mx-auto mb-4">
             <i data-lucide="layers" class="w-8 h-8 text-dark-400"></i>
         </div>
-        <h2 class="text-lg font-display font-bold text-white mb-2">No decks yet</h2>
-        <p class="text-dark-400 text-sm mb-6 max-w-sm mx-auto">Create a deck with 1 Leader and 50 cards to play online.</p>
+        <h2 class="text-lg font-display font-bold text-white mb-2"><?= t('decks.no_decks') ?></h2>
+        <p class="text-dark-400 text-sm mb-6 max-w-sm mx-auto"><?= t('decks.no_decks_desc') ?></p>
         <a href="/decks/create" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gold-500 text-dark-900 rounded-lg font-semibold hover:bg-gold-400 transition">
-            <i data-lucide="plus" class="w-4 h-4"></i> Create your first deck
+            <i data-lucide="plus" class="w-4 h-4"></i> <?= t('decks.create_first') ?>
         </a>
     </div>
     <?php else: ?>
@@ -45,10 +45,10 @@ $decks = $decks ?? [];
             </div>
             <div class="flex border-t border-dark-700">
                 <a href="/decks/<?= (int)$d['id'] ?>/edit" class="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-gold-400 hover:bg-dark-800/50 transition">
-                    <i data-lucide="pencil" class="w-4 h-4"></i> Edit
+                    <i data-lucide="pencil" class="w-4 h-4"></i> <?= t('decks.edit') ?>
                 </a>
                 <a href="/play" class="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-dark-300 hover:bg-dark-800/50 hover:text-white transition">
-                    <i data-lucide="gamepad-2" class="w-4 h-4"></i> Play
+                    <i data-lucide="gamepad-2" class="w-4 h-4"></i> <?= t('decks.play') ?>
                 </a>
             </div>
         </div>

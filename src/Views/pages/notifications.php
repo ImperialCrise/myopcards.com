@@ -1,11 +1,11 @@
 <div class="min-h-screen bg-gray-50 dark:bg-dark-900 py-8">
     <div class="max-w-4xl mx-auto px-4">
         <div class="flex items-center justify-between mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Notifications</h1>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white"><?= t('notifications.title') ?></h1>
             
             <?php if (!empty($notifications) && array_filter($notifications, fn($n) => !$n['is_read'])): ?>
             <button onclick="markAllAsRead()" class="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition">
-                Mark all as read
+                <?= t('notifications.mark_all') ?>
             </button>
             <?php endif; ?>
         </div>
@@ -13,8 +13,8 @@
         <?php if (empty($notifications)): ?>
         <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700 p-12 text-center">
             <i data-lucide="bell" class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4"></i>
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No notifications yet</h2>
-            <p class="text-gray-500 dark:text-gray-400">When people interact with your posts, you'll see notifications here.</p>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2"><?= t('notifications.none') ?></h2>
+            <p class="text-gray-500 dark:text-gray-400"><?= t('notifications.empty_desc') ?></p>
         </div>
         <?php else: ?>
         
@@ -57,13 +57,13 @@
                             <div class="flex items-center gap-2">
                                 <?php if ($notification['type'] === 'forum_reply' && isset($notification['data']['topic_id'])): ?>
                                 <a href="/forum/general/<?= $notification['data']['topic_id'] ?>-<?= urlencode(strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $notification['title']))) ?>" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                                    View Topic
+                                    <?= t('notifications.view_topic') ?>
                                 </a>
                                 <?php endif; ?>
                                 
                                 <?php if (!$notification['is_read']): ?>
                                 <button onclick="markAsRead(<?= $notification['id'] ?>)" class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-                                    Mark as read
+                                    <?= t('notifications.mark_read') ?>
                                 </button>
                                 <?php endif; ?>
                             </div>

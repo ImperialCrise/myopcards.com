@@ -13,14 +13,14 @@ $curValues = [
 ];
 $currentSort = $filters['sort'] ?? 'set';
 $sortOptions = [
-    'set' => 'Set / Number',
-    'price' => 'Price (High)',
-    'price_asc' => 'Price (Low)',
-    'rarity' => 'Rarity',
-    'name' => 'Name (A-Z)',
-    'name_desc' => 'Name (Z-A)',
-    'added' => 'Recently Added',
-    'qty' => 'Quantity',
+    'set' => t('collection.set_number'),
+    'price' => t('collection.price_high'),
+    'price_asc' => t('collection.price_low'),
+    'rarity' => t('collection.rarity'),
+    'name' => t('collection.sort_name_az'),
+    'name_desc' => t('collection.sort_name_za'),
+    'added' => t('collection.recently_added'),
+    'qty' => t('collection.quantity'),
 ];
 $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
 ?>
@@ -28,15 +28,15 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
     <!-- Header with value + share -->
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-display font-bold text-white"><?= ($wishlist ?? false) ? 'My Wishlist' : 'My Collection' ?></h1>
-            <p class="text-sm text-dark-400 mt-1"><?= number_format($result['total'] ?? 0) ?> unique cards</p>
+            <h1 class="text-2xl font-display font-bold text-white"><?= ($wishlist ?? false) ? t('collection.wishlist') : t('collection.my_collection') ?></h1>
+            <p class="text-sm text-dark-400 mt-1"><?= number_format($result['total'] ?? 0) ?> <?= t('collection.unique_cards') ?></p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="/collection/export" class="flex items-center gap-2 px-4 py-2 glass rounded-lg text-sm text-dark-300 hover:text-white transition">
-                <i data-lucide="download" class="w-4 h-4"></i> Export
+                <i data-lucide="download" class="w-4 h-4"></i> <?= t('collection.export') ?>
             </a>
             <button @click="shareCollection()" class="flex items-center gap-2 px-4 py-2 glass rounded-lg text-sm text-gold-400 hover:text-gold-300 hover:border-gold-500/30 transition">
-                <i data-lucide="share-2" class="w-4 h-4"></i> Share
+                <i data-lucide="share-2" class="w-4 h-4"></i> <?= t('collection.share') ?>
             </button>
         </div>
     </div>
@@ -45,7 +45,7 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
     <div x-show="shareOpen" x-transition x-cloak class="glass rounded-2xl p-5">
         <div class="flex items-center justify-between mb-3">
             <h3 class="text-sm font-display font-bold text-white flex items-center gap-2">
-                <i data-lucide="link" class="w-4 h-4 text-gold-400"></i> Share Link
+                <i data-lucide="link" class="w-4 h-4 text-gold-400"></i> <?= t('collection.share_link') ?>
             </h3>
             <button @click="shareOpen = false" class="text-dark-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
         </div>
@@ -54,23 +54,23 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
                 <div class="flex gap-2">
                     <input type="text" :value="shareUrl" readonly class="flex-1 px-4 py-2.5 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white font-mono select-all" @click="$el.select()">
                     <button @click="copyShare()" class="px-4 py-2.5 bg-gold-500 text-dark-900 rounded-lg text-sm font-bold hover:bg-gold-400 transition flex items-center gap-1.5">
-                        <i data-lucide="copy" class="w-4 h-4"></i> <span x-text="copied ? 'Copied' : 'Copy'"></span>
+                        <i data-lucide="copy" class="w-4 h-4"></i> <span x-text="copied ? (typeof __LANG !== 'undefined' && __LANG['collection.copied'] || 'Copied') : (typeof __LANG !== 'undefined' && __LANG['collection.copy'] || 'Copy')"></span>
                     </button>
                 </div>
-                <p class="text-xs text-dark-400 mt-2">Anyone with this link can view your collection and its value. This works even if your profile is private.</p>
+                <p class="text-xs text-dark-400 mt-2"><?= t('collection.share_desc') ?></p>
                 <button @click="revokeShare()" class="text-xs text-red-400 hover:text-red-300 mt-2 flex items-center gap-1">
-                    <i data-lucide="trash-2" class="w-3 h-3"></i> Revoke share link
+                    <i data-lucide="trash-2" class="w-3 h-3"></i> <?= t('collection.revoke') ?>
                 </button>
             </div>
         </template>
         <template x-if="!shareUrl && !shareLoading">
             <div class="text-center py-4">
-                <p class="text-sm text-dark-300 mb-3">Generate a shareable link to your collection</p>
-                <button @click="generateShare()" class="px-6 py-2.5 bg-gradient-to-r from-gold-500 to-amber-600 text-dark-900 rounded-lg text-sm font-bold hover:from-gold-400 hover:to-amber-500 transition">Generate Link</button>
+                <p class="text-sm text-dark-300 mb-3"><?= t('collection.generate_desc') ?></p>
+                <button @click="generateShare()" class="px-6 py-2.5 bg-gradient-to-r from-gold-500 to-amber-600 text-dark-900 rounded-lg text-sm font-bold hover:from-gold-400 hover:to-amber-500 transition"><?= t('collection.generate') ?></button>
             </div>
         </template>
         <template x-if="shareLoading">
-            <div class="text-center py-4 text-dark-400 text-sm">Generating...</div>
+            <div class="text-center py-4 text-dark-400 text-sm"><?= t('collection.generating') ?></div>
         </template>
     </div>
 
@@ -79,7 +79,7 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
     <div class="glass rounded-2xl p-6">
         <div class="flex items-center gap-3 mb-4">
             <i data-lucide="star" class="w-6 h-6 text-yellow-400 fill-current"></i>
-            <h2 class="text-xl font-display font-bold text-white">Your Featured Card</h2>
+            <h2 class="text-xl font-display font-bold text-white"><?= t('collection.featured') ?></h2>
         </div>
         <div class="flex items-center gap-6 p-4 bg-gradient-to-r from-yellow-900/20 to-amber-900/20 rounded-xl border border-yellow-700/30">
             <div class="relative flex-shrink-0">
@@ -92,7 +92,7 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
             </div>
             <div class="flex-1 min-w-0">
                 <h3 class="text-lg font-bold text-white mb-1"><?= htmlspecialchars($featuredCard['card_name']) ?></h3>
-                <p class="text-sm text-gray-400 mb-2"><?= htmlspecialchars($featuredCard['card_set_id']) ?> • <?= htmlspecialchars($featuredCard['set_name'] ?? 'Unknown Set') ?></p>
+                <p class="text-sm text-gray-400 mb-2"><?= htmlspecialchars($featuredCard['card_set_id']) ?> • <?= htmlspecialchars($featuredCard['set_name'] ?? t('profile.unknown_set')) ?></p>
                 
                 <div class="flex items-center gap-4 text-xs">
                     <?php if ($featuredCard['rarity']): ?>
@@ -118,12 +118,12 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
                 <a href="/cards/<?= htmlspecialchars($featuredCard['card_set_id']) ?>" 
                    class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-medium rounded-lg transition">
                     <i data-lucide="external-link" class="w-4 h-4"></i>
-                    View Card
+                    <?= t('profile.view_card') ?>
                 </a>
                 <button onclick="removeFeaturedCard()" 
                         class="inline-flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 font-medium rounded-lg transition border border-red-600/30">
                     <i data-lucide="x" class="w-4 h-4"></i>
-                    Remove
+                    <?= t('collection.remove') ?>
                 </button>
             </div>
         </div>
@@ -133,15 +133,15 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
     <!-- Value Summary -->
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div class="glass rounded-xl p-4 text-center">
-            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1">Unique Cards</p>
+            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1"><?= t('collection.unique') ?></p>
             <p class="text-xl font-display font-bold text-white"><?= number_format($result['total'] ?? 0) ?></p>
         </div>
         <div class="glass rounded-xl p-4 text-center">
-            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1">Total Qty</p>
+            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1"><?= t('collection.total_qty') ?></p>
             <p class="text-xl font-display font-bold text-white"><?= number_format($stats['total_cards'] ?? 0) ?></p>
         </div>
         <div class="glass rounded-xl p-4 text-center">
-            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1">Value (<?= $curInfo['label'] ?>)</p>
+            <p class="text-xs text-dark-400 uppercase tracking-wider font-bold mb-1"><?= t('collection.value') ?><?= $curInfo['label'] ?>)</p>
             <p class="text-xl font-display font-bold text-gold-400"><?= $curInfo['symbol'] . number_format($curValues[$curInfo['key']] ?? 0, 2) ?></p>
         </div>
     </div>
@@ -151,24 +151,24 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
         <form method="GET" action="/collection" onsubmit="event.preventDefault(); cleanSubmit(this);" class="flex flex-wrap gap-3 items-center">
             <div class="relative flex-1 min-w-[180px]">
                 <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-dark-400"></i>
-                <input type="text" name="q" value="<?= htmlspecialchars($filters['q'] ?? '') ?>" placeholder="Search name or ID..."
+                <input type="text" name="q" value="<?= htmlspecialchars($filters['q'] ?? '') ?>" placeholder="<?= htmlspecialchars(t('collection.search_placeholder')) ?>"
                     class="w-full pl-9 pr-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white placeholder-dark-400 focus:outline-none focus:border-gold-500/50 transition"
                     onchange="cleanSubmit(this.form)">
             </div>
             <select name="set_id" onchange="cleanSubmit(this.form)" class="px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
-                <option value="">All Sets</option>
+                <option value=""><?= t('collection.all_sets') ?></option>
                 <?php foreach ($sets as $s): ?>
                     <option value="<?= htmlspecialchars($s) ?>" <?= ($filters['set_id'] ?? '') === $s ? 'selected' : '' ?>><?= htmlspecialchars($s) ?></option>
                 <?php endforeach; ?>
             </select>
             <select name="rarity" onchange="cleanSubmit(this.form)" class="px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
-                <option value="">All Rarities</option>
+                <option value=""><?= t('collection.all_rarities') ?></option>
                 <?php foreach ($rarities as $r): ?>
                     <option value="<?= htmlspecialchars($r) ?>" <?= ($filters['rarity'] ?? '') === $r ? 'selected' : '' ?>><?= htmlspecialchars($r) ?></option>
                 <?php endforeach; ?>
             </select>
             <select name="color" onchange="cleanSubmit(this.form)" class="px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
-                <option value="">All Colors</option>
+                <option value=""><?= t('collection.all_colors') ?></option>
                 <?php foreach ($colors as $c): ?>
                     <option value="<?= htmlspecialchars($c) ?>" <?= ($filters['color'] ?? '') === $c ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
                 <?php endforeach; ?>
@@ -182,7 +182,7 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
                 </select>
             </div>
             <?php if (!empty($filters['q']) || !empty($filters['set_id']) || !empty($filters['rarity']) || !empty($filters['color'])): ?>
-                <a href="/collection" class="text-xs text-dark-400 hover:text-gold-400 transition">Reset</a>
+                <a href="/collection" class="text-xs text-dark-400 hover:text-gold-400 transition"><?= t('collection.reset') ?></a>
             <?php endif; ?>
         </form>
     </div>
@@ -239,12 +239,12 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
                     <div x-show="confirmDel" x-transition.opacity x-cloak
                          class="absolute inset-0 bg-dark-900/90 backdrop-blur-sm flex flex-col items-center justify-center p-3 z-10 rounded-xl">
                         <i data-lucide="alert-triangle" class="w-6 h-6 text-red-400 mb-2"></i>
-                        <p class="text-xs text-white text-center font-medium leading-snug mb-3">Remove this card from your collection?</p>
+                        <p class="text-xs text-white text-center font-medium leading-snug mb-3"><?= t('collection.remove_confirm') ?></p>
                         <div class="flex gap-2 w-full">
                             <button @click="confirmDel = false"
-                                class="flex-1 py-1.5 glass rounded-lg text-xs text-dark-300 hover:text-white transition font-medium">Cancel</button>
-                            <button @click="qty = 0; confirmDel = false; apiPost('/collection/remove', { card_id: <?= $cardId ?> }).then(() => { showToast('Card removed', 'info'); $el.closest('.card-hover').remove(); });"
-                                class="flex-1 py-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-xs text-white transition font-medium">Remove</button>
+                                class="flex-1 py-1.5 glass rounded-lg text-xs text-dark-300 hover:text-white transition font-medium"><?= t('collection.cancel') ?></button>
+                            <button @click="qty = 0; confirmDel = false; apiPost('/collection/remove', { card_id: <?= $cardId ?> }).then(() => { showToast(typeof __LANG !== 'undefined' && __LANG['common.removed'] ? __LANG['common.removed'] : 'Card removed', 'info'); $el.closest('.card-hover').remove(); });"
+                                class="flex-1 py-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-xs text-white transition font-medium"><?= t('collection.remove') ?></button>
                         </div>
                     </div>
                 </div>
@@ -280,20 +280,20 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
             <div class="w-16 h-16 rounded-2xl bg-dark-700/50 flex items-center justify-center mx-auto mb-4">
                 <i data-lucide="package-open" class="w-8 h-8 text-dark-400"></i>
             </div>
-            <h3 class="text-lg font-display font-bold text-dark-300">No cards in your collection</h3>
-            <p class="text-sm text-dark-400 mt-2">Browse the <a href="/cards" class="text-gold-400 hover:text-gold-300">card database</a> to start adding cards.</p>
+            <h3 class="text-lg font-display font-bold text-dark-300"><?= t('collection.no_cards') ?></h3>
+            <p class="text-sm text-dark-400 mt-2"><?= t('collection.browse_db') ?> <a href="/cards" class="text-gold-400 hover:text-gold-300"><?= t('collection.card_database') ?></a> <?= t('collection.to_start') ?></p>
         </div>
     <?php endif; ?>
 
     <!-- Public views stats -->
     <div class="glass rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-4 text-sm text-dark-400">
-            <span class="flex items-center gap-1.5"><i data-lucide="eye" class="w-4 h-4"></i> <?= number_format($viewCounts['profile'] ?? 0) ?> profile views</span>
-            <span class="flex items-center gap-1.5"><i data-lucide="layout-grid" class="w-4 h-4"></i> <?= number_format($viewCounts['collection'] ?? 0) ?> collection views</span>
+            <span class="flex items-center gap-1.5"><i data-lucide="eye" class="w-4 h-4"></i> <?= number_format($viewCounts['profile'] ?? 0) ?> <?= t('collection.profile_views') ?></span>
+            <span class="flex items-center gap-1.5"><i data-lucide="layout-grid" class="w-4 h-4"></i> <?= number_format($viewCounts['collection'] ?? 0) ?> <?= t('collection.collection_views') ?></span>
         </div>
         <?php if ($user['is_public'] ?? false): ?>
         <a href="/user/<?= htmlspecialchars($user['username']) ?>" class="text-xs text-gold-400 hover:text-gold-300 transition flex items-center gap-1">
-            <i data-lucide="external-link" class="w-3 h-3"></i> View my public profile
+            <i data-lucide="external-link" class="w-3 h-3"></i> <?= t('collection.view_public') ?>
         </a>
         <?php endif; ?>
     </div>

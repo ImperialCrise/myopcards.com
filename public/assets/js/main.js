@@ -1,19 +1,10 @@
-function toggleDark() {
-    const on = document.documentElement.classList.toggle('dark');
-    localStorage.setItem('darkMode', on);
-    document.getElementById('dm-moon').classList.toggle('hidden', on);
-    document.getElementById('dm-sun').classList.toggle('hidden', !on);
-    document.getElementById('tc-meta').content = on ? '#06080d' : '#ffffff';
+function t(key, replace) {
+    var s = (window.__LANG && window.__LANG[key]) || key;
+    if (replace && typeof replace === 'object') for (var k in replace) s = String(s).split(k).join(replace[k]);
+    return s;
 }
-(function(){
-    var on = document.documentElement.classList.contains('dark');
-    var moon = document.getElementById('dm-moon');
-    var sun = document.getElementById('dm-sun');
-    var tc = document.getElementById('tc-meta');
-    if (moon) moon.classList.toggle('hidden', on);
-    if (sun) sun.classList.toggle('hidden', !on);
-    if (on && tc) tc.content = '#06080d';
-})();
+
+function toggleDark() {}
 
 function cleanSubmit(form) {
     const action = form.getAttribute('action') || window.location.pathname;
@@ -110,8 +101,8 @@ function unifiedNotifications() {
                     this.forumNotifications = data.count > 0 ? [{ 
                         id: 'forum-count',
                         type: 'forum_reply',
-                        title: `${data.count} new notification${data.count > 1 ? 's' : ''}`,
-                        message: 'View all forum notifications',
+                        title: data.count === 1 ? t('nav.one_new_notification') : t('nav.new_notifications_count', { '%count%': data.count }),
+                        message: t('nav.view_all_forum_notifications'),
                         is_read: false,
                         created_at: new Date().toISOString()
                     }] : [];
