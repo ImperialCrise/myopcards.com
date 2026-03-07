@@ -46,7 +46,7 @@ MyOPCards is a full‑stack web application for One Piece Card Game collectors: 
 ### 1. Clone and dependencies
 
 ```bash
-git clone <repository-url> myopcards.com
+git clone git@github.com:ImperialCrise/myopcards.com.git
 cd myopcards.com
 composer install
 ```
