@@ -9,9 +9,10 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} (.+)/$
 RewriteRule ^ %1 [L,R=301]
 
-# Front controller
+# Front controller (do not rewrite Socket.io so ProxyPass can handle it)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/socket\.io/
 RewriteRule ^(.*)$ index.php [QSA,L]
 
 # Compression

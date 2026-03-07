@@ -110,6 +110,18 @@ class CardController
         ]);
     }
 
+    public function recommended(): void
+    {
+        header('Content-Type: application/json');
+        $color = trim($_GET['color'] ?? '');
+        if ($color === '') {
+            echo json_encode(['cards' => []]);
+            return;
+        }
+        $cards = Card::getRecommendedForDeck($color, 24);
+        echo json_encode(['cards' => $cards]);
+    }
+
     public function search(): void
     {
         header('Content-Type: application/json');
@@ -186,5 +198,40 @@ class CardController
                 echo json_encode(['success' => false, 'error' => 'You must own this card to feature it']);
             }
         }
+    }
+
+    public function proxyImage(): void
+    {
+        $url = $_GET['url'] ?? '';
+        $parsed = parse_url($url);
+        $host = $parsed['host'] ?? '';
+        $allowed = ['optcgapi.com', 'www.optcgapi.com'];
+        if (!in_array($host, $allowed, true)) {
+            http_response_code(400);
+            header('Content-Type: text/plain');
+            echo 'Invalid URL';
+            return;
+        }
+        $ctx = stream_context_create([
+            'http' => [
+                'timeout' => 10,
+                'follow_location' => 1,
+                'user_agent' => 'MyOPCards/1.0 (Image Proxy)',
+            ],
+        ]);
+        $body = @file_get_contents($url, false, $ctx);
+        if ($body === false) {
+            http_response_code(502);
+            return;
+        }
+        $ctype = 'image/jpeg';
+        if (preg_match('/\.(png|gif|webp)$/i', $url)) {
+            $ext = strtolower(pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
+            $ctype = $ext === 'png' ? 'image/png' : ($ext === 'gif' ? 'image/gif' : 'image/webp');
+        }
+        header('Content-Type: ' . $ctype);
+        header('Cache-Control: public, max-age=86400');
+        header('Content-Length: ' . strlen($body));
+        echo $body;
     }
 }

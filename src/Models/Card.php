@@ -153,4 +153,65 @@ class Card
         $db = Database::getConnection();
         return (int)$db->query('SELECT COUNT(*) FROM cards')->fetchColumn();
     }
+
+    public static function getRecommendedForDeck(string $leaderColor, int $limit = 24): array
+    {
+        $db = Database::getConnection();
+        $raw = preg_split('/[\s\/]+/', $leaderColor, -1, PREG_SPLIT_NO_EMPTY);
+        $parts = array_values(array_unique(array_map('trim', $raw)));
+        $parts = array_filter($parts);
+        if (empty($parts)) {
+            return [];
+        }
+        $colorConditions = [];
+        $params = [];
+        foreach ($parts as $c) {
+            $colorConditions[] = "card_color = ? OR card_color LIKE ?";
+            $params[] = $c;
+            $params[] = '%' . $c . '%';
+        }
+        $colorWhere = '(' . implode(' OR ', $colorConditions) . ')';
+        $powerOrder = "CAST(COALESCE(NULLIF(TRIM(REPLACE(card_power, ',', '')), ''), '0') AS UNSIGNED) DESC";
+        $sql = "SELECT * FROM cards
+                WHERE card_type IN ('Character', 'Event', 'Stage')
+                  AND $colorWhere
+                  AND (COALESCE(card_text,'') LIKE '%[Rush]%' OR COALESCE(card_text,'') LIKE '%[Blocker]%' OR COALESCE(card_text,'') LIKE '%[Double Attack]%' OR COALESCE(card_text,'') LIKE '%[On Play]%' OR COALESCE(card_text,'') LIKE '%[Trigger]%')
+                ORDER BY
+                  CASE
+                    WHEN COALESCE(card_text,'') LIKE '%[Rush]%' OR COALESCE(card_text,'') LIKE '%[Blocker]%' THEN 2
+                    WHEN COALESCE(card_text,'') LIKE '%[Double Attack]%' OR COALESCE(card_text,'') LIKE '%[On Play]%' THEN 1
+                    ELSE 0
+                  END DESC, $powerOrder
+                LIMIT ?";
+        $params[] = $limit;
+        $stmt = $db->prepare($sql);
+        foreach ($params as $i => $v) {
+            $stmt->bindValue($i + 1, $v, $i === count($params) - 1 ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->execute();
+        $keyword = $stmt->fetchAll();
+        $have = count($keyword);
+        if ($have >= $limit) {
+            return $keyword;
+        }
+        $ids = $have > 0 ? array_column($keyword, 'id') : [];
+        $exclude = count($ids) > 0 ? ' AND id NOT IN (' . implode(',', array_map('intval', $ids)) . ')' : '';
+        $params2 = [];
+        foreach ($parts as $c) {
+            $params2[] = $c;
+            $params2[] = '%' . $c . '%';
+        }
+        $params2[] = $limit - $have;
+        $sql2 = "SELECT * FROM cards
+                 WHERE card_type IN ('Character', 'Event', 'Stage')
+                   AND $colorWhere $exclude
+                 ORDER BY $powerOrder
+                 LIMIT ?";
+        $stmt2 = $db->prepare($sql2);
+        foreach ($params2 as $i => $v) {
+            $stmt2->bindValue($i + 1, $v, $i === count($params2) - 1 ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt2->execute();
+        return array_merge($keyword, $stmt2->fetchAll());
+    }
 }

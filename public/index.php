@@ -39,6 +39,8 @@ $router->get('/dashboard', [App\Controllers\DashboardController::class, 'index']
 $router->get('/cards', [App\Controllers\CardController::class, 'index']);
 $router->get('/cards/{id}', [App\Controllers\CardController::class, 'show']);
 $router->get('/api/cards/search', [App\Controllers\CardController::class, 'search']);
+$router->get('/api/cards/recommended', [App\Controllers\CardController::class, 'recommended']);
+$router->get('/api/card-image', [App\Controllers\CardController::class, 'proxyImage']);
 
 $router->get('/collection', [App\Controllers\CollectionController::class, 'index']);
 $router->post('/collection/add', [App\Controllers\CollectionController::class, 'add']);
@@ -72,6 +74,20 @@ $router->get('/api/analytics/distribution', [App\Controllers\AnalyticsController
 
 $router->get('/market', [App\Controllers\MarketController::class, 'index']);
 $router->get('/api/market/movers', [App\Controllers\MarketController::class, 'movers']);
+
+$router->get('/decks', [App\Controllers\DeckController::class, 'index']);
+$router->get('/decks/create', [App\Controllers\DeckController::class, 'create']);
+$router->get('/decks/{id}/edit', [App\Controllers\DeckController::class, 'edit']);
+$router->post('/api/decks/save', [App\Controllers\DeckController::class, 'save']);
+$router->post('/api/decks/delete', [App\Controllers\DeckController::class, 'delete']);
+$router->get('/api/decks/{id}', [App\Controllers\DeckController::class, 'get']);
+$router->get('/api/decks/user/list', [App\Controllers\DeckController::class, 'userDecks']);
+
+$router->get('/play', [App\Controllers\GameController::class, 'lobby']);
+$router->get('/play/game/{id}', [App\Controllers\GameController::class, 'board']);
+$router->get('/leaderboard', [App\Controllers\GameController::class, 'leaderboard']);
+$router->get('/api/leaderboard', [App\Controllers\GameController::class, 'leaderboardApi']);
+$router->get('/api/game/history', [App\Controllers\GameController::class, 'history']);
 
 $router->get('/api/search', [App\Controllers\SearchController::class, 'search']);
 $router->get('/api/cards/price-history/{id}', [App\Controllers\CardController::class, 'priceHistory']);

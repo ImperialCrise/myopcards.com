@@ -9,6 +9,18 @@ if ($isLoggedIn) {
     }
 }
 $pendingCount = count($_pendingReqs);
+$_userElo = 1000;
+$_userRank = null;
+if ($isLoggedIn) {
+    try {
+        \App\Models\Leaderboard::ensureUser(\App\Core\Auth::id());
+        $_lbRow = \App\Models\Leaderboard::getByUserId(\App\Core\Auth::id());
+        if ($_lbRow) {
+            $_userElo = (int)($_lbRow['elo_rating'] ?? 1000);
+            $_userRank = \App\Models\Leaderboard::getRankForUser(\App\Core\Auth::id());
+        }
+    } catch (\Throwable $e) {}
+}
 $currentLang = 'en';
 if ($isLoggedIn && $currentUser) {
     $currentLang = $currentUser['preferred_lang'] ?? 'en';
@@ -162,6 +174,9 @@ $_r4 = array_slice($_bgCards, 36, 12);
                         <a href="/forum" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
                             <i data-lucide="message-square" class="w-4 h-4"></i> Forum
                         </a>
+                        <a href="/play" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
+                            <i data-lucide="gamepad-2" class="w-4 h-4"></i> Play
+                        </a>
                         <?php if ($isLoggedIn): ?>
                         <div class="relative" x-data="{ navDrop: false }" @click.outside="navDrop = false">
                             <button @click="navDrop = !navDrop" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
@@ -170,8 +185,10 @@ $_r4 = array_slice($_bgCards, 36, 12);
                             <div x-show="navDrop" x-transition.opacity x-cloak class="absolute top-full left-0 mt-1 glass-strong rounded-xl shadow-2xl py-1 w-48 z-50">
                                 <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="home" class="w-4 h-4"></i> Dashboard</a>
                                 <a href="/collection" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="folder-open" class="w-4 h-4"></i> Collection</a>
+                                <a href="/decks" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="layers" class="w-4 h-4"></i> Decks</a>
                                 <a href="/analytics" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics</a>
                                 <a href="/friends" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="users" class="w-4 h-4"></i> Friends</a>
+                                <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="trophy" class="w-4 h-4"></i> Leaderboard <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?></span></a>
                                 <?php if ($currentUser && !empty($currentUser['is_admin'])): ?>
                                 <div class="border-t my-1" style="border-color:var(--nav-border)"></div>
                                 <a href="/admin" class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition"><i data-lucide="shield" class="w-4 h-4"></i> Admin</a>
@@ -353,6 +370,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 <div class="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center font-bold text-xs" style="color:#fff !important"><?= strtoupper(substr($currentUser['username'], 0, 1)) ?></div>
                             <?php endif; ?>
                             <span class="text-sm font-medium text-gray-600 hidden lg:block"><?= htmlspecialchars($currentUser['username']) ?></span>
+                            <span class="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));color:#f59e0b;border:1px solid rgba(245,158,11,0.2);" title="ELO Rating<?= $_userRank ? ' — Rank #' . $_userRank : '' ?>"><?= $_userElo ?></span>
                         </a>
                         <a href="/logout" class="p-2 text-gray-400 hover:text-red-500 transition" title="Logout"><i data-lucide="log-out" class="w-4 h-4"></i></a>
                     <?php else: ?>
@@ -393,6 +411,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
                 <a href="/collection" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="folder-open" class="w-4 h-4"></i> Collection</a>
                 <a href="/analytics" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics</a>
                 <a href="/friends" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="users" class="w-4 h-4"></i> Friends <?php if ($pendingCount > 0): ?><span class="ml-auto px-1.5 py-0.5 bg-red-500 rounded-full text-xs font-bold" style="color:#fff !important"><?= $pendingCount ?></span><?php endif; ?></a>
+                <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trophy" class="w-4 h-4"></i> Leaderboard <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?> ELO</span></a>
                 <a href="/profile" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="user" class="w-4 h-4"></i> Profile</a>
                 <a href="/logout" class="flex items-center gap-2 px-3 py-2 rounded text-red-500 text-sm"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</a>
             <?php else: ?>

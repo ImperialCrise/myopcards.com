@@ -84,7 +84,39 @@ php bin/migrate.php
 - Enable `mod_rewrite` and point requests to `public/index.php` (see `public/.htaccess`).
 - Use HTTPS in production (e.g. Certbot).
 
-### 5. FlareSolverr (optional, for Cardmarket EUR)
+### 5. Game server (optional, for online play)
+
+The play lobby and VS Bot need the Node.js game server. Apache must proxy `/socket.io/` to it (vhost 80 and 443).
+
+**With Docker Compose (recommended):**
+
+```bash
+docker compose up -d game-server
+```
+
+The service uses the project `.env` and connects to MySQL on the host via `host.docker.internal`. Port 3001 is published on the host for the Apache proxy.
+
+**MySQL:** The game server runs inside Docker, so MySQL sees the connection from the container IP (e.g. `172.20.0.x`), not `localhost`. Allow the same user from any host (e.g. run once as MySQL admin):
+
+```sql
+CREATE USER IF NOT EXISTS 'myopcards_user'@'%' IDENTIFIED BY 'YOUR_DB_PASSWORD';
+GRANT ALL PRIVILEGES ON myopcards.* TO 'myopcards_user'@'%';
+FLUSH PRIVILEGES;
+```
+
+Use the same password as `DB_PASSWORD` in `.env`. If the user already exists for `%`, just ensure the password matches.
+
+**Or with Node directly (e.g. PM2):**
+
+```bash
+cd game-server
+npm install
+pm2 start ecosystem.config.js
+```
+
+Default port: 3001 (override with `GAME_SERVER_PORT` in `.env`). Health check: `curl http://127.0.0.1:3001/health`.
+
+### 6. FlareSolverr (optional, for Cardmarket EUR)
 
 To scrape Cardmarket (Cloudflare‑protected), run a dedicated FlareSolverr instance:
 

@@ -1,4 +1,17 @@
 services:
+  game-server:
+    build: ./game-server
+    container_name: myopcards-game-server
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3001"
+    env_file: .env
+    environment:
+      DB_HOST: host.docker.internal
+      BIND_ADDRESS: "0.0.0.0"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   myopcards-flaresolverr:
     image: 21hsmw/flaresolverr:nodriver
     container_name: myopcards-flaresolverr

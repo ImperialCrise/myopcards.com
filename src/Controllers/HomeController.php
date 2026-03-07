@@ -8,17 +8,13 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
 use App\Models\Card;
+use App\Models\Leaderboard;
 use PDO;
 
 class HomeController
 {
     public function index(): void
     {
-        if (Auth::check()) {
-            header('Location: /dashboard');
-            exit;
-        }
-
         $totalCards = Card::getTotalCount();
         $db = Database::getConnection();
 
@@ -30,6 +26,13 @@ class HomeController
         )->fetchAll(PDO::FETCH_COLUMN);
 
         $userCount = $db->query("SELECT COUNT(*) FROM users")->fetchColumn();
+        $totalMatches = (int) $db->query("SELECT COUNT(*) FROM games WHERE status = 'finished'")->fetchColumn();
+        $totalFromLeaderboard = (int) $db->query("SELECT COALESCE(SUM(games_played), 0) FROM leaderboard")->fetchColumn();
+        if ($totalFromLeaderboard > $totalMatches) {
+            $totalMatches = $totalFromLeaderboard;
+        }
+        $activeGames = (int) $db->query("SELECT COUNT(*) FROM games WHERE status = 'active'")->fetchColumn();
+        $leaderboardTop = Leaderboard::getTop(5);
 
         View::render('pages/home', [
             'title' => 'MyOPCards - One Piece TCG Collection Tracker & Price Guide',
@@ -37,6 +40,9 @@ class HomeController
             'totalCards' => $totalCards,
             'showcaseCards' => $showcaseCards,
             'userCount' => (int)$userCount,
+            'totalMatches' => $totalMatches,
+            'activeGames' => $activeGames,
+            'leaderboardTop' => $leaderboardTop,
             'seoDescription' => 'The ultimate One Piece TCG collection tracker. Browse ' . number_format($totalCards) . ' cards, track market prices from TCGPlayer & Cardmarket, manage your collection, and share it with friends. Join ' . number_format((int)$userCount) . ' collectors today.',
             'seoKeywords' => 'One Piece TCG, OPTCG, card collection tracker, One Piece trading card game, card prices, Cardmarket, TCGPlayer, collection manager, One Piece cards database',
             'seoCanonical' => 'https://myopcards.com/',
