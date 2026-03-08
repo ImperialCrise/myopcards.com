@@ -69,6 +69,8 @@ $router->get('/settings', [App\Controllers\UserController::class, 'settings']);
 $router->post('/settings/password', [App\Controllers\UserController::class, 'changePassword']);
 $router->post('/settings/avatar', [App\Controllers\UserController::class, 'updateAvatar']);
 $router->post('/settings/avatar/remove', [App\Controllers\UserController::class, 'removeAvatar']);
+$router->post('/profile/banner', [App\Controllers\UserController::class, 'updateBanner']);
+$router->post('/profile/banner/remove', [App\Controllers\UserController::class, 'removeBanner']);
 $router->post('/settings/language', [App\Controllers\UserController::class, 'changeLanguage']);
 $router->post('/settings/currency', [App\Controllers\UserController::class, 'changeCurrency']);
 
@@ -159,6 +161,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uriPath !== null && $uriPath !== fa
     if (str_starts_with($uriPath, '/uploads/avatars/')) {
         $path = substr($uriPath, strlen('/uploads/avatars/'));
         (new App\Controllers\UploadController())->serveAvatars($path);
+        exit;
+    }
+    if (str_starts_with($uriPath, '/uploads/banners/')) {
+        $path = substr($uriPath, strlen('/uploads/banners/'));
+        $file = BASE_PATH . '/public/uploads/banners/' . ltrim($path, '/');
+        if (is_file($file)) {
+            $mime = mime_content_type($file) ?: 'image/jpeg';
+            header('Content-Type: ' . $mime);
+            header('Cache-Control: public, max-age=86400');
+            readfile($file);
+            exit;
+        }
+        http_response_code(404);
         exit;
     }
 }

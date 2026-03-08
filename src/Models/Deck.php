@@ -134,6 +134,14 @@ class Deck
         return $stmt->rowCount() > 0;
     }
 
+    public static function getDeckCount(int $userId): int
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare('SELECT COUNT(*) FROM decks WHERE user_id = :user_id');
+        $stmt->execute(['user_id' => $userId]);
+        return (int)$stmt->fetchColumn();
+    }
+
     public static function leaderAllowedColors(string $leaderColor): array
     {
         if ($leaderColor === '') {

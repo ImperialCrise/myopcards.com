@@ -162,6 +162,64 @@ class User
         return $stmt->execute(['card_id' => $cardId, 'user_id' => $userId]);
     }
 
+    public static function getForumStats(int $userId): array
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare(
+            'SELECT
+                (SELECT COUNT(*) FROM forum_topics WHERE user_id = :uid1) as topic_count,
+                (SELECT COUNT(*) FROM forum_posts WHERE user_id = :uid2) as post_count'
+        );
+        $stmt->execute(['uid1' => $userId, 'uid2' => $userId]);
+        $row = $stmt->fetch() ?: [];
+        return [
+            'topic_count' => (int)($row['topic_count'] ?? 0),
+            'post_count'  => (int)($row['post_count'] ?? 0),
+        ];
+    }
+
+    public static function getRarityDistribution(int $userId): array
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare(
+            'SELECT c.rarity, COUNT(DISTINCT uc.card_id) as cnt
+             FROM user_cards uc
+             JOIN cards c ON c.id = uc.card_id
+             WHERE uc.user_id = :user_id AND uc.is_wishlist = 0
+             GROUP BY c.rarity'
+        );
+        $stmt->execute(['user_id' => $userId]);
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[$row['rarity']] = (int)$row['cnt'];
+        }
+        return $result;
+    }
+
+    public static function getParallelCount(int $userId): int
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare(
+            'SELECT COUNT(DISTINCT uc.card_id) FROM user_cards uc
+             JOIN cards c ON c.id = uc.card_id
+             WHERE uc.user_id = :user_id AND uc.is_wishlist = 0 AND c.is_parallel = 1'
+        );
+        $stmt->execute(['user_id' => $userId]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public static function getSecCount(int $userId): int
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare(
+            'SELECT COUNT(DISTINCT uc.card_id) FROM user_cards uc
+             JOIN cards c ON c.id = uc.card_id
+             WHERE uc.user_id = :user_id AND uc.is_wishlist = 0 AND c.rarity = \'SEC\''
+        );
+        $stmt->execute(['user_id' => $userId]);
+        return (int)$stmt->fetchColumn();
+    }
+
     public static function getRecentForumActivity(int $userId, int $limit = 10): array
     {
         $db = Database::getConnection();
