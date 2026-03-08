@@ -21,13 +21,15 @@ if ($isLoggedIn) {
         }
     } catch (\Throwable $e) {}
 }
+$langs = \App\Services\OfficialSiteScraper::getAvailableLanguages();
 $currentLang = 'en';
 if ($isLoggedIn && $currentUser) {
-    $currentLang = $currentUser['preferred_lang'] ?? 'en';
+    $preferred = $currentUser['preferred_lang'] ?? 'en';
+    $currentLang = isset($langs[$preferred]) ? $preferred : 'en';
 } elseif (isset($_COOKIE['lang'])) {
-    $currentLang = $_COOKIE['lang'];
+    $cookieLang = $_COOKIE['lang'];
+    $currentLang = isset($langs[$cookieLang]) ? $cookieLang : 'en';
 }
-$langs = \App\Services\OfficialSiteScraper::getAvailableLanguages();
 
 $_bgCards = [];
 try {
@@ -46,10 +48,11 @@ $_r3 = array_slice($_bgCards, 24, 12);
 $_r4 = array_slice($_bgCards, 36, 12);
 ?>
 <!DOCTYPE html>
-<html lang="<?= $currentLang ?>">
+<html lang="<?= htmlspecialchars($currentLang, ENT_QUOTES, 'UTF-8') ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-0B3QZV6X4S"></script>
     <script>

@@ -30,14 +30,20 @@ class UploadController
             }
         }
 
-        $localPath = self::UPLOAD_DIR . $path;
-        if (is_file($localPath)) {
+        $baseDir = realpath(self::UPLOAD_DIR) ?: self::UPLOAD_DIR;
+        $localPath = $baseDir . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+        $realPath = realpath($localPath);
+        if ($realPath === false || !str_starts_with($realPath, $baseDir . DIRECTORY_SEPARATOR)) {
+            http_response_code(404);
+            return;
+        }
+        if (is_file($realPath)) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file($finfo, $localPath) ?: 'application/octet-stream';
+            $mime = finfo_file($finfo, $realPath) ?: 'application/octet-stream';
             finfo_close($finfo);
             header('Content-Type: ' . $mime);
             header('Cache-Control: public, max-age=86400');
-            readfile($localPath);
+            readfile($realPath);
             return;
         }
 
@@ -64,14 +70,20 @@ class UploadController
             }
         }
 
-        $localPath = self::AVATAR_DIR . $path;
-        if (is_file($localPath)) {
+        $baseDir = realpath(self::AVATAR_DIR) ?: self::AVATAR_DIR;
+        $localPath = $baseDir . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+        $realPath = realpath($localPath);
+        if ($realPath === false || !str_starts_with($realPath, $baseDir . DIRECTORY_SEPARATOR)) {
+            http_response_code(404);
+            return;
+        }
+        if (is_file($realPath)) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file($finfo, $localPath) ?: 'application/octet-stream';
+            $mime = finfo_file($finfo, $realPath) ?: 'application/octet-stream';
             finfo_close($finfo);
             header('Content-Type: ' . $mime);
             header('Cache-Control: public, max-age=86400');
-            readfile($localPath);
+            readfile($realPath);
             return;
         }
 

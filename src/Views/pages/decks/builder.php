@@ -432,7 +432,10 @@ document.addEventListener('alpine:init', () => {
                 cards: this.deckCards.map(e => ({ card_id: e.card_id, quantity: e.quantity }))
             };
             try {
-                const r = await fetch('/api/decks/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['X-CSRF-TOKEN'] = token;
+                const r = await fetch('/api/decks/save', { method: 'POST', headers: headers, body: JSON.stringify(payload) });
                 const data = await r.json();
                 if (data.success) {
                     window.location.href = data.id ? '/decks/' + data.id + '/edit' : '/decks';

@@ -19,6 +19,7 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Topic</h1>
 
             <form action="/forum/topic/<?= $topic['id'] ?>/edit" method="POST">
+                <?= csrf_field() ?>
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Topic Title</label>
                     <input type="text" name="title" value="<?= htmlspecialchars($topic['title']) ?>" 
@@ -127,6 +128,8 @@ function handlePaste(e) {
 
 function uploadImage(file) {
     const formData = new FormData();
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (token) formData.append('csrf_token', token);
     formData.append('image', file);
     fetch('/forum/upload-image', { method: 'POST', body: formData })
         .then(r => r.json())

@@ -124,6 +124,7 @@
             <h2 class="text-lg font-display font-bold text-gray-900 mb-4">Import Prices (CSV)</h2>
             <p class="text-sm text-gray-500 mb-4">Upload a CSV with columns: <code class="text-xs bg-gray-100 px-1 rounded">card_set_id,price_en,price_fr,price_jp</code> (leave columns empty to skip)</p>
             <form action="/admin/prices/import" method="POST" enctype="multipart/form-data" class="flex flex-wrap gap-3 items-center">
+                <?= csrf_field() ?>
                 <input type="file" name="csv" accept=".csv,.txt" class="flex-1 text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gray-900 file:text-white file:font-bold file:text-sm file:cursor-pointer hover:file:bg-gray-800 transition">
                 <button type="submit" class="px-4 py-2 bg-blue-600 rounded-lg text-sm font-bold transition hover:bg-blue-700" style="color:#fff !important">Import</button>
             </form>

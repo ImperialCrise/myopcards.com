@@ -78,6 +78,7 @@ $langs = \App\Services\OfficialSiteScraper::getAvailableLanguages();
             <i data-lucide="lock" class="w-5 h-5 text-amber-400"></i> <?= t('settings.change_password') ?>
         </h2>
         <form method="POST" action="/settings/password" class="space-y-4">
+            <?= csrf_field() ?>
             <div>
                 <label class="block text-sm font-medium text-dark-300 mb-1"><?= t('settings.current_password') ?></label>
                 <input type="password" name="current_password" class="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-lg text-white focus:outline-none focus:border-gold-500/50 transition text-sm">
@@ -104,6 +105,8 @@ document.getElementById('avatar-input')?.addEventListener('change', function(e) 
         return;
     }
     const formData = new FormData();
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (token) formData.append('csrf_token', token);
     formData.append('avatar', file);
     fetch('/settings/avatar', { method: 'POST', body: formData })
         .then(r => r.json())
@@ -123,7 +126,9 @@ document.getElementById('avatar-input')?.addEventListener('change', function(e) 
 
 function removeAvatar() {
     if (!confirm('<?= htmlspecialchars(t('settings.remove_photo_confirm')) ?>')) return;
-    fetch('/settings/avatar/remove', { method: 'POST' })
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const headers = token ? { 'X-CSRF-TOKEN': token } : {};
+    fetch('/settings/avatar/remove', { method: 'POST', headers: headers })
         .then(r => r.json())
         .then(data => { if (data.success) location.reload(); });
 }

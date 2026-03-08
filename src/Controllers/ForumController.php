@@ -747,7 +747,69 @@ class ForumController
         $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
         $content = strip_tags($content, '<p><br><strong><em><u><s><a><img><iframe><ul><ol><li><blockquote><code><pre><h3><h4>');
         $content = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $content);
+        $content = $this->sanitizeHtmlAttributes($content);
         return $content;
+    }
+
+    /** Remove dangerous attributes (on*, javascript:, data: in href/src) to prevent XSS */
+    private function sanitizeHtmlAttributes(string $content): string
+    {
+        $content = preg_replace_callback('/<a\s+([^>]*)>/i', function ($m) {
+            $attrs = $this->filterAttrs($m[1], ['href' => ['allowed' => ['http', 'https', '/'], 'default' => '#']]);
+            return '<a ' . $attrs . '>';
+        }, $content);
+        $content = preg_replace_callback('/<img\s+([^>]*)>/i', function ($m) {
+            $attrs = $this->filterAttrs($m[1], ['src' => ['allowed' => ['http', 'https', '/'], 'default' => ''], 'alt' => null]);
+            return '<img ' . $attrs . '>';
+        }, $content);
+        $content = preg_replace_callback('/<iframe\s+([^>]*)>/i', function ($m) {
+            $attrs = $m[1];
+            if (preg_match('/src=["\']([^"\']+)["\']/', $attrs, $srcMatch) && preg_match('/youtube\.com|youtu\.be|vimeo\.com/', $srcMatch[1])) {
+                return $m[0];
+            }
+            return '';
+        }, $content);
+        $content = preg_replace('/\s+on\w+\s*=\s*["\'][^"\']*["\']/i', '', $content);
+        $content = preg_replace('/\s+on\w+\s*=\s*[^\s>]+/i', '', $content);
+        return $content;
+    }
+
+    private function filterAttrs(string $attrString, array $rules): string
+    {
+        $safe = [];
+        if (preg_match_all('/(\w+)\s*=\s*["\']([^"\']*)["\']/', $attrString, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $m) {
+                $name = strtolower($m[1]);
+                $value = $m[2];
+                if (str_starts_with($name, 'on') && strlen($name) > 2) {
+                    continue;
+                }
+                if (isset($rules[$name])) {
+                    $rule = $rules[$name];
+                    if ($rule === null) {
+                        $safe[] = $name . '="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '"';
+                    } elseif (isset($rule['allowed'])) {
+                        $ok = false;
+                        foreach ($rule['allowed'] as $prefix) {
+                            if ($prefix === '/' && (str_starts_with($value, '/') || $value === '')) {
+                                $ok = true;
+                                break;
+                            }
+                            if (str_starts_with(strtolower($value), $prefix . ':')) {
+                                $ok = true;
+                                break;
+                            }
+                        }
+                        if ($ok && !preg_match('/^(javascript|data|vbscript):/i', $value)) {
+                            $safe[] = $name . '="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '"';
+                        } elseif (isset($rule['default'])) {
+                            $safe[] = $name . '="' . htmlspecialchars($rule['default'], ENT_QUOTES, 'UTF-8') . '"';
+                        }
+                    }
+                }
+            }
+        }
+        return implode(' ', $safe);
     }
 
     private function processContent(string $content): string
@@ -766,6 +828,7 @@ class ForumController
             $content
         );
 
+        $content = $this->sanitizeHtmlAttributes($content);
         return $content;
     }
 
@@ -808,8 +871,12 @@ class ForumController
                 continue;
             }
 
-            $ext = pathinfo($files['name'][$i], PATHINFO_EXTENSION) ?: 'jpg';
-            $filename = date('Y/m/') . uniqid() . '_' . Auth::id() . '.' . strtolower($ext);
+            $ext = strtolower(trim(pathinfo($files['name'][$i], PATHINFO_EXTENSION) ?: 'jpg'));
+            $allowedExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            if (!in_array($ext, $allowedExt)) {
+                $ext = 'jpg';
+            }
+            $filename = date('Y/m/') . uniqid() . '_' . Auth::id() . '.' . $ext;
 
             $saved = false;
             if (StorageService::isConfigured()) {

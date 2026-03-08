@@ -304,9 +304,12 @@ window.__PAGE_DATA = { shareUrl: <?= json_encode($shareToken ? $appUrl . '/s/' .
 
 function removeFeaturedCard() {
     if (confirm('Remove this card from being featured?')) {
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['X-CSRF-TOKEN'] = token;
         fetch('/api/cards/remove-featured', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: headers
         })
         .then(response => response.json())
         .then(data => {

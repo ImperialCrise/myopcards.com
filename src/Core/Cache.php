@@ -33,7 +33,7 @@ class Cache
             return $default;
         }
 
-        $decoded = unserialize($data);
+        $decoded = json_decode($data, true);
         if (!is_array($decoded) || !isset($decoded['expires'], $decoded['data'])) {
             return $default;
         }
@@ -56,7 +56,7 @@ class Cache
             'data' => $value
         ];
 
-        return file_put_contents($file, serialize($data)) !== false;
+        return file_put_contents($file, json_encode($data)) !== false;
     }
 
     public static function remember(string $key, callable $callback, int $seconds = 3600)
@@ -119,7 +119,7 @@ class Cache
         foreach ($files as $file) {
             $data = file_get_contents($file);
             if ($data !== false) {
-                $decoded = unserialize($data);
+                $decoded = json_decode($data, true);
                 if (is_array($decoded) && isset($decoded['expires']) && $decoded['expires'] < time()) {
                     if (unlink($file)) {
                         $count++;

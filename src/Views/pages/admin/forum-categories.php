@@ -88,6 +88,7 @@
                                 </a>
                                 <?php if (($category['topic_count'] ?? 0) == 0): ?>
                                 <form action="/admin/forum-categories/<?= $category['id'] ?>/delete" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this category?')">
+                                    <?= csrf_field() ?>
                                     <button type="submit" class="text-red-600 hover:text-red-900 transition">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>

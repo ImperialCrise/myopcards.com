@@ -84,10 +84,41 @@ class Auth
     public static function requireAuth(): void
     {
         if (!self::check()) {
-            $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+            $uri = $_SERVER['REQUEST_URI'] ?? '/';
+            $_SESSION['redirect_after_login'] = self::validateRedirectUrl($uri) ? $uri : '/dashboard';
             header('Location: /login');
             exit;
         }
+    }
+
+    /**
+     * Validate redirect URL to prevent open redirect attacks.
+     * Only allow relative paths starting with / (no //, no protocol).
+     */
+    public static function validateRedirectUrl(string $url): bool
+    {
+        $url = trim($url);
+        if ($url === '' || $url[0] !== '/') {
+            return false;
+        }
+        if (str_starts_with($url, '//')) {
+            return false;
+        }
+        return (bool) preg_match('/^\/(?!\/)[a-zA-Z0-9\/\-_?=&.%]*$/', $url);
+    }
+
+    public static function csrfToken(): string
+    {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        return $_SESSION['csrf_token'];
+    }
+
+    public static function validateCsrf(): bool
+    {
+        $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        return $token !== '' && hash_equals(self::csrfToken(), $token);
     }
 
     public static function requireGuest(): void
@@ -136,11 +167,13 @@ class Auth
         setcookie(
             self::REMEMBER_COOKIE,
             $token,
-            time() + 86400 * self::REMEMBER_DAYS,
-            '/',
-            '',
-            true,
-            true
+            [
+                'expires' => time() + 86400 * self::REMEMBER_DAYS,
+                'path' => '/',
+                'secure' => true,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]
         );
     }
 

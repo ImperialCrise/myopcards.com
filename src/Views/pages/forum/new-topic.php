@@ -30,6 +30,7 @@
             </div>
 
             <form action="/forum/<?= htmlspecialchars($category['slug']) ?>/create" method="POST" enctype="multipart/form-data">
+                <?= csrf_field() ?>
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Topic Title</label>
                     <input type="text" name="title" required minlength="5" maxlength="255" 
@@ -166,6 +167,8 @@ function handlePaste(e) {
 
 function uploadImage(file) {
     const formData = new FormData();
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (token) formData.append('csrf_token', token);
     formData.append('image', file);
     fetch('/forum/upload-image', { method: 'POST', body: formData })
         .then(r => r.json())

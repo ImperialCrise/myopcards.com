@@ -169,11 +169,12 @@ function setFeatured() {
     const cardSetId = window.__PAGE_DATA.cardSetId;
     this.updating = true;
     
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['X-CSRF-TOKEN'] = token;
     fetch(`/api/cards/${cardSetId}/set-featured`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        }
+        headers: headers
     })
     .then(response => response.json())
     .then(data => {

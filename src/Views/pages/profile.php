@@ -191,6 +191,7 @@
                 <i data-lucide="edit" class="w-5 h-5 text-gold-400"></i> <?= t('profile.edit') ?>
             </h2>
             <form method="POST" action="/profile/update" class="space-y-4">
+                <?= csrf_field() ?>
                 <div>
                     <label class="block text-sm font-medium text-gray-600 mb-1"><?= t('profile.bio') ?></label>
                     <textarea name="bio" rows="3" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400 transition text-sm" placeholder="<?= htmlspecialchars(t('profile.bio_placeholder')) ?>"><?= htmlspecialchars($user['bio'] ?? '') ?></textarea>

@@ -82,15 +82,19 @@
 document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
 
 function markAsRead(notificationId) {
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const body = 'notification_id=' + notificationId + (token ? '&csrf_token=' + encodeURIComponent(token) : '');
     fetch('/notifications/read', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'notification_id=' + notificationId
+        body: body
     }).then(() => location.reload());
 }
 
 function markAllAsRead() {
-    fetch('/notifications/read-all', { method: 'POST' })
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const headers = token ? { 'X-CSRF-TOKEN': token } : {};
+    fetch('/notifications/read-all', { method: 'POST', headers: headers })
         .then(() => location.reload());
 }
 </script>

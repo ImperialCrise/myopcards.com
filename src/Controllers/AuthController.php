@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\RateLimiter;
 use App\Core\View;
 use App\Models\User;
 use App\Services\OAuthService;
@@ -21,6 +22,13 @@ class AuthController
     {
         Auth::requireGuest();
 
+        $ipKey = 'login_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+        if (RateLimiter::isLimited($ipKey)) {
+            $seconds = RateLimiter::getRemainingSeconds($ipKey);
+            View::render('pages/login', ['title' => 'Login', 'error' => t('auth.too_many_attempts') . ($seconds > 0 ? ' ' . t('auth.try_again_in', ['%seconds%' => $seconds]) : '')]);
+            return;
+        }
+
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $remember = isset($_POST['remember']);
@@ -33,6 +41,7 @@ class AuthController
         $user = User::findByEmail($email);
 
         if (!$user || !password_verify($password, $user['password_hash'])) {
+            RateLimiter::recordAttempt($ipKey);
             View::render('pages/login', ['title' => 'Login', 'error' => t('auth.invalid_email_or_password')]);
             return;
         }
@@ -41,6 +50,9 @@ class AuthController
         
         $redirect = $_SESSION['redirect_after_login'] ?? '/dashboard';
         unset($_SESSION['redirect_after_login']);
+        if (!Auth::validateRedirectUrl($redirect)) {
+            $redirect = '/dashboard';
+        }
         header('Location: ' . $redirect);
         exit;
     }
@@ -54,6 +66,12 @@ class AuthController
     public function register(): void
     {
         Auth::requireGuest();
+
+        $ipKey = 'register_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+        if (RateLimiter::isLimited($ipKey, 3, 3600)) {
+            View::render('pages/register', ['title' => 'Register', 'errors' => [t('auth.too_many_registrations')], 'old' => $_POST]);
+            return;
+        }
 
         $username = trim($_POST['username'] ?? '');
         $email = trim($_POST['email'] ?? '');
@@ -109,6 +127,7 @@ class AuthController
             'password_hash' => password_hash($password, PASSWORD_ARGON2ID),
         ]);
 
+        RateLimiter::recordAttempt($ipKey, 3600);
         Auth::login($userId);
         header('Location: /dashboard');
         exit;

@@ -16,6 +16,7 @@
         <?php endif; ?>
 
         <form method="POST" action="/register" class="space-y-4">
+            <?= csrf_field() ?>
             <div>
                 <label class="block text-sm font-medium text-dark-300 mb-1"><?= t('register.username') ?></label>
                 <input type="text" name="username" required minlength="3" maxlength="50" value="<?= htmlspecialchars($old['username'] ?? '') ?>"

@@ -21,6 +21,7 @@
 
     <div class="bg-white rounded-lg shadow p-6">
         <form method="POST" action="/admin/forum-categories/create" class="space-y-6">
+            <?= csrf_field() ?>
             <div>
                 <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Category Name *</label>
                 <input type="text" 

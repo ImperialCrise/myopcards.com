@@ -28,7 +28,9 @@ function showToast(message, type) {
 
 async function apiPost(url, data) {
     const formData = new FormData();
-    Object.entries(data).forEach(function(entry) { formData.append(entry[0], String(entry[1])); });
+    var token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (token) formData.append('csrf_token', token);
+    Object.entries(data || {}).forEach(function(entry) { formData.append(entry[0], String(entry[1])); });
     const res = await fetch(url, { method: 'POST', body: formData });
     return res.json();
 }
@@ -147,12 +149,12 @@ function unifiedNotifications() {
             }
             
             try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const body = `notification_id=${notificationId}` + (csrfToken ? `&csrf_token=${encodeURIComponent(csrfToken)}` : '');
                 const response = await fetch('/notifications/read', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `notification_id=${notificationId}`
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body
                 });
                 
                 if (response.ok) {

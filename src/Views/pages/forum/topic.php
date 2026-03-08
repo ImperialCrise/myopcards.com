@@ -76,7 +76,7 @@ $isAdmin = \App\Core\Auth::isAdmin();
                 </div>
             </div>
             <div class="p-6">
-                <div class="prose dark:prose-invert max-w-none forum-content forum-lightbox-content" @click="if ($event.target.tagName === 'IMG') { lightboxSrc = $event.target.src; lightboxAlt = $event.target.alt || ''; $event.preventDefault(); }">
+                <div class="prose dark:prose-invert max-w-none forum-content forum-lightbox-content" @click="if ($event.target.tagName === 'IMG') { lightboxSrc = $event.target.src; lightboxAlt = $event.target.alt || ''; $event.preventDefault(); $event.stopPropagation(); }">
                     <?= $topic['content'] ?>
                 </div>
                 
@@ -85,7 +85,7 @@ $isAdmin = \App\Core\Auth::isAdmin();
                     <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Attachments</h4>
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         <?php foreach ($topicAttachments as $attachment): ?>
-                        <div class="relative group cursor-pointer" @click="lightboxSrc = <?= json_encode('/uploads/forum/' . $attachment['filename']) ?>; lightboxAlt = <?= json_encode($attachment['original_name']) ?>">
+                        <div class="relative group cursor-pointer" @click.prevent="lightboxSrc = <?= htmlspecialchars(json_encode('/uploads/forum/' . $attachment['filename']), ENT_QUOTES, 'UTF-8') ?>; lightboxAlt = <?= htmlspecialchars(json_encode($attachment['original_name']), ENT_QUOTES, 'UTF-8') ?>">
                             <img src="/uploads/forum/<?= htmlspecialchars($attachment['filename']) ?>" 
                                  alt="<?= htmlspecialchars($attachment['original_name']) ?>"
                                  class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-dark-600 hover:border-blue-500 dark:hover:border-blue-400 transition">
@@ -172,6 +172,7 @@ $isAdmin = \App\Core\Auth::isAdmin();
                                     <i data-lucide="pencil" class="w-4 h-4"></i>
                                 </a>
                                 <form action="/forum/post/<?= $post['id'] ?>/delete" method="POST" class="inline" onsubmit="return confirm('Delete this post?')">
+                                    <?= csrf_field() ?>
                                     <button type="submit" class="text-gray-400 hover:text-red-500 transition">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
@@ -205,7 +206,7 @@ $isAdmin = \App\Core\Auth::isAdmin();
                             <a href="/user/<?= htmlspecialchars($post['username']) ?>" class="font-medium text-gray-900 dark:text-white"><?= htmlspecialchars($post['username']) ?></a>
                         </div>
                         <div class="p-4">
-                            <div class="prose dark:prose-invert max-w-none forum-content forum-lightbox-content" @click="if ($event.target.tagName === 'IMG') { lightboxSrc = $event.target.src; lightboxAlt = $event.target.alt || ''; $event.preventDefault(); }">
+                            <div class="prose dark:prose-invert max-w-none forum-content forum-lightbox-content" @click="if ($event.target.tagName === 'IMG') { lightboxSrc = $event.target.src; lightboxAlt = $event.target.alt || ''; $event.preventDefault(); $event.stopPropagation(); }">
                                 <?= $post['content'] ?>
                             </div>
                             
@@ -214,7 +215,7 @@ $isAdmin = \App\Core\Auth::isAdmin();
                                 <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Attachments</h4>
                                 <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                                     <?php foreach ($postAttachments[$post['id']] as $attachment): ?>
-                                    <div class="relative group cursor-pointer" @click="lightboxSrc = <?= json_encode('/uploads/forum/' . $attachment['filename']) ?>; lightboxAlt = <?= json_encode($attachment['original_name']) ?>">
+                                    <div class="relative group cursor-pointer" @click.prevent="lightboxSrc = <?= htmlspecialchars(json_encode('/uploads/forum/' . $attachment['filename']), ENT_QUOTES, 'UTF-8') ?>; lightboxAlt = <?= htmlspecialchars(json_encode($attachment['original_name']), ENT_QUOTES, 'UTF-8') ?>">
                                         <img src="/uploads/forum/<?= htmlspecialchars($attachment['filename']) ?>" 
                                              alt="<?= htmlspecialchars($attachment['original_name']) ?>"
                                              class="w-full h-20 object-cover rounded-lg border border-gray-200 dark:border-dark-600 hover:border-blue-500 dark:hover:border-blue-400 transition">
@@ -258,6 +259,7 @@ $isAdmin = \App\Core\Auth::isAdmin();
         <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700 p-6">
             <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Post a Reply</h3>
             <form action="/forum/<?= htmlspecialchars($topic['category_slug']) ?>/<?= $topic['id'] ?>/reply" method="POST" enctype="multipart/form-data">
+                <?= csrf_field() ?>
                 <div id="editor-container" class="mb-4">
                     <div class="border border-gray-200 dark:border-dark-600 rounded-xl overflow-hidden">
                         <div class="bg-gray-50 dark:bg-dark-700 px-3 py-2 border-b border-gray-200 dark:border-dark-600 flex items-center gap-1 flex-wrap">
@@ -337,8 +339,9 @@ $isAdmin = \App\Core\Auth::isAdmin();
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-         @click="lightboxSrc = null">
+         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 cursor-pointer"
+         @click="lightboxSrc = null"
+         title="Cliquer pour fermer (ou Échap)">
         <img :src="lightboxSrc" :alt="lightboxAlt"
              class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
              @click.stop
@@ -371,10 +374,13 @@ function insertLink() {
 }
 
 function insertImage() {
-    const url = prompt('Enter image URL (or upload below):');
-    if (url) {
-        document.execCommand('insertImage', false, url);
-    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+        if (e.target.files && e.target.files[0]) uploadImage(e.target.files[0]);
+    };
+    input.click();
 }
 
 function insertVideo() {
@@ -415,20 +421,26 @@ function handlePaste(e) {
 
 function uploadImage(file) {
     const formData = new FormData();
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (token) formData.append('csrf_token', token);
     formData.append('image', file);
     
-    fetch('/forum/upload-image', {
-        method: 'POST',
-        body: formData
+    fetch('/forum/upload-image', { method: 'POST', body: formData })
+    .then(r => {
+        if (!r.ok) {
+            throw new Error(r.status === 403 ? 'Session expired. Please refresh and try again.' : 'Upload failed (' + r.status + ')');
+        }
+        return r.json();
     })
-    .then(r => r.json())
     .then(data => {
         if (data.success) {
             document.execCommand('insertImage', false, data.url);
+            document.getElementById('editor')?.focus();
         } else {
             alert(data.error || 'Upload failed');
         }
-    });
+    })
+    .catch(err => alert(err.message || 'Upload failed'));
 }
 
 function showAttachments(input) {
@@ -448,10 +460,12 @@ function prepareSubmit() {
 }
 
 function reactToPost(postId) {
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const body = `post_id=${postId}&reaction=like` + (token ? `&csrf_token=${encodeURIComponent(token)}` : '');
     fetch('/forum/react', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `post_id=${postId}&reaction=like`
+        body: body
     })
     .then(r => r.json())
     .then(data => {
@@ -467,6 +481,14 @@ function deleteTopic(topicId) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/forum/topic/${topicId}/delete`;
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (token) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'csrf_token';
+            input.value = token;
+            form.appendChild(input);
+        }
         document.body.appendChild(form);
         form.submit();
     }

@@ -14,6 +14,7 @@
         <?php endif; ?>
 
         <form method="POST" action="/login" class="space-y-4">
+            <?= csrf_field() ?>
             <div>
                 <label class="block text-sm font-medium text-dark-300 mb-1"><?= t('login.email') ?></label>
                 <input type="email" name="email" required class="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/20 transition text-sm" placeholder="<?= htmlspecialchars(t('login.placeholder_email')) ?>">

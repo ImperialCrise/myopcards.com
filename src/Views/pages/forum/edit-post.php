@@ -19,6 +19,7 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Post</h1>
 
             <form action="/forum/post/<?= $post['id'] ?>/edit" method="POST">
+                <?= csrf_field() ?>
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Content</label>
                     <div class="border border-gray-200 dark:border-dark-600 rounded-xl overflow-hidden">
@@ -120,6 +121,8 @@ function handlePaste(e) {
 
 function uploadImage(file) {
     const formData = new FormData();
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (token) formData.append('csrf_token', token);
     formData.append('image', file);
     fetch('/forum/upload-image', { method: 'POST', body: formData })
         .then(r => r.json())

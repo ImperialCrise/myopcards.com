@@ -29,6 +29,11 @@ class Router
             $pattern = $this->convertToRegex($route['path']);
 
             if (preg_match($pattern, $uri, $matches)) {
+                if ($method === 'POST' && !Auth::validateCsrf()) {
+                    http_response_code(403);
+                    echo 'Invalid or missing CSRF token';
+                    return;
+                }
                 $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
                 $params = array_map(
                     fn($v) => ctype_digit($v) ? (int)$v : $v,
