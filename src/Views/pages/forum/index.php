@@ -112,8 +112,8 @@
                 <div class="flex flex-wrap gap-2">
                     <?php foreach (array_slice($onlineUsers, 0, 20) as $user): ?>
                     <a href="/user/<?= htmlspecialchars($user['username']) ?>" class="flex items-center gap-2 bg-gray-50 dark:bg-dark-700 rounded-full px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-dark-600 transition">
-                        <?php if ($user['avatar']): ?>
-                        <img src="<?= htmlspecialchars($user['avatar']) ?>" alt="" class="w-5 h-5 rounded-full">
+                        <?php if (avatar_url($user)): ?>
+                        <img src="<?= htmlspecialchars(avatar_url($user)) ?>" alt="" class="w-5 h-5 rounded-full">
                         <?php else: ?>
                         <div class="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
                         <?php endif; ?>

@@ -44,7 +44,7 @@ class SearchController
         $cards = $cardStmt->fetchAll();
 
         $userStmt = $db->prepare(
-            "SELECT id, username, avatar FROM users WHERE username LIKE :q LIMIT 5"
+            "SELECT id, username, avatar, custom_avatar FROM users WHERE username LIKE :q LIMIT 5"
         );
         $userStmt->execute(['q' => $like]);
         $users = $userStmt->fetchAll();

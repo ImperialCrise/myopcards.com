@@ -8,3 +8,10 @@ if (!function_exists('t')) {
         return \App\Services\Lang::get($key, $replace);
     }
 }
+
+if (!function_exists('avatar_url')) {
+    function avatar_url(array $user): string
+    {
+        return \App\Models\User::getAvatarUrl($user);
+    }
+}

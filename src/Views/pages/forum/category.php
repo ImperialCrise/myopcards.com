@@ -62,8 +62,8 @@
                 <div class="grid grid-cols-12 gap-4 items-center">
                     <div class="col-span-6">
                         <div class="flex items-start gap-3">
-                            <?php if ($topic['avatar']): ?>
-                            <img src="<?= htmlspecialchars($topic['avatar']) ?>" alt="" class="w-10 h-10 rounded-full flex-shrink-0">
+                            <?php if (avatar_url($topic)): ?>
+                            <img src="<?= htmlspecialchars(avatar_url($topic)) ?>" alt="" class="w-10 h-10 rounded-full flex-shrink-0">
                             <?php else: ?>
                             <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold flex-shrink-0">
                                 <?= strtoupper(substr($topic['username'], 0, 1)) ?>

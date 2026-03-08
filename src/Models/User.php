@@ -9,6 +9,14 @@ use PDO;
 
 class User
 {
+    public static function getAvatarUrl(array $user): string
+    {
+        if (!empty($user['custom_avatar'])) {
+            return '/uploads/avatars/' . ltrim($user['custom_avatar'], '/');
+        }
+        return (string)($user['avatar'] ?? '');
+    }
+
     public static function findById(int $id): ?array
     {
         $db = Database::getConnection();
@@ -79,7 +87,7 @@ class User
     {
         $db = Database::getConnection();
         $stmt = $db->prepare(
-            'SELECT id, username, avatar FROM users WHERE username LIKE :query AND id != :exclude LIMIT :limit'
+            'SELECT id, username, avatar, custom_avatar FROM users WHERE username LIKE :query AND id != :exclude LIMIT :limit'
         );
         $stmt->bindValue('query', '%' . $query . '%');
         $stmt->bindValue('exclude', $excludeUserId, PDO::PARAM_INT);

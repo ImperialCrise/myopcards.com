@@ -26,8 +26,8 @@ $baseUrl = '/s/' . urlencode($token);
     <!-- Owner Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-center gap-4">
-            <?php if (!empty($owner['avatar'])): ?>
-                <img src="<?= htmlspecialchars($owner['avatar']) ?>" alt="" class="w-14 h-14 rounded-full border-2 border-dark-600">
+            <?php if (avatar_url($owner)): ?>
+                <img src="<?= htmlspecialchars(avatar_url($owner)) ?>" alt="" class="w-14 h-14 rounded-full border-2 border-dark-600">
             <?php else: ?>
                 <div class="w-14 h-14 rounded-full bg-gradient-to-br from-gold-500 to-amber-600 flex items-center justify-center text-2xl font-bold text-dark-900">
                     <?= strtoupper(substr($owner['username'] ?? '?', 0, 1)) ?>

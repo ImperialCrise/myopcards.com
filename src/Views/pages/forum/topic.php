@@ -4,7 +4,7 @@ $currentUserId = \App\Core\Auth::id();
 $isAdmin = \App\Core\Auth::isAdmin();
 ?>
 
-<div class="min-h-screen bg-gray-50 dark:bg-dark-900 py-8">
+<div class="min-h-screen bg-gray-50 dark:bg-dark-900 py-8" x-data="{ lightboxSrc: null, lightboxAlt: '' }" @keydown.escape.window="lightboxSrc = null">
     <div class="max-w-5xl mx-auto px-4">
 
         <nav class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-6 flex-wrap">
@@ -25,8 +25,8 @@ $isAdmin = \App\Core\Auth::isAdmin();
             <div class="p-6 border-b border-gray-100 dark:border-dark-700">
                 <div class="flex items-start gap-4">
                     <div class="relative flex-shrink-0">
-                        <?php if ($topic['avatar']): ?>
-                        <img src="<?= htmlspecialchars($topic['avatar']) ?>" alt="" class="w-12 h-12 rounded-full">
+                        <?php if (avatar_url($topic)): ?>
+                        <img src="<?= htmlspecialchars(avatar_url($topic)) ?>" alt="" class="w-12 h-12 rounded-full">
                         <?php else: ?>
                         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
                             <?= strtoupper(substr($topic['username'], 0, 1)) ?>
@@ -76,7 +76,7 @@ $isAdmin = \App\Core\Auth::isAdmin();
                 </div>
             </div>
             <div class="p-6">
-                <div class="prose dark:prose-invert max-w-none forum-content">
+                <div class="prose dark:prose-invert max-w-none forum-content forum-lightbox-content" @click="if ($event.target.tagName === 'IMG') { lightboxSrc = $event.target.src; lightboxAlt = $event.target.alt || ''; $event.preventDefault(); }">
                     <?= $topic['content'] ?>
                 </div>
                 
@@ -85,13 +85,11 @@ $isAdmin = \App\Core\Auth::isAdmin();
                     <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Attachments</h4>
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         <?php foreach ($topicAttachments as $attachment): ?>
-                        <div class="relative group">
-                            <a href="/uploads/forum/<?= htmlspecialchars($attachment['filename']) ?>" target="_blank" class="block">
-                                <img src="/uploads/forum/<?= htmlspecialchars($attachment['filename']) ?>" 
-                                     alt="<?= htmlspecialchars($attachment['original_name']) ?>"
-                                     class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-dark-600 hover:border-blue-500 dark:hover:border-blue-400 transition">
-                            </a>
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
+                        <div class="relative group cursor-pointer" @click="lightboxSrc = <?= json_encode('/uploads/forum/' . $attachment['filename']) ?>; lightboxAlt = <?= json_encode($attachment['original_name']) ?>">
+                            <img src="/uploads/forum/<?= htmlspecialchars($attachment['filename']) ?>" 
+                                 alt="<?= htmlspecialchars($attachment['original_name']) ?>"
+                                 class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-dark-600 hover:border-blue-500 dark:hover:border-blue-400 transition">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center pointer-events-none">
                                 <i data-lucide="expand" class="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition"></i>
                             </div>
                         </div>
@@ -125,8 +123,8 @@ $isAdmin = \App\Core\Auth::isAdmin();
                     <div class="w-48 flex-shrink-0 bg-gray-50 dark:bg-dark-700 p-4 text-center border-r border-gray-100 dark:border-dark-600 hidden md:block">
                         <a href="/user/<?= htmlspecialchars($post['username']) ?>">
                             <div class="relative inline-block mb-2">
-                                <?php if ($post['avatar']): ?>
-                                <img src="<?= htmlspecialchars($post['avatar']) ?>" alt="" class="w-16 h-16 rounded-full">
+                                <?php if (avatar_url($post)): ?>
+                                <img src="<?= htmlspecialchars(avatar_url($post)) ?>" alt="" class="w-16 h-16 rounded-full">
                                 <?php else: ?>
                                 <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
                                     <?= strtoupper(substr($post['username'], 0, 1)) ?>
@@ -183,8 +181,8 @@ $isAdmin = \App\Core\Auth::isAdmin();
                         </div>
                         <div class="p-4 md:hidden flex items-center gap-3 border-b border-gray-100 dark:border-dark-600">
                             <div class="relative">
-                                <?php if ($post['avatar']): ?>
-                                <img src="<?= htmlspecialchars($post['avatar']) ?>" alt="" class="w-8 h-8 rounded-full">
+                                <?php if (avatar_url($post)): ?>
+                                <img src="<?= htmlspecialchars(avatar_url($post)) ?>" alt="" class="w-8 h-8 rounded-full">
                                 <?php else: ?>
                                 <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
                                     <?= strtoupper(substr($post['username'], 0, 1)) ?>
@@ -207,7 +205,7 @@ $isAdmin = \App\Core\Auth::isAdmin();
                             <a href="/user/<?= htmlspecialchars($post['username']) ?>" class="font-medium text-gray-900 dark:text-white"><?= htmlspecialchars($post['username']) ?></a>
                         </div>
                         <div class="p-4">
-                            <div class="prose dark:prose-invert max-w-none forum-content">
+                            <div class="prose dark:prose-invert max-w-none forum-content forum-lightbox-content" @click="if ($event.target.tagName === 'IMG') { lightboxSrc = $event.target.src; lightboxAlt = $event.target.alt || ''; $event.preventDefault(); }">
                                 <?= $post['content'] ?>
                             </div>
                             
@@ -216,13 +214,11 @@ $isAdmin = \App\Core\Auth::isAdmin();
                                 <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Attachments</h4>
                                 <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                                     <?php foreach ($postAttachments[$post['id']] as $attachment): ?>
-                                    <div class="relative group">
-                                        <a href="/uploads/forum/<?= htmlspecialchars($attachment['filename']) ?>" target="_blank" class="block">
-                                            <img src="/uploads/forum/<?= htmlspecialchars($attachment['filename']) ?>" 
-                                                 alt="<?= htmlspecialchars($attachment['original_name']) ?>"
-                                                 class="w-full h-20 object-cover rounded-lg border border-gray-200 dark:border-dark-600 hover:border-blue-500 dark:hover:border-blue-400 transition">
-                                        </a>
-                                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
+                                    <div class="relative group cursor-pointer" @click="lightboxSrc = <?= json_encode('/uploads/forum/' . $attachment['filename']) ?>; lightboxAlt = <?= json_encode($attachment['original_name']) ?>">
+                                        <img src="/uploads/forum/<?= htmlspecialchars($attachment['filename']) ?>" 
+                                             alt="<?= htmlspecialchars($attachment['original_name']) ?>"
+                                             class="w-full h-20 object-cover rounded-lg border border-gray-200 dark:border-dark-600 hover:border-blue-500 dark:hover:border-blue-400 transition">
+                                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center pointer-events-none">
                                             <i data-lucide="expand" class="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition"></i>
                                         </div>
                                     </div>
@@ -332,10 +328,26 @@ $isAdmin = \App\Core\Auth::isAdmin();
         <?php endif; ?>
 
     </div>
+
+    <!-- Lightbox overlay -->
+    <div x-show="lightboxSrc" x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+         @click="lightboxSrc = null">
+        <img :src="lightboxSrc" :alt="lightboxAlt"
+             class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+             @click.stop
+             loading="lazy">
+    </div>
 </div>
 
 <style>
-.forum-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0; }
+.forum-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0; cursor: zoom-in; }
 .forum-content iframe { max-width: 100%; border-radius: 8px; margin: 1rem 0; }
 .forum-content blockquote { border-left: 4px solid #3B82F6; padding-left: 1rem; margin: 1rem 0; font-style: italic; color: #6B7280; }
 .forum-content pre { background: #1F2937; color: #E5E7EB; padding: 1rem; border-radius: 8px; overflow-x: auto; }

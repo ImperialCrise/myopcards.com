@@ -9,6 +9,7 @@ use App\Core\View;
 use App\Models\User;
 use App\Models\Friendship;
 use App\Models\PageView;
+use App\Services\StorageService;
 
 class UserController
 {
@@ -98,7 +99,7 @@ class UserController
             'featuredCard' => $featuredCard,
             'recentActivity' => $recentActivity,
             'seoDescription' => $profileDesc,
-            'seoImage' => $user['avatar'] ?? '',
+            'seoImage' => \App\Models\User::getAvatarUrl($user) ?: '',
             'seoOgType' => 'profile',
         ]);
     }
@@ -184,5 +185,70 @@ class UserController
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'currency' => $currency]);
+    }
+
+    private const AVATAR_MAX_SIZE = 2 * 1024 * 1024;
+    private const AVATAR_ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    private const AVATAR_UPLOAD_DIR = BASE_PATH . '/public/uploads/avatars/';
+
+    public function updateAvatar(): void
+    {
+        Auth::requireAuth();
+        header('Content-Type: application/json');
+
+        if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['success' => false, 'error' => 'Upload failed']);
+            return;
+        }
+
+        $file = $_FILES['avatar'];
+        if ($file['size'] > self::AVATAR_MAX_SIZE) {
+            echo json_encode(['success' => false, 'error' => 'File too large (max 2MB)']);
+            return;
+        }
+
+        $mime = mime_content_type($file['tmp_name']);
+        if (!$mime || !in_array($mime, self::AVATAR_ALLOWED)) {
+            echo json_encode(['success' => false, 'error' => 'Invalid file type']);
+            return;
+        }
+
+        $ext = match ($mime) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+            default => 'jpg',
+        };
+        $relativePath = date('Y/m/') . uniqid() . '_' . Auth::id() . '.' . $ext;
+        $storageKey = 'avatars/' . $relativePath;
+
+        $saved = false;
+        if (StorageService::isConfigured()) {
+            $content = file_get_contents($file['tmp_name']);
+            $saved = ($content !== false && StorageService::put($storageKey, $content, $mime));
+        }
+        if (!$saved) {
+            $dir = self::AVATAR_UPLOAD_DIR . dirname($relativePath);
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            $saved = move_uploaded_file($file['tmp_name'], self::AVATAR_UPLOAD_DIR . $relativePath);
+        }
+
+        if ($saved) {
+            User::update(Auth::id(), ['custom_avatar' => $relativePath]);
+            echo json_encode(['success' => true, 'url' => '/uploads/avatars/' . $relativePath]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to save file']);
+        }
+    }
+
+    public function removeAvatar(): void
+    {
+        Auth::requireAuth();
+        User::update(Auth::id(), ['custom_avatar' => null]);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true]);
     }
 }

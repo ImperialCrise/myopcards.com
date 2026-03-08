@@ -9,6 +9,7 @@ use App\Core\Cache;
 use App\Core\Database;
 use App\Core\View;
 use App\Services\NotificationService;
+use App\Services\StorageService;
 use PDO;
 
 class ForumController
@@ -72,7 +73,7 @@ class ForumController
 
         if (!$category) {
             http_response_code(404);
-            View::render('pages/errors/404', ['title' => 'Not Found']);
+            View::render('pages/404', ['title' => 'Not Found']);
             return;
         }
 
@@ -82,7 +83,7 @@ class ForumController
         $totalPages = max(1, ceil($totalTopics / self::TOPICS_PER_PAGE));
 
         $stmt = $db->prepare(
-            "SELECT t.*, u.username, u.avatar,
+            "SELECT t.*, u.username, u.avatar, u.custom_avatar,
                     lu.username as last_reply_username
              FROM forum_topics t
              JOIN users u ON u.id = t.user_id
@@ -109,12 +110,23 @@ class ForumController
 
     public function topic(string $categorySlug, int $topicId, string $topicSlug): void
     {
+        try {
+            $this->topicAction($categorySlug, $topicId, $topicSlug);
+        } catch (\Throwable $e) {
+            error_log('Forum topic error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
+            http_response_code(500);
+            View::render('pages/forum/error', ['title' => 'Error', 'message' => 'Unable to load this topic. Please try again later.']);
+        }
+    }
+
+    private function topicAction(string $categorySlug, int $topicId, string $topicSlug): void
+    {
         $db = Database::getConnection();
         $page = max(1, (int)($_GET['page'] ?? 1));
         $offset = ($page - 1) * self::POSTS_PER_PAGE;
 
         $topic = $db->prepare(
-            "SELECT t.*, c.name as category_name, c.slug as category_slug, u.username, u.avatar
+            "SELECT t.*, c.name as category_name, c.slug as category_slug, u.username, u.avatar, u.custom_avatar
              FROM forum_topics t
              JOIN forum_categories c ON c.id = t.category_id
              JOIN users u ON u.id = t.user_id
@@ -125,7 +137,7 @@ class ForumController
 
         if (!$topic || $topic['category_slug'] !== $categorySlug) {
             http_response_code(404);
-            View::render('pages/errors/404', ['title' => 'Not Found']);
+            View::render('pages/404', ['title' => 'Not Found']);
             return;
         }
 
@@ -138,7 +150,7 @@ class ForumController
         $totalPages = max(1, ceil(($totalPosts + 1) / self::POSTS_PER_PAGE));
 
         $stmt = $db->prepare(
-            "SELECT p.*, u.username, u.avatar, u.created_at as user_joined,
+            "SELECT p.*, u.username, u.avatar, u.custom_avatar, u.created_at as user_joined,
                     (SELECT COUNT(*) FROM forum_posts WHERE user_id = u.id) as user_post_count,
                     (SELECT COUNT(*) FROM forum_reactions WHERE post_id = p.id AND reaction = 'like') as likes
              FROM forum_posts p
@@ -180,7 +192,7 @@ class ForumController
             $attachStmt = $db->prepare(
                 "SELECT * FROM forum_attachments WHERE post_id IN (" . str_repeat('?,', count($postIds) - 1) . "?) ORDER BY created_at ASC"
             );
-            $attachStmt->execute($postIds);
+            $attachStmt->execute(array_values($postIds));
             foreach ($attachStmt->fetchAll() as $attachment) {
                 $postAttachments[$attachment['post_id']][] = $attachment;
             }
@@ -204,10 +216,16 @@ class ForumController
                  JOIN cards c ON c.id = u.featured_card_id 
                  WHERE u.id IN ($placeholders) AND u.featured_card_id IS NOT NULL"
             );
-            $featuredStmt->execute($userIds);
+            $featuredStmt->execute(array_values($userIds));
             foreach ($featuredStmt->fetchAll() as $featured) {
                 $featuredCards[$featured['user_id']] = $featured;
             }
+        }
+
+        // Sanitize content for safe output (handles corrupted data from failed uploads, etc.)
+        $topic['content'] = $this->sanitizeContentForDisplay($topic['content']);
+        foreach ($posts as $i => $post) {
+            $posts[$i]['content'] = $this->sanitizeContentForDisplay($post['content']);
         }
 
         View::render('pages/forum/topic', [
@@ -235,7 +253,7 @@ class ForumController
 
         if (!$category) {
             http_response_code(404);
-            View::render('pages/errors/404', ['title' => 'Not Found']);
+            View::render('pages/404', ['title' => 'Not Found']);
             return;
         }
 
@@ -626,13 +644,9 @@ class ForumController
         }
 
         $mime = mime_content_type($file['tmp_name']);
-        if (!in_array($mime, self::ALLOWED_IMAGES)) {
+        if (!$mime || !in_array($mime, self::ALLOWED_IMAGES)) {
             echo json_encode(['success' => false, 'error' => 'Invalid file type']);
             return;
-        }
-
-        if (!is_dir(self::UPLOAD_DIR)) {
-            mkdir(self::UPLOAD_DIR, 0755, true);
         }
 
         $ext = match ($mime) {
@@ -643,17 +657,25 @@ class ForumController
             default => 'jpg',
         };
 
-        $filename = date('Y/m/');
-        if (!is_dir(self::UPLOAD_DIR . $filename)) {
-            mkdir(self::UPLOAD_DIR . $filename, 0755, true);
-        }
-        $filename .= uniqid() . '_' . Auth::id() . '.' . $ext;
+        $filename = date('Y/m/') . uniqid() . '_' . Auth::id() . '.' . $ext;
 
+        if (StorageService::isConfigured()) {
+            $content = file_get_contents($file['tmp_name']);
+            if ($content !== false && StorageService::put($filename, $content, $mime)) {
+                echo json_encode(['success' => true, 'url' => '/uploads/forum/' . $filename]);
+                return;
+            }
+        }
+
+        if (!is_dir(self::UPLOAD_DIR)) {
+            mkdir(self::UPLOAD_DIR, 0755, true);
+        }
+        $dir = self::UPLOAD_DIR . dirname($filename);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
         if (move_uploaded_file($file['tmp_name'], self::UPLOAD_DIR . $filename)) {
-            echo json_encode([
-                'success' => true,
-                'url' => '/uploads/forum/' . $filename,
-            ]);
+            echo json_encode(['success' => true, 'url' => '/uploads/forum/' . $filename]);
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to save file']);
         }
@@ -717,6 +739,17 @@ class ForumController
         return substr($slug, 0, 100) . '-' . substr(uniqid(), -5);
     }
 
+    private function sanitizeContentForDisplay(string $content): string
+    {
+        if ($content === '') {
+            return '';
+        }
+        $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
+        $content = strip_tags($content, '<p><br><strong><em><u><s><a><img><iframe><ul><ol><li><blockquote><code><pre><h3><h4>');
+        $content = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $content);
+        return $content;
+    }
+
     private function processContent(string $content): string
     {
         $content = strip_tags($content, '<p><br><strong><em><u><s><a><img><iframe><ul><ol><li><blockquote><code><pre><h3><h4>');
@@ -771,19 +804,27 @@ class ForumController
             }
 
             $mime = mime_content_type($files['tmp_name'][$i]);
-            if (!in_array($mime, self::ALLOWED_IMAGES)) {
+            if (!$mime || !in_array($mime, self::ALLOWED_IMAGES)) {
                 continue;
             }
 
-            $ext = pathinfo($files['name'][$i], PATHINFO_EXTENSION);
-            $filename = date('Y/m/') . uniqid() . '_' . Auth::id() . '.' . $ext;
+            $ext = pathinfo($files['name'][$i], PATHINFO_EXTENSION) ?: 'jpg';
+            $filename = date('Y/m/') . uniqid() . '_' . Auth::id() . '.' . strtolower($ext);
 
-            $dir = self::UPLOAD_DIR . date('Y/m/');
-            if (!is_dir($dir)) {
-                mkdir($dir, 0755, true);
+            $saved = false;
+            if (StorageService::isConfigured()) {
+                $content = file_get_contents($files['tmp_name'][$i]);
+                $saved = ($content !== false && StorageService::put($filename, $content, $mime));
+            }
+            if (!$saved) {
+                $dir = self::UPLOAD_DIR . dirname($filename);
+                if (!is_dir($dir)) {
+                    mkdir($dir, 0755, true);
+                }
+                $saved = move_uploaded_file($files['tmp_name'][$i], self::UPLOAD_DIR . $filename);
             }
 
-            if (move_uploaded_file($files['tmp_name'][$i], self::UPLOAD_DIR . $filename)) {
+            if ($saved) {
                 $db->prepare(
                     "INSERT INTO forum_attachments (post_id, topic_id, user_id, filename, original_name, mime_type, file_size)
                      VALUES (:pid, :tid, :uid, :fn, :on, :mt, :fs)"

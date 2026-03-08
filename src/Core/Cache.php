@@ -10,13 +10,18 @@ class Cache
 
     public static function init(): void
     {
-        if (!is_dir(self::$cacheDir)) {
-            mkdir(self::$cacheDir, 0755, true);
+        if (!is_dir(self::$cacheDir) && !@mkdir(self::$cacheDir, 0775, true)) {
+            // Fallback: use system temp if storage is not writable
+            self::$cacheDir = sys_get_temp_dir() . '/myopcards_cache';
+            if (!is_dir(self::$cacheDir)) {
+                @mkdir(self::$cacheDir, 0775, true);
+            }
         }
     }
 
     public static function get(string $key, $default = null)
     {
+        self::init();
         $file = self::$cacheDir . '/' . self::sanitizeKey($key) . '.cache';
         
         if (!file_exists($file)) {

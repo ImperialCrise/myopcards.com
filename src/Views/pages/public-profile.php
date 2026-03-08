@@ -2,8 +2,8 @@
     <div class="glass rounded-2xl p-8">
         <div class="flex items-start gap-6">
             <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-gold-500 to-amber-600 flex items-center justify-center text-3xl font-display font-bold flex-shrink-0" style="color:#fff">
-                <?php if ($profileUser['avatar']): ?>
-                    <img src="<?= htmlspecialchars($profileUser['avatar']) ?>" class="w-full h-full rounded-2xl object-cover" alt="">
+                <?php if (avatar_url($profileUser)): ?>
+                    <img src="<?= htmlspecialchars(avatar_url($profileUser)) ?>" class="w-full h-full rounded-2xl object-cover" alt="">
                 <?php else: ?>
                     <?= strtoupper(substr($profileUser['username'], 0, 1)) ?>
                 <?php endif; ?>

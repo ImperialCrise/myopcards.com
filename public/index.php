@@ -67,6 +67,8 @@ $router->post('/profile/update', [App\Controllers\UserController::class, 'update
 $router->get('/user/{username}', [App\Controllers\UserController::class, 'publicProfile']);
 $router->get('/settings', [App\Controllers\UserController::class, 'settings']);
 $router->post('/settings/password', [App\Controllers\UserController::class, 'changePassword']);
+$router->post('/settings/avatar', [App\Controllers\UserController::class, 'updateAvatar']);
+$router->post('/settings/avatar/remove', [App\Controllers\UserController::class, 'removeAvatar']);
 $router->post('/settings/language', [App\Controllers\UserController::class, 'changeLanguage']);
 $router->post('/settings/currency', [App\Controllers\UserController::class, 'changeCurrency']);
 
@@ -145,5 +147,20 @@ $router->get('/notifications', [App\Controllers\NotificationController::class, '
 $router->post('/notifications/read', [App\Controllers\NotificationController::class, 'markAsRead']);
 $router->post('/notifications/read-all', [App\Controllers\NotificationController::class, 'markAllAsRead']);
 $router->get('/api/notifications/count', [App\Controllers\NotificationController::class, 'getUnreadCount']);
+
+// Uploads proxy (MinIO or local) - must match before dispatch for path with slashes
+$uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uriPath !== null && $uriPath !== false) {
+    if (str_starts_with($uriPath, '/uploads/forum/')) {
+        $path = substr($uriPath, strlen('/uploads/forum/'));
+        (new App\Controllers\UploadController())->serveForum($path);
+        exit;
+    }
+    if (str_starts_with($uriPath, '/uploads/avatars/')) {
+        $path = substr($uriPath, strlen('/uploads/avatars/'));
+        (new App\Controllers\UploadController())->serveAvatars($path);
+        exit;
+    }
+}
 
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

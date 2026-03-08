@@ -72,7 +72,7 @@ class PageView
     {
         $db = Database::getConnection();
         $stmt = $db->prepare(
-            "SELECT pv.page_type, pv.viewed_at, u.username, u.avatar
+            "SELECT pv.page_type, pv.viewed_at, u.username, u.avatar, u.custom_avatar
              FROM page_views pv
              LEFT JOIN users u ON u.id = pv.viewer_user_id
              WHERE pv.user_id = :uid AND pv.viewer_user_id IS NOT NULL

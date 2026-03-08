@@ -65,7 +65,7 @@ class Friendship
     {
         $db = Database::getConnection();
         $stmt = $db->prepare(
-            'SELECT u.id, u.username, u.avatar,
+            'SELECT u.id, u.username, u.avatar, u.custom_avatar,
                     CASE WHEN f.user_id = :uid THEN f.friend_id ELSE f.user_id END as friend_user_id
              FROM friendships f
              JOIN users u ON u.id = CASE WHEN f.user_id = :uid2 THEN f.friend_id ELSE f.user_id END
@@ -85,7 +85,7 @@ class Friendship
     {
         $db = Database::getConnection();
         $stmt = $db->prepare(
-            'SELECT f.*, u.username, u.avatar
+            'SELECT f.*, u.username, u.avatar, u.custom_avatar
              FROM friendships f
              JOIN users u ON u.id = f.user_id
              WHERE f.friend_id = :user_id AND f.status = :pending'
@@ -98,7 +98,7 @@ class Friendship
     {
         $db = Database::getConnection();
         $stmt = $db->prepare(
-            'SELECT f.*, u.username, u.avatar
+            'SELECT f.*, u.username, u.avatar, u.custom_avatar
              FROM friendships f
              JOIN users u ON u.id = f.friend_id
              WHERE f.user_id = :user_id AND f.status = :pending'

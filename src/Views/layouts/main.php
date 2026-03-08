@@ -50,6 +50,14 @@ $_r4 = array_slice($_bgCards, 36, 12);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0B3QZV6X4S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-0B3QZV6X4S');
+    </script>
     <title><?= htmlspecialchars($title ?? 'MyOPCards - One Piece TCG Collection Tracker') ?></title>
     <link rel="icon" href="/assets/img/favicon.ico" type="image/x-icon">
     <link rel="canonical" href="<?= htmlspecialchars(($seoCanonical ?? null) ?: ('https://myopcards.com' . strtok($_SERVER['REQUEST_URI'], '?'))) ?>">
@@ -189,6 +197,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 <a href="/analytics" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> <?= t('nav.analytics') ?></a>
                                 <a href="/friends" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="users" class="w-4 h-4"></i> <?= t('nav.friends') ?></a>
                                 <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="trophy" class="w-4 h-4"></i> <?= t('nav.leaderboard') ?> <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?></span></a>
+                                <a href="/settings" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="settings" class="w-4 h-4"></i> <?= t('nav.settings') ?></a>
                                 <?php if ($currentUser && !empty($currentUser['is_admin'])): ?>
                                 <div class="border-t my-1" style="border-color:var(--nav-border)"></div>
                                 <a href="/admin" class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition"><i data-lucide="shield" class="w-4 h-4"></i> <?= t('nav.admin') ?></a>
@@ -359,8 +368,8 @@ $_r4 = array_slice($_bgCards, 36, 12);
 
                     <?php if ($isLoggedIn): ?>
                         <a href="/profile" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition">
-                            <?php if ($currentUser['avatar']): ?>
-                                <img src="<?= htmlspecialchars($currentUser['avatar']) ?>" class="w-7 h-7 rounded-full border border-gray-200" alt="">
+                            <?php if (avatar_url($currentUser)): ?>
+                                <img src="<?= htmlspecialchars(avatar_url($currentUser)) ?>" class="w-7 h-7 rounded-full border border-gray-200" alt="">
                             <?php else: ?>
                                 <div class="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center font-bold text-xs" style="color:#fff !important"><?= strtoupper(substr($currentUser['username'], 0, 1)) ?></div>
                             <?php endif; ?>
@@ -408,6 +417,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
                 <a href="/friends" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="users" class="w-4 h-4"></i> <?= t('nav.friends') ?> <?php if ($pendingCount > 0): ?><span class="ml-auto px-1.5 py-0.5 bg-red-500 rounded-full text-xs font-bold" style="color:#fff !important"><?= $pendingCount ?></span><?php endif; ?></a>
                 <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trophy" class="w-4 h-4"></i> <?= t('nav.leaderboard') ?> <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?> ELO</span></a>
                 <a href="/profile" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="user" class="w-4 h-4"></i> <?= t('nav.profile') ?></a>
+                <a href="/settings" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="settings" class="w-4 h-4"></i> <?= t('nav.settings') ?></a>
                 <a href="/logout" class="flex items-center gap-2 px-3 py-2 rounded text-red-500 text-sm"><i data-lucide="log-out" class="w-4 h-4"></i> <?= t('nav.logout') ?></a>
             <?php else: ?>
                 <a href="/login" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 text-sm"><?= t('nav.login') ?></a>

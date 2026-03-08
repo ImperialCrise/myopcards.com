@@ -20,8 +20,8 @@ class Router
 
     public function dispatch(string $method, string $uri): void
     {
-        $uri = parse_url($uri, PHP_URL_PATH);
-        $uri = rtrim($uri, '/') ?: '/';
+        $path = parse_url($uri, PHP_URL_PATH);
+        $uri = ($path !== null && $path !== false) ? (rtrim($path, '/') ?: '/') : '/';
 
         $routes = $this->routes[$method] ?? [];
 

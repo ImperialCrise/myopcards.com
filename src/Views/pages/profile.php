@@ -13,8 +13,8 @@
         <div class="glass rounded-2xl p-8">
             <div class="flex items-start gap-6">
                 <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-gold-500 to-amber-600 flex items-center justify-center text-3xl font-display font-bold flex-shrink-0" style="color:#fff">
-                    <?php if ($user['avatar']): ?>
-                        <img src="<?= htmlspecialchars($user['avatar']) ?>" class="w-full h-full rounded-2xl object-cover" alt="">
+                    <?php if (avatar_url($user)): ?>
+                        <img src="<?= htmlspecialchars(avatar_url($user)) ?>" class="w-full h-full rounded-2xl object-cover" alt="">
                     <?php else: ?>
                         <?= strtoupper(substr($user['username'], 0, 1)) ?>
                     <?php endif; ?>
@@ -23,8 +23,13 @@
                     <h1 class="text-2xl font-display font-bold text-gray-900"><?= htmlspecialchars($user['username']) ?></h1>
                     <p class="text-sm text-gray-400 mt-1"><?= htmlspecialchars($user['email']) ?></p>
                     <p class="text-sm text-gray-400"><?= t('profile.joined') ?> <?= date('M Y', strtotime($user['created_at'])) ?></p>
-                    <?php if ($user['is_public'] ?? false): ?>
-                        <div class="flex items-center gap-2 mt-3" x-data="{ copied: false }">
+                    <div class="flex items-center gap-2 mt-3 flex-wrap">
+                        <a href="/settings" class="text-xs text-gold-400 hover:text-gold-300 transition flex items-center gap-1">
+                            <i data-lucide="settings" class="w-3 h-3"></i> <?= t('profile.edit_photo') ?>
+                        </a>
+                        <?php if ($user['is_public'] ?? false): ?>
+                        <span class="text-gray-300">|</span>
+                        <div class="flex items-center gap-2" x-data="{ copied: false }">
                             <a href="/user/<?= htmlspecialchars($user['username']) ?>" class="text-xs text-gold-400 hover:text-gold-300 transition flex items-center gap-1">
                                 <i data-lucide="external-link" class="w-3 h-3"></i> <?= t('profile.public_profile') ?>
                             </a>
@@ -34,7 +39,8 @@
                                 <i data-lucide="copy" class="w-3 h-3"></i> <span x-text="copied ? '<?= htmlspecialchars(t('profile.copied')) ?>' : '<?= htmlspecialchars(t('profile.copy_link')) ?>'"></span>
                             </button>
                         </div>
-                    <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -122,8 +128,8 @@
             <div class="space-y-3">
                 <?php foreach ($recentViewers as $v): ?>
                     <div class="flex items-center gap-3">
-                        <?php if (!empty($v['avatar'])): ?>
-                            <img src="<?= htmlspecialchars($v['avatar']) ?>" class="w-8 h-8 rounded-full" alt="">
+                        <?php if (avatar_url($v)): ?>
+                            <img src="<?= htmlspecialchars(avatar_url($v)) ?>" class="w-8 h-8 rounded-full" alt="">
                         <?php else: ?>
                             <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600"><?= strtoupper(substr($v['username'] ?? '?', 0, 1)) ?></div>
                         <?php endif; ?>
@@ -217,8 +223,8 @@
                 <div class="space-y-2">
                     <?php foreach (array_slice($friends, 0, 8) as $f): ?>
                         <a href="/user/<?= htmlspecialchars($f['username']) ?>" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition group">
-                            <?php if (!empty($f['avatar'])): ?>
-                                <img src="<?= htmlspecialchars($f['avatar']) ?>" class="w-8 h-8 rounded-full" alt="">
+                            <?php if (avatar_url($f)): ?>
+                                <img src="<?= htmlspecialchars(avatar_url($f)) ?>" class="w-8 h-8 rounded-full" alt="">
                             <?php else: ?>
                                 <div class="w-8 h-8 rounded-full bg-gradient-to-br from-gold-500 to-gold-300 flex items-center justify-center font-bold text-xs" style="color:#fff"><?= strtoupper(substr($f['username'], 0, 1)) ?></div>
                             <?php endif; ?>

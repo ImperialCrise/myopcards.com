@@ -195,8 +195,8 @@ class Auth
             $db->prepare(
                 "INSERT INTO user_sessions (user_id, session_id, last_activity, expires_at) 
                  VALUES (:uid, :sid, NOW(), DATE_ADD(NOW(), INTERVAL :days DAY))
-                 ON DUPLICATE KEY UPDATE last_activity = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL :days DAY)"
-            )->execute(['uid' => $userId, 'sid' => $sessionId, 'days' => self::REMEMBER_DAYS]);
+                 ON DUPLICATE KEY UPDATE last_activity = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL :days2 DAY)"
+            )->execute(['uid' => $userId, 'sid' => $sessionId, 'days' => self::REMEMBER_DAYS, 'days2' => self::REMEMBER_DAYS]);
         } catch (\Throwable $e) {
             error_log('Auth createSession: ' . $e->getMessage());
         }
@@ -254,7 +254,7 @@ class Auth
         try {
             $db = Database::getConnection();
             $stmt = $db->prepare(
-                "SELECT DISTINCT u.id, u.username, u.avatar, us.last_activity
+                "SELECT DISTINCT u.id, u.username, u.avatar, u.custom_avatar, us.last_activity
                  FROM user_sessions us
                  JOIN users u ON u.id = us.user_id
                  WHERE us.last_activity > DATE_SUB(NOW(), INTERVAL :mins MINUTE)
