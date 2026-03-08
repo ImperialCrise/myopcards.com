@@ -50,6 +50,9 @@ class SeoController
             ['/', '1.0', 'daily'],
             ['/cards', '0.9', 'daily'],
             ['/market', '0.9', 'daily'],
+            ['/play', '0.85', 'daily'],
+            ['/leaderboard', '0.8', 'daily'],
+            ['/forum', '0.8', 'daily'],
         ];
 
         foreach ($static as [$path, $priority, $freq]) {
@@ -268,6 +271,8 @@ class SeoController
         echo "Allow: /cards\n";
         echo "Allow: /cards/\n";
         echo "Allow: /market\n";
+        echo "Allow: /play\n";
+        echo "Allow: /leaderboard\n";
         echo "Allow: /user/\n";
         echo "Allow: /collection/\n";
         echo "Allow: /forum\n";
@@ -282,6 +287,8 @@ class SeoController
         echo "Disallow: /analytics\n";
         echo "Disallow: /friends\n";
         echo "Disallow: /admin\n";
+        echo "Disallow: /decks\n";
+        echo "Disallow: /play/game/\n";
         echo "Disallow: /s/\n";
         echo "Disallow: /collection/add\n";
         echo "Disallow: /collection/remove\n";

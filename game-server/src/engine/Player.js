@@ -24,14 +24,12 @@ class Player {
     this.donDeck = 10;
     this.donArea = [];
     this.maxCharacters = 5;
+    this.lifeStartCount = 0;
   }
 
-  /**
-   * Rule 5-2-1-7: draw N cards face-down from deck
-   * into the life zone (top of deck → bottom of life zone).
-   */
   setupLifeZone(count) {
     this.life = [];
+    this.lifeStartCount = count;
     for (let i = 0; i < count && this.deck.length > 0; i++) {
       this.life.push(this.deck.shift());
     }
@@ -48,15 +46,60 @@ class Player {
     return drawn;
   }
 
-  /**
-   * Rule 4-6-2-1 / 7-1-4-1-1-2: when leader takes damage,
-   * move top card from life zone to hand.
-   */
   takeLifeDamage() {
     if (this.life.length <= 0) return { card: null, trigger: false };
     const card = this.life.shift();
     if (card) this.hand.push(card);
-    return { card: card || null, trigger: !!card };
+    const hasTrigger = !!(card && card.card_text && card.card_text.indexOf('[Trigger]') !== -1);
+    return { card: card || null, trigger: hasTrigger };
+  }
+
+  getCounterCardsInHand() {
+    const result = [];
+    for (let i = 0; i < this.hand.length; i++) {
+      const c = this.hand[i];
+      const cv = parseInt(c.counter_amount, 10);
+      if (cv > 0) {
+        result.push({ handIndex: i, card_name: c.card_name, card_image_url: c.card_image_url, counterValue: cv });
+      }
+    }
+    return result;
+  }
+
+  getBlockerCharacters() {
+    const result = [];
+    for (let i = 0; i < this.characters.length; i++) {
+      const c = this.characters[i];
+      if (!c.rested && c.card_text && c.card_text.indexOf('[Blocker]') !== -1) {
+        result.push({
+          charIndex: i,
+          card_name: c.card_name,
+          card_image_url: c.card_image_url,
+          card_power: c.card_power,
+          attachedDon: c.attachedDon || 0
+        });
+      }
+    }
+    return result;
+  }
+
+  useCounterCard(handIndex) {
+    if (handIndex < 0 || handIndex >= this.hand.length) return 0;
+    const card = this.hand[handIndex];
+    const cv = parseInt(card.counter_amount, 10) || 0;
+    if (cv <= 0) return 0;
+    this.hand.splice(handIndex, 1);
+    this.trash.push(card);
+    return cv;
+  }
+
+  activateBlocker(charIndex) {
+    if (charIndex < 0 || charIndex >= this.characters.length) return false;
+    const c = this.characters[charIndex];
+    if (c.rested) return false;
+    if (!c.card_text || c.card_text.indexOf('[Blocker]') === -1) return false;
+    c.rested = true;
+    return true;
   }
 
   restDon(count) {
@@ -81,6 +124,13 @@ class Player {
     return this.donArea.filter(d => !d.rested).length;
   }
 
+  removeDonFromArea() {
+    const idx = this.donArea.findIndex(d => !d.rested);
+    if (idx === -1) return false;
+    this.donArea.splice(idx, 1);
+    return true;
+  }
+
   addDonToArea(amount) {
     amount = amount || 1;
     for (let i = 0; i < amount && this.donDeck > 0; i++) {
@@ -89,22 +139,19 @@ class Player {
     }
   }
 
-  /**
-   * Rule 6-2-3: return all DON!! attached to leader/characters
-   * to cost zone as RESTED. They will be unrested in refreshAll().
-   */
   returnAttachedDonToArea() {
     let total = 0;
     if (this.leader && this.leader.attachedDon) {
-      for (let i = 0; i < this.leader.attachedDon; i++) this.donArea.push({ rested: true });
       total += this.leader.attachedDon;
       this.leader.attachedDon = 0;
     }
     for (const c of this.characters) {
       const n = c.attachedDon || 0;
-      for (let i = 0; i < n; i++) this.donArea.push({ rested: true });
-      c.attachedDon = 0;
       total += n;
+      c.attachedDon = 0;
+    }
+    for (let i = 0; i < total; i++) {
+      this.donArea.push({ rested: false });
     }
     return total;
   }
@@ -128,6 +175,7 @@ class Player {
       deckCount: this.deck.length,
       trashCount: this.trash.length,
       lifeRemaining: this.life.length,
+      lifeStartCount: this.lifeStartCount,
       donDeck: this.donDeck,
       donArea: this.donArea.map(d => ({ rested: d.rested }))
     };

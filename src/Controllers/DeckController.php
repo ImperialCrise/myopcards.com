@@ -18,7 +18,10 @@ class DeckController
         $decks = Deck::getByUserId(Auth::id());
 
         View::render('pages/decks/index', [
-            'title' => 'My Decks',
+            'title' => 'My Decks - One Piece TCG Deck Builder - MyOPCards',
+            'seoDescription' => 'Manage your One Piece TCG decks. Build competitive decks with our deck builder, get card recommendations, and prepare for ranked matches.',
+            'seoKeywords' => 'One Piece TCG deck builder, OPTCG decks, One Piece card game deck, build OPTCG deck, One Piece TCG deck list, OPTCG deck strategy',
+            'seoRobots' => 'noindex, nofollow',
             'decks' => $decks,
             'sets' => Card::getDistinctValues('set_id'),
             'colors' => Card::getDistinctValues('card_color'),
@@ -31,7 +34,10 @@ class DeckController
         Auth::requireAuth();
 
         View::render('pages/decks/builder', [
-            'title' => 'Create Deck',
+            'title' => 'Create Deck - One Piece TCG Deck Builder - MyOPCards',
+            'seoDescription' => 'Build a new One Piece TCG deck with our interactive deck builder. Choose your leader, add characters, events and stages. Get smart card recommendations.',
+            'seoKeywords' => 'One Piece TCG deck builder, create OPTCG deck, OPTCG deck creator, build One Piece deck, OPTCG card selection',
+            'seoRobots' => 'noindex, nofollow',
             'deck' => null,
             'sets' => Card::getDistinctValues('set_id'),
             'colors' => Card::getDistinctValues('card_color'),
@@ -51,7 +57,8 @@ class DeckController
         }
 
         View::render('pages/decks/builder', [
-            'title' => 'Edit Deck - ' . $deck['name'],
+            'title' => 'Edit Deck - ' . $deck['name'] . ' - MyOPCards',
+            'seoRobots' => 'noindex, nofollow',
             'deck' => $deck,
             'sets' => Card::getDistinctValues('set_id'),
             'colors' => Card::getDistinctValues('card_color'),

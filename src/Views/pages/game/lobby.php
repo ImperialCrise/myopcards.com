@@ -37,21 +37,6 @@ $streak = (int)($elo['streak'] ?? 0);
 
 .deck-picker { margin-bottom: 36px; }
 .deck-picker label { display: block; font-size: 0.85rem; color: rgba(255,255,255,0.4); margin-bottom: 8px; font-weight: 500; }
-.deck-picker select {
-  width: 100%; max-width: 360px;
-  padding: 12px 16px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 12px;
-  color: #fff;
-  font-size: 1rem;
-  appearance: none;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-.deck-picker select:focus { outline: none; border-color: rgba(245,158,11,0.5); }
-.deck-picker select option { background: #1a1a2e; color: #fff; }
-
 .deck-cards-row { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; }
 .deck-card {
   display: flex; flex-direction: column; align-items: center;
@@ -89,6 +74,7 @@ $streak = (int)($elo['streak'] ?? 0);
   background: radial-gradient(circle at 50% 0%, rgba(245,158,11,0.06) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.3s;
+  pointer-events: none;
 }
 .mode-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-4px); }
 .mode-card:hover::before { opacity: 1; }
@@ -119,7 +105,7 @@ $streak = (int)($elo['streak'] ?? 0);
 
 .room-code-box { margin-top: 16px; padding: 14px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; text-align: center; }
 .room-code-label { display: block; font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
-.room-code-value { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.2em; color: #f59e0b; margin-bottom: 10px; }
+.room-code-value { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.2em; color: #f59e0b; margin-bottom: 10px; user-select: all; }
 .custom-or {
   text-align: center; font-size: 0.8rem; color: rgba(255,255,255,0.3);
   padding: 10px 0 8px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;
@@ -127,12 +113,102 @@ $streak = (int)($elo['streak'] ?? 0);
 }
 .custom-join-input {
   display: block; width: 100%; padding: 10px 14px;
-  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
   border-radius: 10px; color: #fff; font-size: 0.95rem; text-align: center;
   letter-spacing: 0.1em; margin-bottom: 8px;
+  position: relative; z-index: 2;
 }
-.custom-join-input:focus { outline: none; border-color: rgba(245,158,11,0.5); }
-.custom-join-full { margin-top: 0; }
+.custom-join-input::placeholder { color: rgba(255,255,255,0.3); }
+.custom-join-input:focus { outline: none; border-color: rgba(245,158,11,0.5); background: rgba(255,255,255,0.08); }
+
+.queue-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.8);
+  display: flex; align-items: center; justify-content: center;
+  animation: fade-in 0.3s;
+}
+.queue-box {
+  text-align: center; padding: 40px 48px; border-radius: 24px;
+  background: #12121e; border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.7); min-width: 340px; max-width: 440px;
+}
+.queue-spinner {
+  width: 56px; height: 56px; border: 4px solid rgba(255,255,255,0.08);
+  border-top-color: #f59e0b; border-radius: 50%; margin: 0 auto 20px;
+  animation: spin-loader 0.8s linear infinite;
+}
+@keyframes spin-loader { to { transform: rotate(360deg); } }
+.queue-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+.queue-sub { font-size: 0.85rem; color: rgba(255,255,255,0.4); margin-bottom: 24px; }
+.queue-cancel-btn {
+  padding: 10px 28px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15);
+  background: transparent; color: rgba(255,255,255,0.7); font-weight: 600; font-size: 0.9rem;
+  cursor: pointer; transition: all 0.2s;
+}
+.queue-cancel-btn:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.06); }
+
+.match-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.92);
+  display: flex; align-items: center; justify-content: center;
+  animation: match-bg-pulse 2s ease infinite;
+}
+@keyframes match-bg-pulse {
+  0%, 100% { background: rgba(0,0,0,0.92); }
+  50% { background: rgba(0,0,0,0.88); }
+}
+.match-box {
+  text-align: center; padding: 48px 56px; border-radius: 28px;
+  background: linear-gradient(180deg, rgba(245,158,11,0.06) 0%, #12121e 50%);
+  border: 2px solid rgba(245,158,11,0.25);
+  box-shadow: 0 0 60px rgba(245,158,11,0.08), 0 30px 80px rgba(0,0,0,0.7);
+  min-width: 400px; max-width: 520px;
+  animation: match-box-enter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes match-box-enter { from { opacity: 0; transform: scale(0.7) translateY(40px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.match-found-title {
+  font-size: 2rem; font-weight: 900; letter-spacing: 0.08em; color: #f59e0b;
+  text-shadow: 0 0 30px rgba(245,158,11,0.3); margin-bottom: 8px; text-transform: uppercase;
+}
+.match-found-sub { color: rgba(255,255,255,0.4); font-size: 0.9rem; margin-bottom: 28px; }
+.match-vs {
+  display: flex; align-items: center; justify-content: center; gap: 24px;
+  margin-bottom: 28px; padding: 20px 16px; border-radius: 16px;
+  background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+}
+.match-player { display: flex; flex-direction: column; align-items: center; min-width: 100px; }
+.match-player-name { font-size: 1rem; font-weight: 700; color: #fff; }
+.match-player-elo { font-size: 0.8rem; color: #f59e0b; font-weight: 600; }
+.match-vs-text { font-size: 1.5rem; font-weight: 900; color: rgba(255,255,255,0.15); }
+.match-countdown {
+  display: flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 24px;
+  border: 3px solid rgba(245,158,11,0.3); font-size: 1.8rem; font-weight: 900; color: #f59e0b;
+  position: relative;
+}
+.match-countdown-ring {
+  position: absolute; inset: -3px; border-radius: 50%;
+  border: 3px solid transparent; border-top-color: #f59e0b;
+  animation: spin-loader 2s linear infinite;
+}
+.match-status {
+  font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-bottom: 24px; min-height: 22px;
+}
+.match-status.ready-status { color: #22c55e; font-weight: 600; }
+.match-actions { display: flex; gap: 12px; justify-content: center; }
+.match-accept-btn {
+  padding: 14px 40px; border-radius: 14px; border: none;
+  background: #22c55e; color: #fff; font-weight: 800; font-size: 1.05rem;
+  cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.match-accept-btn:hover { background: #16a34a; transform: scale(1.04); box-shadow: 0 8px 24px rgba(34,197,94,0.3); }
+.match-accept-btn:disabled { background: rgba(34,197,94,0.3); cursor: not-allowed; transform: none; box-shadow: none; }
+.match-decline-btn {
+  padding: 14px 28px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.15);
+  background: transparent; color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.95rem;
+  cursor: pointer; transition: all 0.2s;
+}
+.match-decline-btn:hover { border-color: #ef4444; color: #ef4444; }
 
 .lobby-msg {
   text-align: center;
@@ -227,15 +303,63 @@ $streak = (int)($elo['streak'] ?? 0);
                         <button type="button" class="mode-btn secondary" @click="navigator.clipboard && navigator.clipboard.writeText(roomCode)"><?= t('game.copy') ?></button>
                     </div>
                     <div class="custom-or"><?= t('game.or') ?></div>
-                    <input type="text" x-model="joinCode" placeholder="<?= htmlspecialchars(t('game.enter_code')) ?>" maxlength="8" class="custom-join-input">
-                    <button class="mode-btn primary custom-join-full" @click="joinCustom()" :disabled="!joinCode.trim() || !selectedDeckId"><?= t('game.join_room') ?></button>
+                    <input type="text" x-model="joinCode" placeholder="<?= htmlspecialchars(t('game.enter_code')) ?>" maxlength="8" class="custom-join-input" @click.stop>
+                    <button class="mode-btn primary" style="margin-top:0" @click="joinCustom()" :disabled="!joinCode.trim() || !selectedDeckId"><?= t('game.join_room') ?></button>
                 </div>
             </div>
 
-            <div x-show="message" class="lobby-msg" :class="messageType === 'error' ? 'error' : 'info'" x-text="message" x-transition></div>
+            <div x-show="message && !queueing && !matchPopup" class="lobby-msg" :class="messageType === 'error' ? 'error' : 'info'" x-text="message" x-transition></div>
         </div>
     </template>
+
+    <div class="queue-overlay" x-show="queueing && !matchPopup" x-transition x-cloak>
+        <div class="queue-box">
+            <div class="queue-spinner"></div>
+            <div class="queue-title">
+                <template x-if="queueMode === 'ranked'"><span>Searching Ranked Match...</span></template>
+                <template x-if="queueMode === 'casual'"><span>Searching Casual Match...</span></template>
+                <template x-if="queueMode === 'custom'"><span>Joining Room...</span></template>
+                <template x-if="queueMode !== 'ranked' && queueMode !== 'casual' && queueMode !== 'custom'"><span>Connecting to game server...</span></template>
+            </div>
+            <div class="queue-sub" x-text="queueMode === 'ranked' ? 'Looking for an opponent with similar skill level' : queueMode === 'casual' ? 'Looking for any available opponent' : queueMode === 'custom' ? 'Connecting to room...' : 'Starting game...'"></div>
+            <button type="button" class="queue-cancel-btn" @click="cancelSearch()">Cancel</button>
+        </div>
+    </div>
+
+    <div class="match-overlay" x-show="matchPopup" x-transition x-cloak>
+        <div class="match-box">
+            <div class="match-found-title">Match Found</div>
+            <div class="match-found-sub" x-text="matchData && matchData.mode ? matchData.mode.charAt(0).toUpperCase() + matchData.mode.slice(1) + ' Match' : 'Match'"></div>
+
+            <div class="match-vs">
+                <div class="match-player">
+                    <div class="match-player-name" x-text="username || 'You'"></div>
+                    <div class="match-player-elo" x-text="'<?= $eloRating ?> ELO'"></div>
+                </div>
+                <div class="match-vs-text">VS</div>
+                <div class="match-player">
+                    <div class="match-player-name" x-text="matchData && matchData.opponentName ? matchData.opponentName : 'Opponent'"></div>
+                    <div class="match-player-elo" x-text="matchData && matchData.opponentElo ? matchData.opponentElo + ' ELO' : ''"></div>
+                </div>
+            </div>
+
+            <div class="match-countdown">
+                <div class="match-countdown-ring"></div>
+                <span x-text="matchCountdown"></span>
+            </div>
+
+            <div class="match-status" :class="{ 'ready-status': matchAccepted }"
+                x-text="matchAccepted ? (matchBothReady ? 'Both players ready! Starting...' : 'Waiting for opponent...') : 'Are you ready?'"></div>
+
+            <div class="match-actions">
+                <button class="match-accept-btn" @click="acceptMatch()" :disabled="matchAccepted"
+                    x-text="matchAccepted ? '&#10003; ACCEPTED' : 'ACCEPT'"></button>
+                <button class="match-decline-btn" @click="declineMatch()" x-show="!matchAccepted">DECLINE</button>
+            </div>
+        </div>
+    </div>
 </div>
 
+<style>[x-cloak] { display: none !important; }</style>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="/assets/js/game/lobby.js"></script>

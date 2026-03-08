@@ -30,7 +30,6 @@ async function getElo(userId) {
 }
 
 async function insertGameRow(room) {
-  var game = room.game;
   var dbType = room.gameType === 'ranked' ? 'ranked' : (room.gameType === 'bot' ? 'bot' : 'casual');
   var p2Id = room.player2UserId || null;
   if (p2Id === 0) p2Id = null;
@@ -40,7 +39,6 @@ async function insertGameRow(room) {
       [room.player1UserId, p2Id, dbType]
     );
     room.dbGameId = (result && result.insertId) ? result.insertId : null;
-    console.log('[DB] Game row inserted, dbGameId=' + room.dbGameId);
   } catch (e) {
     console.error('[DB] insertGameRow failed:', e.message);
   }
@@ -96,12 +94,10 @@ async function processGameEnd(room) {
   if (isRanked && !isBot) {
     var p1Change = calcEloChange(p1.elo, p2.elo, p1Won);
     var p2Change = calcEloChange(p2.elo, p1.elo, p2Won);
-
     result.p1.change = p1Change;
     result.p1.newElo = p1.elo + p1Change;
     result.p2.change = p2Change;
     result.p2.newElo = p2.elo + p2Change;
-
     try {
       await db.query(
         'UPDATE leaderboard SET elo_rating = elo_rating + ?, wins = wins + ?, losses = losses + ?, games_played = games_played + 1, streak = IF(? = 1, GREATEST(streak, 0) + 1, LEAST(streak, 0) - 1), best_streak = IF(? = 1, GREATEST(best_streak, GREATEST(streak, 0) + 1), best_streak), last_game_at = NOW() WHERE user_id = ?',
@@ -111,30 +107,20 @@ async function processGameEnd(room) {
         'UPDATE leaderboard SET elo_rating = elo_rating + ?, wins = wins + ?, losses = losses + ?, games_played = games_played + 1, streak = IF(? = 1, GREATEST(streak, 0) + 1, LEAST(streak, 0) - 1), best_streak = IF(? = 1, GREATEST(best_streak, GREATEST(streak, 0) + 1), best_streak), last_game_at = NOW() WHERE user_id = ?',
         [p2Change, p2Won ? 1 : 0, p2Won ? 0 : 1, p2Won ? 1 : 0, p2Won ? 1 : 0, p2.userId]
       );
-      console.log('[ELO] Ranked game ended: ' + p1.username + ' ' + (p1Won ? 'won' : 'lost') + ' (' + p1Change + ') vs ' + p2.username + ' (' + p2Change + ')');
-    } catch (e) {
-      console.error('[ELO] DB update failed:', e.message);
-    }
-  } else if (isBot) {
-    try {
-      await db.query(
-        'UPDATE leaderboard SET games_played = games_played + 1, wins = wins + ?, losses = losses + ?, last_game_at = NOW() WHERE user_id = ?',
-        [p1Won ? 1 : 0, p1Won ? 0 : 1, p1.userId]
-      );
-    } catch (e) { /* ignore bot game stats errors */ }
+    } catch (e) { console.error('[ELO] DB update failed:', e.message); }
   } else {
     try {
       await db.query(
         'UPDATE leaderboard SET games_played = games_played + 1, wins = wins + ?, losses = losses + ?, last_game_at = NOW() WHERE user_id = ?',
         [p1Won ? 1 : 0, p1Won ? 0 : 1, p1.userId]
       );
-      if (p2.userId) {
+      if (!isBot && p2.userId) {
         await db.query(
           'UPDATE leaderboard SET games_played = games_played + 1, wins = wins + ?, losses = losses + ?, last_game_at = NOW() WHERE user_id = ?',
           [p2Won ? 1 : 0, p2Won ? 0 : 1, p2.userId]
         );
       }
-    } catch (e) { /* ignore casual game stats errors */ }
+    } catch (e) { /* ignore */ }
   }
 
   return result;
@@ -142,33 +128,22 @@ async function processGameEnd(room) {
 
 function emitGameOver(room, eloResult) {
   if (!eloResult) return;
-  var game = room.game;
-
-  var baseData = {
-    winnerId: eloResult.winnerId,
-    turns: eloResult.turns,
-    gameType: eloResult.gameType
-  };
-
+  var baseData = { winnerId: eloResult.winnerId, turns: eloResult.turns, gameType: eloResult.gameType };
   if (room.player1SocketId) {
     var s = io.sockets.sockets.get(room.player1SocketId);
-    if (s) {
-      s.emit('gameOver', Object.assign({}, baseData, {
-        won: eloResult.winnerId === eloResult.p1.userId,
-        you: eloResult.p1,
-        opponent: { username: eloResult.p2.username, oldElo: eloResult.p2.oldElo, newElo: eloResult.p2.newElo }
-      }));
-    }
+    if (s) s.emit('gameOver', Object.assign({}, baseData, {
+      won: eloResult.winnerId === eloResult.p1.userId,
+      you: eloResult.p1,
+      opponent: { username: eloResult.p2.username, oldElo: eloResult.p2.oldElo, newElo: eloResult.p2.newElo }
+    }));
   }
   if (room.player2SocketId) {
     var s = io.sockets.sockets.get(room.player2SocketId);
-    if (s) {
-      s.emit('gameOver', Object.assign({}, baseData, {
-        won: eloResult.winnerId === eloResult.p2.userId,
-        you: eloResult.p2,
-        opponent: { username: eloResult.p1.username, oldElo: eloResult.p1.oldElo, newElo: eloResult.p1.newElo }
-      }));
-    }
+    if (s) s.emit('gameOver', Object.assign({}, baseData, {
+      won: eloResult.winnerId === eloResult.p2.userId,
+      you: eloResult.p2,
+      opponent: { username: eloResult.p1.username, oldElo: eloResult.p1.oldElo, newElo: eloResult.p1.newElo }
+    }));
   }
 }
 
@@ -189,27 +164,17 @@ async function createGameFromMatch(player1, player2, gameType) {
   if (!p1Deck || !p2Deck) return null;
   var gameId = gameIdCounter++;
   var game = new Game(gameId, {
-    userId: player1.userId,
-    username: player1.username || 'Player 1',
-    elo: p1Elo,
-    leaderCard: p1Deck.leaderCard,
-    deckCards: p1Deck.deckCards
+    userId: player1.userId, username: player1.username || 'Player 1', elo: p1Elo,
+    leaderCard: p1Deck.leaderCard, deckCards: p1Deck.deckCards
   }, {
-    userId: player2.userId,
-    username: player2.username || 'Player 2',
-    elo: p2Elo,
-    leaderCard: p2Deck.leaderCard,
-    deckCards: p2Deck.deckCards
+    userId: player2.userId, username: player2.username || 'Player 2', elo: p2Elo,
+    leaderCard: p2Deck.leaderCard, deckCards: p2Deck.deckCards
   });
   var roomData = {
-    game,
-    gameType: gameType || 'casual',
-    player1UserId: player1.userId,
-    player2UserId: player2.userId,
-    player1SocketId: player1.socketId,
-    player2SocketId: player2.socketId,
-    eloProcessed: false,
-    dbGameId: null
+    game, gameType: gameType || 'casual',
+    player1UserId: player1.userId, player2UserId: player2.userId,
+    player1SocketId: player1.socketId, player2SocketId: player2.socketId,
+    eloProcessed: false, dbGameId: null, botAttackQueue: null
   };
   setRoom(gameId, roomData);
   insertGameRow(roomData);
@@ -251,73 +216,345 @@ function emitStateToBoth(room) {
   }
 }
 
-app.get('/health', (req, res) => { res.json({ ok: true }); });
+function isDefenderBot(room, defenderPlayerIndex) {
+  return room.player2SocketId === null && defenderPlayerIndex === 1;
+}
 
-function botPlay(game, socket) {
+function botDefend(game) {
+  if (!game.pendingCombat) return;
+  var c = game.pendingCombat;
+  var defIdx = c.defenderPlayerIndex;
+  var defender = game.board.getPlayer(defIdx);
+
+  if (c.currentTargetType === 'leader' && !c.blockerUsed) {
+    var blockers = defender.getBlockerCharacters();
+    if (blockers.length > 0) {
+      var atkPower = c.attackerPower;
+      var bestBlocker = null;
+      for (var b of blockers) {
+        var bPower = game.getEffectivePower(defender.characters[b.charIndex]);
+        if (bPower >= atkPower && (!bestBlocker || bPower < bestBlocker.power)) {
+          bestBlocker = { idx: b.charIndex, power: bPower };
+        }
+      }
+      if (!bestBlocker && defender.life.length <= 1) {
+        bestBlocker = { idx: blockers[0].charIndex };
+      }
+      if (bestBlocker) {
+        game.useBlocker(defIdx, bestBlocker.idx);
+      }
+    }
+  }
+
+  var atkPower = c.attackerPower;
+  var currentDefender;
+  if (c.blockerUsed && c.blockerCharIndex >= 0) {
+    currentDefender = defender.characters[c.blockerCharIndex];
+  } else if (c.currentTargetType === 'leader') {
+    currentDefender = defender.leader;
+  } else {
+    currentDefender = defender.characters[c.currentTargetIndex];
+  }
+  var defPower = game.getEffectivePower(currentDefender) + c.counterBoost;
+
+  if (atkPower >= defPower) {
+    var counters = defender.getCounterCardsInHand();
+    var needed = atkPower - defPower + 1;
+    var totalAvailable = 0;
+    for (var ct of counters) totalAvailable += ct.counterValue;
+
+    if (totalAvailable >= needed) {
+      counters.sort(function (a, b) { return a.counterValue - b.counterValue; });
+      var remaining = needed;
+      var toPlay = [];
+      for (var ct of counters) {
+        if (remaining <= 0) break;
+        toPlay.push(ct.handIndex);
+        remaining -= ct.counterValue;
+      }
+      toPlay.sort(function (a, b) { return b - a; });
+      for (var idx of toPlay) {
+        game.playCounter(defIdx, idx);
+      }
+    }
+  }
+}
+
+function botPlayCards(game) {
   var bot = game.board.player2;
-  var attacks = [];
   var played = true;
   while (played) {
     played = false;
+    var best = -1;
+    var bestCost = -1;
     for (var i = 0; i < bot.hand.length; i++) {
       var card = bot.hand[i];
       var cost = parseInt(card.card_cost, 10) || 0;
       var type = ((card.card_type || '') + '').toLowerCase();
       if (type.indexOf('event') !== -1 || type.indexOf('leader') !== -1) continue;
-      if (cost <= bot.getAvailableDon()) {
-        var r = game.playCard(1, i, true);
-        if (r.ok) { played = true; break; }
+      if (cost <= bot.getAvailableDon() && cost > bestCost) {
+        best = i;
+        bestCost = cost;
       }
     }
+    if (best >= 0) {
+      var r = game.playCard(1, best, true);
+      if (r.ok) played = true;
+    }
   }
+}
+
+function botAttachDon(game) {
+  var bot = game.board.player2;
+  var available = bot.getAvailableDon();
+  if (available <= 0) return;
+
+  var targets = [];
+  for (var i = 0; i < bot.characters.length; i++) {
+    var c = bot.characters[i];
+    if (!c.rested && !c.summonSick) {
+      targets.push({ type: 'character', index: i, power: parseInt(c.card_power, 10) || 0 });
+    }
+  }
+  if (bot.leader && !bot.leader.rested) {
+    targets.push({ type: 'leader', index: 0, power: parseInt(bot.leader.card_power, 10) || 0 });
+  }
+
+  targets.sort(function (a, b) { return b.power - a.power; });
+
+  for (var t of targets) {
+    if (bot.getAvailableDon() <= 0) break;
+    game.attachDon(1, t.type, t.index);
+  }
+}
+
+function botPlanAttacks(game) {
+  var bot = game.board.player2;
+  var opp = game.board.player1;
+  var attacks = [];
+
   if (bot.leader && !bot.leader.rested && !bot.leader.summonSick) {
-    var r = game.attack(1, 'leader', 0, 'leader', 0);
-    if (r.ok) attacks.push({ attackerType: 'leader', attackerIndex: 0, targetType: 'leader', targetIndex: 0, hit: !!r.hit, damage: !!r.damage, ko: !!r.ko, side: 'opp' });
+    attacks.push({ type: 'leader', index: 0, targetType: 'leader', targetIndex: 0 });
   }
+
   for (var i = 0; i < bot.characters.length; i++) {
     var c = bot.characters[i];
     if (c && !c.rested && !c.summonSick) {
-      var r = game.attack(1, 'character', i, 'leader', 0);
-      if (r.ok) attacks.push({ attackerType: 'character', attackerIndex: i, targetType: 'leader', targetIndex: 0, hit: !!r.hit, damage: !!r.damage, ko: !!r.ko, side: 'opp' });
+      var restedTarget = -1;
+      for (var j = 0; j < opp.characters.length; j++) {
+        if (opp.characters[j].rested) {
+          var charPower = game.getEffectivePower(c);
+          var tgtPower = game.getEffectivePower(opp.characters[j]);
+          if (charPower >= tgtPower) {
+            restedTarget = j;
+            break;
+          }
+        }
+      }
+
+      if (restedTarget >= 0) {
+        attacks.push({ type: 'character', index: i, targetType: 'character', targetIndex: restedTarget });
+      } else {
+        attacks.push({ type: 'character', index: i, targetType: 'leader', targetIndex: 0 });
+      }
     }
   }
-  if (socket && attacks.length > 0) {
-    socket.emit('botAttacks', attacks);
-  }
-  return attacks.length;
+
+  return attacks;
 }
 
-io.on('connection', (socket) => {
+function emitAttackAnimation(room, combat, attackerPlayerIndex) {
+  var side0 = attackerPlayerIndex === 0 ? 'my' : 'opp';
+  var side1 = attackerPlayerIndex === 0 ? 'opp' : 'my';
+  var base = {
+    attackerType: combat.attackerType || 'leader',
+    attackerIndex: combat.attackerIndex || 0,
+    targetType: combat.targetType || 'leader',
+    targetIndex: combat.targetIndex || 0,
+    hit: !!combat.hit,
+    damage: !!combat.damage,
+    ko: !!combat.ko,
+    gameOver: !!combat.gameOver,
+    blockerUsed: !!combat.blockerUsed
+  };
+  emitToPlayer(room, 0, 'attackAnimation', Object.assign({}, base, { side: side0 }));
+  emitToPlayer(room, 1, 'attackAnimation', Object.assign({}, base, { side: side1 }));
+}
+
+function processNextBotAttack(room, humanSocket) {
+  if (!room.botAttackQueue || room.botAttackQueue.length === 0) {
+    room.botAttackQueue = null;
+    room.game.endTurn();
+    emitStateToBoth(room);
+    if (room.game.status === 'finished') checkAndProcessEnd(room);
+    return;
+  }
+
+  var atk = room.botAttackQueue.shift();
+  var game = room.game;
+
+  var declareResult = game.declareAttack(1, atk.type, atk.index, atk.targetType, atk.targetIndex);
+  if (!declareResult.ok) {
+    processNextBotAttack(room, humanSocket);
+    return;
+  }
+
+  var humanDefender = game.board.player1;
+  var blockers = humanDefender.getBlockerCharacters();
+  var counters = humanDefender.getCounterCardsInHand();
+  var hasDefense = blockers.length > 0 || counters.length > 0;
+
+  if (!hasDefense || game.pendingCombat.currentTargetType === 'character') {
+    var result = game.resolveCombat();
+    emitAttackAnimation(room, result, 1);
+    setTimeout(function () {
+      emitStateToBoth(room);
+      if (result.gameOver) {
+        checkAndProcessEnd(room);
+      } else {
+        processNextBotAttack(room, humanSocket);
+      }
+    }, 700);
+  } else {
+    room.botAttacking = true;
+    emitStateToBoth(room);
+  }
+}
+
+app.get('/health', function (req, res) { res.json({ ok: true }); });
+
+var pendingMatches = new Map();
+var pendingMatchCounter = 1;
+
+function createPendingMatch(player1, player2, mode) {
+  var matchId = 'M' + (pendingMatchCounter++);
+  var pm = {
+    matchId: matchId,
+    mode: mode,
+    player1: player1,
+    player2: player2,
+    p1Accepted: false,
+    p2Accepted: false,
+    timer: null
+  };
+
+  pm.timer = setTimeout(function () {
+    var m = pendingMatches.get(matchId);
+    if (!m) return;
+    pendingMatches.delete(matchId);
+    var s1 = io.sockets.sockets.get(m.player1.socketId);
+    var s2 = io.sockets.sockets.get(m.player2.socketId);
+    if (s1) s1.emit('matchDeclined', { reason: 'timeout' });
+    if (s2) s2.emit('matchDeclined', { reason: 'timeout' });
+  }, 32000);
+
+  pendingMatches.set(matchId, pm);
+  return pm;
+}
+
+async function finalizePendingMatch(pm) {
+  if (pm.timer) clearTimeout(pm.timer);
+  pendingMatches.delete(pm.matchId);
+
+  var gameId = await createGameFromMatch(pm.player1, pm.player2, pm.mode);
+  if (!gameId) {
+    var s1 = io.sockets.sockets.get(pm.player1.socketId);
+    var s2 = io.sockets.sockets.get(pm.player2.socketId);
+    if (s1) s1.emit('error', { message: 'Failed to load decks' });
+    if (s2) s2.emit('error', { message: 'Failed to load decks' });
+    return;
+  }
+  var s1 = io.sockets.sockets.get(pm.player1.socketId);
+  var s2 = io.sockets.sockets.get(pm.player2.socketId);
+  if (s1) s1.emit('gameStart', { gameId: gameId });
+  if (s2) s2.emit('gameStart', { gameId: gameId });
+}
+
+io.on('connection', function (socket) {
   socket.emit('connected', { message: 'Game server connected' });
 
-  socket.on('findMatch', async (data) => {
+  socket.on('findMatch', async function (data) {
     try {
       var userId = data && data.userId;
       var deckId = data && data.deckId;
       var mode = (data && data.mode) || 'casual';
       if (!userId || !deckId) return socket.emit('error', { message: 'Missing userId or deckId' });
       var elo = mode === 'ranked' ? await getElo(userId) : 1000;
-      var player = { userId, deckId, username: data.username || 'Player', socketId: socket.id, elo };
+      var player = { userId: userId, deckId: deckId, username: data.username || 'Player', socketId: socket.id, elo: elo };
       matchmaking.enqueue(mode, player);
       var match = matchmaking.findMatch(mode, player);
       if (!match) return;
       matchmaking.dequeue(mode, userId);
-      var gameId = await createGameFromMatch(match.player1, match.player2, mode);
-      if (!gameId) return socket.emit('error', { message: 'Failed to load decks' });
-      var p1Socket = io.sockets.sockets.get(match.player1.socketId);
-      var p2Socket = io.sockets.sockets.get(match.player2.socketId);
-      if (p1Socket) p1Socket.emit('gameStart', { gameId });
-      if (p2Socket) p2Socket.emit('gameStart', { gameId });
+
+      var pm = createPendingMatch(match.player1, match.player2, mode);
+
+      var s1 = io.sockets.sockets.get(match.player1.socketId);
+      var s2 = io.sockets.sockets.get(match.player2.socketId);
+      if (s1) s1.emit('matchReady', {
+        matchId: pm.matchId,
+        mode: mode,
+        opponentName: match.player2.username,
+        opponentElo: match.player2.elo || 1000
+      });
+      if (s2) s2.emit('matchReady', {
+        matchId: pm.matchId,
+        mode: mode,
+        opponentName: match.player1.username,
+        opponentElo: match.player1.elo || 1000
+      });
     } catch (e) {
       socket.emit('error', { message: e && e.sqlMessage ? 'Database error' : (e && e.message) || 'Failed to find match' });
     }
   });
 
-  socket.on('vsBot', async (data) => {
+  socket.on('cancelQueue', function (data) {
+    var userId = data && data.userId;
+    var mode = (data && data.mode) || 'casual';
+    if (userId) {
+      matchmaking.dequeue('ranked', userId);
+      matchmaking.dequeue('casual', userId);
+    }
+  });
+
+  socket.on('acceptMatch', function (data) {
+    var matchId = data && data.matchId;
+    var pm = pendingMatches.get(matchId);
+    if (!pm) return;
+
+    if (pm.player1.socketId === socket.id) pm.p1Accepted = true;
+    else if (pm.player2.socketId === socket.id) pm.p2Accepted = true;
+    else return;
+
+    if (pm.p1Accepted && pm.p2Accepted) {
+      var s1 = io.sockets.sockets.get(pm.player1.socketId);
+      var s2 = io.sockets.sockets.get(pm.player2.socketId);
+      if (s1) s1.emit('matchAccepted', { who: 'both' });
+      if (s2) s2.emit('matchAccepted', { who: 'both' });
+      setTimeout(function () { finalizePendingMatch(pm); }, 1500);
+    } else {
+      var otherSocketId = pm.player1.socketId === socket.id ? pm.player2.socketId : pm.player1.socketId;
+      var otherSocket = io.sockets.sockets.get(otherSocketId);
+      if (otherSocket) otherSocket.emit('matchAccepted', { who: 'opponent' });
+    }
+  });
+
+  socket.on('declineMatch', function (data) {
+    var matchId = data && data.matchId;
+    var pm = pendingMatches.get(matchId);
+    if (!pm) return;
+    if (pm.timer) clearTimeout(pm.timer);
+    pendingMatches.delete(matchId);
+
+    var s1 = io.sockets.sockets.get(pm.player1.socketId);
+    var s2 = io.sockets.sockets.get(pm.player2.socketId);
+    if (s1) s1.emit('matchDeclined', { reason: 'declined' });
+    if (s2) s2.emit('matchDeclined', { reason: 'declined' });
+  });
+
+  socket.on('vsBot', async function (data) {
     try {
       var userId = data && data.userId;
       var deckId = data && data.deckId;
-      var difficulty = (data && data.difficulty) || 'easy';
       if (!userId || !deckId) return socket.emit('error', { message: 'Missing userId or deckId' });
       var [p1Deck, p1Elo] = await Promise.all([
         decks.loadDeckForGame(deckId, userId),
@@ -326,46 +563,36 @@ io.on('connection', (socket) => {
       if (!p1Deck) return socket.emit('error', { message: 'Deck not found' });
       var gameId = gameIdCounter++;
       var game = new Game(gameId, {
-        userId,
-        username: data.username || 'Player',
-        elo: p1Elo,
-        leaderCard: p1Deck.leaderCard,
-        deckCards: p1Deck.deckCards
+        userId: userId, username: data.username || 'Player', elo: p1Elo,
+        leaderCard: p1Deck.leaderCard, deckCards: p1Deck.deckCards
       }, {
-        userId: 0,
-        username: 'Bot',
-        elo: 1000,
-        leaderCard: p1Deck.leaderCard,
-        deckCards: [...p1Deck.deckCards]
+        userId: 0, username: 'Bot', elo: 1000,
+        leaderCard: p1Deck.leaderCard, deckCards: [...p1Deck.deckCards]
       });
       var roomData = {
-        game,
-        gameType: 'bot',
-        player1UserId: userId,
-        player2UserId: 0,
-        player1SocketId: socket.id,
-        player2SocketId: null,
-        eloProcessed: false,
-        dbGameId: null
+        game: game, gameType: 'bot',
+        player1UserId: userId, player2UserId: 0,
+        player1SocketId: socket.id, player2SocketId: null,
+        eloProcessed: false, dbGameId: null, botAttackQueue: null, botAttacking: false
       };
       setRoom(gameId, roomData);
       insertGameRow(roomData);
-      socket.emit('gameStart', { gameId });
+      socket.emit('gameStart', { gameId: gameId });
     } catch (e) {
       socket.emit('error', { message: e && e.sqlMessage ? 'Database error' : (e && e.message) || 'Failed to start game' });
     }
   });
 
-  socket.on('createCustom', async (data) => {
+  socket.on('createCustom', async function (data) {
     var userId = data && data.userId;
     var deckId = data && data.deckId;
     if (!userId || !deckId) return socket.emit('error', { message: 'Missing userId or deckId' });
     var code = Math.random().toString(36).slice(2, 8).toUpperCase();
-    customRooms.set(code, { player1: { userId, deckId, username: data.username || 'Player', socketId: socket.id } });
-    socket.emit('customRoomCreated', { code });
+    customRooms.set(code, { player1: { userId: userId, deckId: deckId, username: data.username || 'Player', socketId: socket.id } });
+    socket.emit('customRoomCreated', { code: code });
   });
 
-  socket.on('joinCustom', async (data) => {
+  socket.on('joinCustom', async function (data) {
     try {
       var code = (data && data.code || '').toUpperCase().trim();
       var userId = data && data.userId;
@@ -373,54 +600,53 @@ io.on('connection', (socket) => {
       if (!code || !userId || !deckId) return socket.emit('error', { message: 'Missing code, userId or deckId' });
       var room = customRooms.get(code);
       if (!room || room.player2) return socket.emit('error', { message: 'Room not found or full' });
-      room.player2 = { userId, deckId, username: data.username || 'Player', socketId: socket.id };
-      var gameId = await createGameFromMatch(room.player1, room.player2, 'custom');
+      room.player2 = { userId: userId, deckId: deckId, username: data.username || 'Player', socketId: socket.id };
       customRooms.delete(code);
-      if (!gameId) return socket.emit('error', { message: 'Failed to load decks' });
-      var p1Socket = io.sockets.sockets.get(room.player1.socketId);
-      if (p1Socket) p1Socket.emit('gameStart', { gameId });
-      socket.emit('gameStart', { gameId });
+
+      var p1Elo = await getElo(room.player1.userId);
+      var p2Elo = await getElo(userId);
+      var pm = createPendingMatch(room.player1, room.player2, 'custom');
+
+      var s1 = io.sockets.sockets.get(room.player1.socketId);
+      if (s1) s1.emit('matchReady', {
+        matchId: pm.matchId,
+        mode: 'custom',
+        opponentName: data.username || 'Player',
+        opponentElo: p2Elo || 1000
+      });
+      socket.emit('matchReady', {
+        matchId: pm.matchId,
+        mode: 'custom',
+        opponentName: room.player1.username || 'Player',
+        opponentElo: p1Elo || 1000
+      });
     } catch (e) {
       socket.emit('error', { message: e && e.sqlMessage ? 'Database error' : (e && e.message) || 'Failed to join game' });
     }
   });
 
-  socket.on('joinGame', (data) => {
+  socket.on('joinGame', function (data) {
     var gameId = data && data.gameId;
     var userId = data && data.userId;
-    console.log('[Server] joinGame gameId=' + gameId + ' userId=' + userId + ' socketId=' + socket.id);
     try {
       var room = getRoom(gameId);
-      if (!room || !room.game) {
-        console.log('[Server] joinGame: no room for gameId=' + gameId);
-        return;
-      }
+      if (!room || !room.game) return;
 
       var pIndex = -1;
-      if (room.player1UserId === userId) {
-        pIndex = 0;
-        room.player1SocketId = socket.id;
-      } else if (room.player2UserId === userId) {
-        pIndex = 1;
-        room.player2SocketId = socket.id;
-      } else {
-        console.log('[Server] joinGame: userId=' + userId + ' not in this game (p1=' + room.player1UserId + ' p2=' + room.player2UserId + ')');
-        socket.emit('error', { message: 'You are not a player in this game' });
-        return;
-      }
+      if (room.player1UserId === userId) { pIndex = 0; room.player1SocketId = socket.id; }
+      else if (room.player2UserId === userId) { pIndex = 1; room.player2SocketId = socket.id; }
+      else { socket.emit('error', { message: 'You are not a player in this game' }); return; }
 
       var state = room.game.getStateForPlayer(pIndex);
       state.playerIndex = pIndex;
       state.gameType = room.gameType || 'casual';
-      console.log('[Server] joinGame: player' + (pIndex + 1) + ' connected, phase=' + (state.turn && state.turn.phase));
       socket.emit('gameState', state);
     } catch (e) {
-      console.error('[Server] joinGame error', e);
       socket.emit('error', { message: (e && e.message) || 'Failed to load game state' });
     }
   });
 
-  socket.on('playCard', (data) => {
+  socket.on('playCard', function (data) {
     try {
       var gameId = data && data.gameId;
       var handIndex = typeof (data && data.handIndex) === 'number' ? data.handIndex : -1;
@@ -439,45 +665,34 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('attack', (data) => {
+  socket.on('attack', function (data) {
     try {
       var gameId = data && data.gameId;
       var room = getRoom(gameId);
       if (!room || !room.game) return;
       var pIndex = resolvePlayerIndex(room, socket);
       if (pIndex < 0) return;
-      var result = room.game.attack(
+
+      var game = room.game;
+      var declareResult = game.declareAttack(
         pIndex,
         data.attackerType,
         typeof data.attackerIndex === 'number' ? data.attackerIndex : -1,
         data.targetType,
         typeof data.targetIndex === 'number' ? data.targetIndex : -1
       );
-      socket.emit('actionResult', result);
-      if (result.ok) {
-        socket.emit('attackAnimation', {
-          attackerType: data.attackerType,
-          attackerIndex: data.attackerIndex || 0,
-          targetType: data.targetType,
-          targetIndex: data.targetIndex || 0,
-          hit: !!result.hit,
-          damage: !!result.damage,
-          ko: !!result.ko,
-          gameOver: !!result.gameOver,
-          side: 'my'
-        });
-        var oppIndex = 1 - pIndex;
-        emitToPlayer(room, oppIndex, 'attackAnimation', {
-          attackerType: data.attackerType,
-          attackerIndex: data.attackerIndex || 0,
-          targetType: data.targetType,
-          targetIndex: data.targetIndex || 0,
-          hit: !!result.hit,
-          damage: !!result.damage,
-          ko: !!result.ko,
-          gameOver: !!result.gameOver,
-          side: 'opp'
-        });
+
+      if (!declareResult.ok) {
+        socket.emit('actionResult', declareResult);
+        return;
+      }
+
+      var defenderIdx = 1 - pIndex;
+
+      if (isDefenderBot(room, defenderIdx)) {
+        botDefend(game);
+        var result = game.resolveCombat();
+        emitAttackAnimation(room, result, pIndex);
         setTimeout(function () {
           emitStateToBoth(room);
           if (result.gameOver) checkAndProcessEnd(room);
@@ -490,7 +705,69 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('attachDon', (data) => {
+  socket.on('useBlocker', function (data) {
+    try {
+      var gameId = data && data.gameId;
+      var charIndex = typeof data.charIndex === 'number' ? data.charIndex : -1;
+      var room = getRoom(gameId);
+      if (!room || !room.game || !room.game.pendingCombat) return;
+      var pIndex = resolvePlayerIndex(room, socket);
+      if (pIndex < 0) return;
+      var result = room.game.useBlocker(pIndex, charIndex);
+      socket.emit('actionResult', result);
+      if (result.ok) emitStateToBoth(room);
+    } catch (e) {
+      socket.emit('error', { message: (e && e.message) || 'Blocker failed' });
+    }
+  });
+
+  socket.on('playCounter', function (data) {
+    try {
+      var gameId = data && data.gameId;
+      var handIndex = typeof data.handIndex === 'number' ? data.handIndex : -1;
+      var room = getRoom(gameId);
+      if (!room || !room.game || !room.game.pendingCombat) return;
+      var pIndex = resolvePlayerIndex(room, socket);
+      if (pIndex < 0) return;
+      var result = room.game.playCounter(pIndex, handIndex);
+      socket.emit('actionResult', result);
+      if (result.ok) emitStateToBoth(room);
+    } catch (e) {
+      socket.emit('error', { message: (e && e.message) || 'Counter failed' });
+    }
+  });
+
+  socket.on('finishDefense', function (data) {
+    try {
+      var gameId = data && data.gameId;
+      var room = getRoom(gameId);
+      if (!room || !room.game || !room.game.pendingCombat) return;
+      var pIndex = resolvePlayerIndex(room, socket);
+      if (pIndex < 0) return;
+
+      var game = room.game;
+      var attackerPlayerIndex = game.pendingCombat.attackerPlayerIndex;
+      var result = game.resolveCombat();
+
+      emitAttackAnimation(room, result, attackerPlayerIndex);
+
+      setTimeout(function () {
+        emitStateToBoth(room);
+        if (result.gameOver) {
+          checkAndProcessEnd(room);
+        } else if (room.botAttacking) {
+          room.botAttacking = false;
+          setTimeout(function () {
+            processNextBotAttack(room, socket);
+          }, 400);
+        }
+      }, 600);
+    } catch (e) {
+      socket.emit('error', { message: (e && e.message) || 'Defense resolve failed' });
+    }
+  });
+
+  socket.on('attachDon', function (data) {
     try {
       var gameId = data && data.gameId;
       var room = getRoom(gameId);
@@ -505,7 +782,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('endTurn', (data) => {
+  socket.on('endTurn', function (data) {
     var gameId = data && data.gameId;
     try {
       var room = getRoom(gameId);
@@ -513,40 +790,52 @@ io.on('connection', (socket) => {
       var pIndex = resolvePlayerIndex(room, socket);
       if (pIndex < 0) return;
 
-      if (room.game.turnManager.currentPlayerIndex !== pIndex) {
+      var game = room.game;
+      if (game.turnManager.currentPlayerIndex !== pIndex) {
         socket.emit('actionResult', { ok: false, reason: 'Not your turn' });
         return;
       }
+      if (game.pendingCombat) {
+        socket.emit('actionResult', { ok: false, reason: 'Resolve combat first' });
+        return;
+      }
 
-      room.game.endTurn();
+      game.endTurn();
 
-      if (room.game.status === 'finished') {
+      if (game.status === 'finished') {
         emitStateToBoth(room);
         checkAndProcessEnd(room);
         return;
       }
 
-      if (room.player2SocketId === null && room.game.turnManager.currentPlayerIndex === 1) {
-        var botAtkCount = botPlay(room.game, socket);
-        room.game.endTurn();
-        var delay = botAtkCount > 0 ? (botAtkCount * 700 + 400) : 0;
-        if (delay > 0) {
-          setTimeout(function () {
-            emitStateToBoth(room);
-            if (room.game.status === 'finished') checkAndProcessEnd(room);
-          }, delay);
+      if (room.player2SocketId === null && game.turnManager.currentPlayerIndex === 1) {
+        botPlayCards(game);
+        botAttachDon(game);
+        var attacks = botPlanAttacks(game);
+
+        if (attacks.length === 0) {
+          game.endTurn();
+          emitStateToBoth(room);
+          if (game.status === 'finished') checkAndProcessEnd(room);
           return;
         }
+
+        room.botAttackQueue = attacks;
+        emitStateToBoth(room);
+        setTimeout(function () {
+          processNextBotAttack(room, socket);
+        }, 500);
+        return;
       }
 
       emitStateToBoth(room);
-      if (room.game.status === 'finished') checkAndProcessEnd(room);
+      if (game.status === 'finished') checkAndProcessEnd(room);
     } catch (e) {
       socket.emit('error', { message: (e && e.message) || 'Invalid action' });
     }
   });
 });
 
-server.listen(PORT, BIND, () => {
+server.listen(PORT, BIND, function () {
   console.log('Game server listening on ' + BIND + ':' + PORT);
 });

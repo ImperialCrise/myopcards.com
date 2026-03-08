@@ -43,8 +43,8 @@ class HomeController
             'totalMatches' => $totalMatches,
             'activeGames' => $activeGames,
             'leaderboardTop' => $leaderboardTop,
-            'seoDescription' => 'The ultimate One Piece TCG collection tracker. Browse ' . number_format($totalCards) . ' cards, track market prices from TCGPlayer & Cardmarket, manage your collection, and share it with friends. Join ' . number_format((int)$userCount) . ' collectors today.',
-            'seoKeywords' => 'One Piece TCG, OPTCG, card collection tracker, One Piece trading card game, card prices, Cardmarket, TCGPlayer, collection manager, One Piece cards database',
+            'seoDescription' => 'The ultimate One Piece TCG platform. Browse ' . number_format($totalCards) . ' cards, track market prices, manage your collection, and play the One Piece card game online with ranked matchmaking. Join ' . number_format((int)$userCount) . ' collectors today.',
+            'seoKeywords' => 'One Piece TCG, OPTCG, card collection tracker, One Piece trading card game, card prices, Cardmarket, TCGPlayer, collection manager, One Piece cards database, play OPTCG online, One Piece TCG simulator',
             'seoCanonical' => 'https://myopcards.com/',
             'seoJsonLd' => [
                 '@context' => 'https://schema.org',

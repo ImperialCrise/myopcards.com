@@ -2,7 +2,7 @@ const db = require('./db');
 
 async function loadDeckForGame(deckId, userId) {
   const decks = await db.query(
-    'SELECT d.id, d.leader_card_id, c.id AS leader_id, c.card_name AS leader_name, c.card_set_id AS leader_set_id, c.card_image_url AS leader_image_url, c.card_color AS leader_color, c.card_type AS leader_type, c.card_power AS leader_power, c.life AS leader_life, c.card_text AS leader_text FROM decks d JOIN cards c ON c.id = d.leader_card_id WHERE d.id = ? AND d.user_id = ?',
+    'SELECT d.id, d.leader_card_id, c.id AS leader_id, c.card_name AS leader_name, c.card_set_id AS leader_set_id, c.card_image_url AS leader_image_url, c.card_color AS leader_color, c.card_type AS leader_type, c.card_power AS leader_power, c.life AS leader_life, c.card_text AS leader_text, c.counter_amount AS leader_counter, c.attribute AS leader_attribute FROM decks d JOIN cards c ON c.id = d.leader_card_id WHERE d.id = ? AND d.user_id = ?',
     [deckId, userId]
   );
   if (!decks || decks.length === 0) return null;
@@ -16,10 +16,12 @@ async function loadDeckForGame(deckId, userId) {
     card_type: deck.leader_type,
     card_power: deck.leader_power,
     life: deck.leader_life,
-    card_text: deck.leader_text
+    card_text: deck.leader_text,
+    counter_amount: deck.leader_counter,
+    attribute: deck.leader_attribute
   };
   const rows = await db.query(
-    'SELECT dc.card_id, dc.quantity, ca.id, ca.card_name, ca.card_set_id, ca.card_type, ca.card_color, ca.card_cost, ca.card_power, ca.card_image_url, ca.card_text FROM deck_cards dc JOIN cards ca ON ca.id = dc.card_id WHERE dc.deck_id = ? ORDER BY dc.card_id',
+    'SELECT dc.card_id, dc.quantity, ca.id, ca.card_name, ca.card_set_id, ca.card_type, ca.card_color, ca.card_cost, ca.card_power, ca.card_image_url, ca.card_text, ca.counter_amount, ca.attribute FROM deck_cards dc JOIN cards ca ON ca.id = dc.card_id WHERE dc.deck_id = ? ORDER BY dc.card_id',
     [deckId]
   );
   const deckCards = [];
@@ -35,7 +37,9 @@ async function loadDeckForGame(deckId, userId) {
         card_cost: r.card_cost,
         card_power: r.card_power,
         card_image_url: r.card_image_url,
-        card_text: r.card_text
+        card_text: r.card_text,
+        counter_amount: r.counter_amount,
+        attribute: r.attribute
       });
     }
   });
