@@ -25,7 +25,7 @@
 
         cardImageSrc: function (url) {
           if (url == null || typeof url !== 'string') return '/assets/img/card-back.png';
-          if (url.indexOf('optcgapi.com') !== -1) return '/api/card-image?url=' + encodeURIComponent(url);
+          if (url.indexOf('optcgapi.com') !== -1) return '/uploads/cards/' + url.split('/').pop();
           return url;
         },
 

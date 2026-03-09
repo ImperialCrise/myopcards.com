@@ -97,4 +97,21 @@ class StorageService
             return null;
         }
     }
+
+    public static function delete(string $key): bool
+    {
+        if (!self::isConfigured()) {
+            return false;
+        }
+        try {
+            self::getClient()->deleteObject([
+                'Bucket' => self::getBucket(),
+                'Key' => $key,
+            ]);
+            return true;
+        } catch (AwsException $e) {
+            error_log('StorageService delete error: ' . $e->getMessage());
+            return false;
+        }
+    }
 }

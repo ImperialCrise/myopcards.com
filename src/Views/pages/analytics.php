@@ -94,7 +94,7 @@
                             <td class="py-3 pr-4 text-dark-400 font-bold"><?= $i + 1 ?></td>
                             <td class="py-3 pr-4">
                                 <a href="/cards/<?= urlencode($tc['card_set_id']) ?>" class="flex items-center gap-3 hover:text-gold-400 transition">
-                                    <img src="<?= htmlspecialchars($tc['card_image_url'] ?? '') ?: 'about:blank' ?>" class="w-7 h-10 rounded object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
+                                    <img src="<?= htmlspecialchars(card_img_url($tc)) ?: 'about:blank' ?>" data-ext-src="<?= htmlspecialchars($tc['card_image_url'] ?? '') ?>" class="w-7 h-10 rounded object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
                                     <div>
                                         <p class="text-white font-medium"><?= htmlspecialchars($tc['card_name']) ?></p>
                                         <p class="text-xs text-dark-400"><?= htmlspecialchars($tc['card_set_id']) ?> &middot; <?= htmlspecialchars($tc['rarity'] ?? '') ?></p>

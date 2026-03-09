@@ -110,7 +110,7 @@ $user = \App\Core\Auth::user();
             <div class="space-y-2 max-h-80 overflow-y-auto pr-2">
                 <?php foreach ($recentCards as $rc): ?>
                     <a href="/cards/<?= urlencode($rc['card_set_id']) ?>" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition">
-                        <img src="<?= htmlspecialchars($rc['card_image_url'] ?? '') ?: 'about:blank' ?>" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
+                        <img src="<?= htmlspecialchars(card_img_url($rc)) ?: 'about:blank' ?>" data-ext-src="<?= htmlspecialchars($rc['card_image_url'] ?? '') ?>" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-white truncate"><?= htmlspecialchars($rc['card_name']) ?></p>
                             <p class="text-xs text-dark-400"><?= htmlspecialchars($rc['card_set_id']) ?></p>

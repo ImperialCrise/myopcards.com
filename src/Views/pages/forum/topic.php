@@ -2,6 +2,90 @@
 $isLoggedIn = \App\Core\Auth::check();
 $currentUserId = \App\Core\Auth::id();
 $isAdmin = \App\Core\Auth::isAdmin();
+
+// Card-style block theme bg/border map (matches profile.php)
+$blockThemeBg = [
+    'default'  => 'rgba(17,24,39,0.72)',
+    'ocean'    => 'rgba(8,28,52,0.78)',
+    'fire'     => 'rgba(52,8,8,0.78)',
+    'gold'     => 'rgba(36,24,4,0.78)',
+    'emerald'  => 'rgba(4,28,16,0.78)',
+    'purple'   => 'rgba(20,4,40,0.78)',
+    'midnight' => 'rgba(6,6,20,0.82)',
+    'crimson'  => 'rgba(36,4,12,0.78)',
+    'slate'    => 'rgba(16,24,36,0.78)',
+    'rose'     => 'rgba(36,8,20,0.78)',
+    'teal'     => 'rgba(4,28,28,0.78)',
+    'amber'    => 'rgba(36,20,4,0.78)',
+];
+$blockThemeBorder = [
+    'default'  => 'rgba(74,100,128,0.22)',
+    'ocean'    => 'rgba(30,100,200,0.3)',
+    'fire'     => 'rgba(200,40,30,0.32)',
+    'gold'     => 'rgba(200,160,40,0.35)',
+    'emerald'  => 'rgba(20,160,80,0.3)',
+    'purple'   => 'rgba(120,30,210,0.35)',
+    'midnight' => 'rgba(50,50,130,0.28)',
+    'crimson'  => 'rgba(180,20,50,0.32)',
+    'slate'    => 'rgba(100,130,160,0.28)',
+    'rose'     => 'rgba(200,50,100,0.3)',
+    'teal'     => 'rgba(20,160,150,0.3)',
+    'amber'    => 'rgba(210,130,20,0.32)',
+];
+function forumAuthorCard(array $u, array $featuredCards, array $blockThemeBg, array $blockThemeBorder, bool $large = false): void {
+    $uid        = (int)($u['user_id'] ?? $u['id'] ?? 0);
+    $username   = htmlspecialchars($u['username'] ?? '');
+    $accent     = htmlspecialchars($u['profile_accent_color'] ?? '#d4a853');
+    $style      = $u['card_style'] ?? 'default';
+    $panelBg    = $blockThemeBg[$style]   ?? $blockThemeBg['default'];
+    $panelBord  = $blockThemeBorder[$style] ?? $blockThemeBorder['default'];
+    $avatarSize = $large ? 'w-16 h-16' : 'w-12 h-12';
+    $featured   = $featuredCards[$uid] ?? null;
+    $postCount  = (int)($u['user_post_count'] ?? 0);
+    $joined     = isset($u['user_joined']) ? date('M Y', strtotime($u['user_joined'])) : '';
+    $avatarUrl  = \App\Models\User::getAvatarUrl($u);
+
+    echo '<div class="forum-author-card">';
+
+    // Avatar
+    echo '<div class="relative inline-block mb-2">';
+    echo '<a href="/user/' . $username . '">';
+    if ($avatarUrl) {
+        echo '<img src="' . htmlspecialchars($avatarUrl) . '" alt="" class="' . $avatarSize . ' rounded-full object-cover" style="border:3px solid ' . $accent . ';box-shadow:0 0 10px ' . $accent . '44">';
+    } else {
+        echo '<div class="' . $avatarSize . ' rounded-full flex items-center justify-center text-lg font-bold" style="background:linear-gradient(135deg,' . $accent . ',' . $accent . '88);color:#fff;border:3px solid ' . $accent . ';box-shadow:0 0 10px ' . $accent . '44">';
+        echo strtoupper(substr($u['username'] ?? '?', 0, 1));
+        echo '</div>';
+    }
+    echo '</a>';
+
+    // Featured card badge
+    if ($featured) {
+        echo '<div class="absolute -bottom-1 -right-1 group z-10">';
+        echo '<div class="relative">';
+        echo '<img src="' . htmlspecialchars(card_img_url($featured)) . '" data-ext-src="' . htmlspecialchars($featured['card_image_url'] ?? '') . '" alt="' . htmlspecialchars($featured['card_name']) . '" class="' . ($large ? 'w-8 h-10' : 'w-6 h-8') . ' object-cover rounded border-2 border-white shadow-lg" onerror="cardImgErr(this)">';
+        echo '<div class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center" style="background:' . $accent . '">';
+        echo '<i data-lucide="star" class="w-2 h-2 text-white fill-current"></i>';
+        echo '</div>';
+        echo '</div>';
+        echo '<div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 bg-gray-900 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">';
+        echo htmlspecialchars($featured['card_name']);
+        echo '</div>';
+        echo '</div>';
+    }
+    echo '</div>'; // /relative
+
+    // Username
+    echo '<a href="/user/' . $username . '" class="font-semibold text-sm hover:opacity-80 transition block leading-tight" style="color:' . $accent . '">' . $username . '</a>';
+
+    // Stats
+    echo '<p class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">' . number_format($postCount) . ' posts</p>';
+    if ($joined) {
+        echo '<p class="text-[10px] text-gray-500 dark:text-gray-400">Joined ' . $joined . '</p>';
+    }
+
+    echo '</div>'; // /forum-author-card
+}
 ?>
 
 <div class="min-h-screen bg-gray-50 dark:bg-dark-900 py-8" x-data="{ lightboxSrc: null, lightboxAlt: '' }" @keydown.escape.window="lightboxSrc = null">
@@ -21,58 +105,54 @@ $isAdmin = \App\Core\Auth::isAdmin();
         </div>
         <?php unset($_SESSION['forum_error']); endif; ?>
 
+        <?php
+        $topicAccent = htmlspecialchars($topic['profile_accent_color'] ?? '#d4a853');
+        $topicStyle  = $topic['card_style'] ?? 'default';
+        $topicPanelBg   = $blockThemeBg[$topicStyle]   ?? $blockThemeBg['default'];
+        $topicPanelBord = $blockThemeBorder[$topicStyle] ?? $blockThemeBorder['default'];
+        ?>
         <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700 overflow-hidden mb-6">
-            <div class="p-6 border-b border-gray-100 dark:border-dark-700">
-                <div class="flex items-start gap-4">
+            <div class="border-b border-gray-100 dark:border-dark-700">
+                <!-- Topic header: author strip + meta -->
+                <div class="flex items-center gap-3 px-4 py-3" style="background:<?= $topicPanelBg ?>;border-bottom:1px solid <?= $topicPanelBord ?>">
+                    <?php $topicAvatarUrl = \App\Models\User::getAvatarUrl($topic); ?>
                     <div class="relative flex-shrink-0">
-                        <?php if (avatar_url($topic)): ?>
-                        <img src="<?= htmlspecialchars(avatar_url($topic)) ?>" alt="" class="w-12 h-12 rounded-full">
+                        <?php if ($topicAvatarUrl): ?>
+                        <a href="/user/<?= htmlspecialchars($topic['username']) ?>">
+                            <img src="<?= htmlspecialchars($topicAvatarUrl) ?>" alt="" class="w-9 h-9 rounded-full object-cover" style="border:2px solid <?= $topicAccent ?>;box-shadow:0 0 8px <?= $topicAccent ?>44">
+                        </a>
                         <?php else: ?>
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
+                        <a href="/user/<?= htmlspecialchars($topic['username']) ?>" class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold" style="background:linear-gradient(135deg,<?= $topicAccent ?>,<?= $topicAccent ?>88);color:#fff;border:2px solid <?= $topicAccent ?>;display:flex">
                             <?= strtoupper(substr($topic['username'], 0, 1)) ?>
-                        </div>
+                        </a>
                         <?php endif; ?>
-                        
                         <?php if (isset($featuredCards[$topic['user_id']])): ?>
                         <div class="absolute -bottom-1 -right-1 group">
-                            <div class="relative">
-                                <img src="<?= htmlspecialchars($featuredCards[$topic['user_id']]['card_image_url']) ?>" 
-                                     alt="<?= htmlspecialchars($featuredCards[$topic['user_id']]['card_name']) ?>"
-                                     class="w-6 h-8 object-cover rounded border-2 border-white shadow-lg">
-                                <div class="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full flex items-center justify-center">
-                                    <i data-lucide="star" class="w-2 h-2 text-white fill-current"></i>
-                                </div>
-                            </div>
-                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                                Featured: <?= htmlspecialchars($featuredCards[$topic['user_id']]['card_name']) ?>
-                            </div>
+                            <img src="<?= htmlspecialchars(card_img_url($featuredCards[$topic['user_id']])) ?>" data-ext-src="<?= htmlspecialchars($featuredCards[$topic['user_id']]['card_image_url'] ?? '') ?>" alt="" class="w-5 h-6 object-cover rounded border border-white shadow" title="Featured: <?= htmlspecialchars($featuredCards[$topic['user_id']]['card_name']) ?>" onerror="cardImgErr(this)">
                         </div>
                         <?php endif; ?>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 flex-wrap mb-2">
-                            <?php if ($topic['is_pinned']): ?>
-                            <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-medium rounded">Pinned</span>
-                            <?php endif; ?>
-                            <?php if ($topic['is_locked']): ?>
-                            <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs font-medium rounded flex items-center gap-1">
-                                <i data-lucide="lock" class="w-3 h-3"></i> Locked
-                            </span>
-                            <?php endif; ?>
-                        </div>
-                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($topic['title']) ?></h1>
-                        <div class="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
-                            <a href="/user/<?= htmlspecialchars($topic['username']) ?>" class="hover:text-blue-600 transition">
-                                <?= htmlspecialchars($topic['username']) ?>
-                            </a>
-                            <span>&middot;</span>
-                            <span><?= date('F j, Y \a\t g:i a', strtotime($topic['created_at'])) ?></span>
-                            <span>&middot;</span>
-                            <span class="flex items-center gap-1"><i data-lucide="eye" class="w-4 h-4"></i> <?= number_format($topic['views']) ?> views</span>
-                            <span>&middot;</span>
-                            <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-4 h-4"></i> <?= number_format($topic['reply_count']) ?> replies</span>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <a href="/user/<?= htmlspecialchars($topic['username']) ?>" class="text-sm font-semibold hover:opacity-80 transition" style="color:<?= $topicAccent ?>"><?= htmlspecialchars($topic['username']) ?></a>
+                            <span class="text-xs text-gray-400 dark:text-gray-500"><?= date('M j, Y · g:i a', strtotime($topic['created_at'])) ?></span>
+                            <span class="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1"><i data-lucide="eye" class="w-3 h-3"></i><?= number_format($topic['views']) ?></span>
+                            <span class="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i><?= number_format($topic['reply_count']) ?></span>
                         </div>
                     </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <?php if ($topic['is_pinned']): ?>
+                        <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-medium rounded">Pinned</span>
+                        <?php endif; ?>
+                        <?php if ($topic['is_locked']): ?>
+                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs font-medium rounded flex items-center gap-1">
+                            <i data-lucide="lock" class="w-3 h-3"></i> Locked
+                        </span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="px-6 pt-4 pb-2">
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($topic['title']) ?></h1>
                 </div>
             </div>
             <div class="p-6">
@@ -118,47 +198,34 @@ $isAdmin = \App\Core\Auth::isAdmin();
         <?php if (!empty($posts)): ?>
         <div class="space-y-4 mb-6">
             <?php foreach ($posts as $post): ?>
+            <?php
+            $postAccent = htmlspecialchars($post['profile_accent_color'] ?? '#d4a853');
+            $postStyle  = $post['card_style'] ?? 'default';
+            $postPanelBg   = $blockThemeBg[$postStyle]   ?? $blockThemeBg['default'];
+            $postPanelBord = $blockThemeBorder[$postStyle] ?? $blockThemeBorder['default'];
+            ?>
             <div id="post-<?= $post['id'] ?>" class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700 overflow-hidden">
                 <div class="flex">
-                    <div class="w-48 flex-shrink-0 bg-gray-50 dark:bg-dark-700 p-4 text-center border-r border-gray-100 dark:border-dark-600 hidden md:block">
-                        <a href="/user/<?= htmlspecialchars($post['username']) ?>">
-                            <div class="relative inline-block mb-2">
-                                <?php if (avatar_url($post)): ?>
-                                <img src="<?= htmlspecialchars(avatar_url($post)) ?>" alt="" class="w-16 h-16 rounded-full">
-                                <?php else: ?>
-                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
-                                    <?= strtoupper(substr($post['username'], 0, 1)) ?>
-                                </div>
-                                <?php endif; ?>
-                                
-                                <?php if (isset($featuredCards[$post['user_id']])): ?>
-                                <div class="absolute -bottom-1 -right-1 group">
-                                    <div class="relative">
-                                        <img src="<?= htmlspecialchars($featuredCards[$post['user_id']]['card_image_url']) ?>" 
-                                             alt="<?= htmlspecialchars($featuredCards[$post['user_id']]['card_name']) ?>"
-                                             class="w-8 h-10 object-cover rounded border-2 border-white shadow-lg">
-                                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
-                                            <i data-lucide="star" class="w-2.5 h-2.5 text-white fill-current"></i>
-                                        </div>
-                                    </div>
-                                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                                        Featured: <?= htmlspecialchars($featuredCards[$post['user_id']]['card_name']) ?>
-                                    </div>
-                                </div>
-                                <?php endif; ?>
-                            </div>
-                            <p class="font-semibold text-gray-900 dark:text-white hover:text-blue-600 transition"><?= htmlspecialchars($post['username']) ?></p>
-                        </a>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1"><?= number_format($post['user_post_count']) ?> posts</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Joined <?= date('M Y', strtotime($post['user_joined'])) ?></p>
+                    <!-- Desktop author sidebar -->
+                    <div class="w-44 flex-shrink-0 border-r hidden md:flex flex-col items-center text-center p-4 gap-0" style="background:<?= $postPanelBg ?>;border-color:<?= $postPanelBord ?>">
+                        <?php forumAuthorCard($post, $featuredCards, $blockThemeBg, $blockThemeBorder, true); ?>
                     </div>
                     <div class="flex-1 min-w-0">
+                        <!-- Post header bar -->
                         <div class="px-4 py-2 bg-gray-50 dark:bg-dark-700 border-b border-gray-100 dark:border-dark-600 flex items-center justify-between">
-                            <span class="text-sm text-gray-500 dark:text-gray-400">
-                                <?= date('F j, Y \a\t g:i a', strtotime($post['created_at'])) ?>
-                                <?php if ($post['edited_at']): ?>
-                                <span class="italic">(edited)</span>
+                            <!-- Mobile: author row -->
+                            <div class="flex items-center gap-2 md:hidden">
+                                <?php $postAv = \App\Models\User::getAvatarUrl($post); ?>
+                                <?php if ($postAv): ?>
+                                <img src="<?= htmlspecialchars($postAv) ?>" alt="" class="w-6 h-6 rounded-full object-cover" style="border:2px solid <?= $postAccent ?>">
+                                <?php else: ?>
+                                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style="background:<?= $postAccent ?>;color:#fff"><?= strtoupper(substr($post['username'],0,1)) ?></div>
                                 <?php endif; ?>
+                                <a href="/user/<?= htmlspecialchars($post['username']) ?>" class="text-sm font-semibold" style="color:<?= $postAccent ?>"><?= htmlspecialchars($post['username']) ?></a>
+                            </div>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 hidden md:inline">
+                                <?= date('M j, Y · g:i a', strtotime($post['created_at'])) ?>
+                                <?php if ($post['edited_at']): ?><span class="italic"> (edited)</span><?php endif; ?>
                             </span>
                             <div class="flex items-center gap-2">
                                 <?php if ($isLoggedIn): ?>
@@ -179,31 +246,6 @@ $isAdmin = \App\Core\Auth::isAdmin();
                                 </form>
                                 <?php endif; ?>
                             </div>
-                        </div>
-                        <div class="p-4 md:hidden flex items-center gap-3 border-b border-gray-100 dark:border-dark-600">
-                            <div class="relative">
-                                <?php if (avatar_url($post)): ?>
-                                <img src="<?= htmlspecialchars(avatar_url($post)) ?>" alt="" class="w-8 h-8 rounded-full">
-                                <?php else: ?>
-                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                                    <?= strtoupper(substr($post['username'], 0, 1)) ?>
-                                </div>
-                                <?php endif; ?>
-                                
-                                <?php if (isset($featuredCards[$post['user_id']])): ?>
-                                <div class="absolute -bottom-0.5 -right-0.5 group">
-                                    <div class="relative">
-                                        <img src="<?= htmlspecialchars($featuredCards[$post['user_id']]['card_image_url']) ?>" 
-                                             alt="<?= htmlspecialchars($featuredCards[$post['user_id']]['card_name']) ?>"
-                                             class="w-4 h-5 object-cover rounded border border-white shadow">
-                                        <div class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-400 rounded-full flex items-center justify-center">
-                                            <i data-lucide="star" class="w-1.5 h-1.5 text-white fill-current"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                                <?php endif; ?>
-                            </div>
-                            <a href="/user/<?= htmlspecialchars($post['username']) ?>" class="font-medium text-gray-900 dark:text-white"><?= htmlspecialchars($post['username']) ?></a>
                         </div>
                         <div class="p-4">
                             <div class="prose dark:prose-invert max-w-none forum-content forum-lightbox-content" @click="if ($event.target.tagName === 'IMG') { lightboxSrc = $event.target.src; lightboxAlt = $event.target.alt || ''; $event.preventDefault(); $event.stopPropagation(); }">
@@ -356,6 +398,8 @@ $isAdmin = \App\Core\Auth::isAdmin();
 .forum-content pre { background: #1F2937; color: #E5E7EB; padding: 1rem; border-radius: 8px; overflow-x: auto; }
 .forum-content a { color: #3B82F6; text-decoration: underline; }
 #editor:empty:before { content: 'Write your reply...'; color: #9CA3AF; }
+.forum-author-card { display:flex; flex-direction:column; align-items:center; text-align:center; padding:12px 10px; }
+.badge-coin-inner svg { border-radius:50%; display:block; }
 </style>
 
 <script>

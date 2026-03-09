@@ -126,7 +126,8 @@ class ForumController
         $offset = ($page - 1) * self::POSTS_PER_PAGE;
 
         $topic = $db->prepare(
-            "SELECT t.*, c.name as category_name, c.slug as category_slug, u.username, u.avatar, u.custom_avatar
+            "SELECT t.*, c.name as category_name, c.slug as category_slug,
+                    u.username, u.avatar, u.custom_avatar, u.profile_accent_color, u.card_style
              FROM forum_topics t
              JOIN forum_categories c ON c.id = t.category_id
              JOIN users u ON u.id = t.user_id
@@ -150,7 +151,8 @@ class ForumController
         $totalPages = max(1, ceil(($totalPosts + 1) / self::POSTS_PER_PAGE));
 
         $stmt = $db->prepare(
-            "SELECT p.*, u.username, u.avatar, u.custom_avatar, u.created_at as user_joined,
+            "SELECT p.*, u.username, u.avatar, u.custom_avatar, u.profile_accent_color, u.card_style,
+                    u.created_at as user_joined,
                     (SELECT COUNT(*) FROM forum_posts WHERE user_id = u.id) as user_post_count,
                     (SELECT COUNT(*) FROM forum_reactions WHERE post_id = p.id AND reaction = 'like') as likes
              FROM forum_posts p
@@ -222,6 +224,30 @@ class ForumController
             }
         }
 
+        // Batch-fetch quick stats for author badge computation
+        $userBadges = [];
+        if (!empty($userIds)) {
+            $placeholders2 = str_repeat('?,', count($userIds) - 1) . '?';
+            $statsStmt = $db->prepare(
+                "SELECT u.id,
+                        (SELECT COUNT(DISTINCT card_id) FROM user_cards WHERE user_id = u.id) as card_count,
+                        (SELECT COUNT(*) FROM forum_posts WHERE user_id = u.id) as post_count,
+                        (SELECT COUNT(*) FROM forum_topics WHERE user_id = u.id) as topic_count,
+                        (SELECT COUNT(*) FROM friendships WHERE (user_id = u.id OR friend_id = u.id) AND status = 'accepted') as friend_count,
+                        COALESCE(l.elo_rating, 1000) as elo_rating,
+                        COALESCE(l.wins, 0) as wins,
+                        COALESCE(l.games_played, 0) as games_played,
+                        COALESCE(l.best_streak, 0) as best_streak
+                 FROM users u
+                 LEFT JOIN leaderboard l ON l.user_id = u.id
+                 WHERE u.id IN ($placeholders2)"
+            );
+            $statsStmt->execute(array_values($userIds));
+            foreach ($statsStmt->fetchAll() as $row) {
+                $userBadges[(int)$row['id']] = \App\Services\BadgeService::computeForumBadges($row, 3);
+            }
+        }
+
         // Sanitize content for safe output (handles corrupted data from failed uploads, etc.)
         $topic['content'] = $this->sanitizeContentForDisplay($topic['content']);
         foreach ($posts as $i => $post) {
@@ -239,6 +265,7 @@ class ForumController
             'topicAttachments' => $topicAttachments,
             'postAttachments' => $postAttachments,
             'featuredCards' => $featuredCards,
+            'userBadges' => $userBadges,
         ]);
     }
 

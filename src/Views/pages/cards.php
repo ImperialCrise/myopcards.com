@@ -89,7 +89,7 @@ $filtersJson = json_encode($filters, JSON_HEX_APOS | JSON_HEX_TAG);
                     <a :href="'/cards/' + card.card_set_id" class="block">
                         <div class="glass rounded-xl overflow-hidden">
                             <div class="relative aspect-[5/7] bg-dark-700">
-                                <img :src="card.card_image_url || __PLACEHOLDER" alt="" class="w-full h-full object-cover" loading="lazy"
+                                <img :src="cardImgSrc(card.card_image_url)" :data-ext-src="card.card_image_url" alt="" class="w-full h-full object-cover" loading="lazy"
                                      onerror="cardImgErr(this)">
                                 <template x-if="ownedCards[card.id]">
                                     <div class="absolute top-1.5 right-1.5 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">

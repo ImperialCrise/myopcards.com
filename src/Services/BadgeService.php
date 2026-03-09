@@ -352,6 +352,64 @@ class BadgeService
     }
 
     /**
+     * Lightweight badge computation for forum author sidebars.
+     * Takes a flat array of quick stats (card_count, post_count, etc.)
+     * and returns the top $limit earned badges sorted by tier (best first).
+     */
+    public static function computeForumBadges(array $quick, int $limit = 3): array
+    {
+        $cards   = (int)($quick['card_count']   ?? 0);
+        $posts   = (int)($quick['post_count']   ?? 0);
+        $topics  = (int)($quick['topic_count']  ?? 0);
+        $games   = (int)($quick['games_played'] ?? 0);
+        $wins    = (int)($quick['wins']         ?? 0);
+        $elo     = (int)($quick['elo_rating']   ?? 1000);
+        $friends = (int)($quick['friend_count'] ?? 0);
+        $streak  = (int)($quick['best_streak']  ?? 0);
+
+        $checks = [
+            'first_card'    => $cards >= 1,
+            'collector_10'  => $cards >= 10,
+            'collector_50'  => $cards >= 50,
+            'collector_100' => $cards >= 100,
+            'collector_500' => $cards >= 500,
+            'collector_1000'=> $cards >= 1000,
+            'first_post'    => $posts >= 1,
+            'forum_10'      => $posts >= 10,
+            'forum_50'      => $posts >= 50,
+            'forum_100'     => $posts >= 100,
+            'first_topic'   => $topics >= 1,
+            'topic_10'      => $topics >= 10,
+            'first_game'    => $games >= 1,
+            'gamer_10'      => $games >= 10,
+            'gamer_50'      => $games >= 50,
+            'gamer_100'     => $games >= 100,
+            'first_win'     => $wins >= 1,
+            'streak_3'      => $streak >= 3,
+            'streak_5'      => $streak >= 5,
+            'streak_10'     => $streak >= 10,
+            'elo_1200'      => $elo >= 1200,
+            'elo_1500'      => $elo >= 1500,
+            'elo_1800'      => $elo >= 1800,
+            'elo_2000'      => $elo >= 2000,
+            'social_1'      => $friends >= 1,
+            'social_5'      => $friends >= 5,
+            'social_10'     => $friends >= 10,
+            'social_25'     => $friends >= 25,
+        ];
+
+        $tierPriority = ['diamond' => 4, 'gold' => 3, 'silver' => 2, 'bronze' => 1];
+        $earned = [];
+        foreach (self::getAllBadges() as $badge) {
+            if ($checks[$badge['id']] ?? false) {
+                $earned[] = $badge;
+            }
+        }
+        usort($earned, fn($a, $b) => ($tierPriority[$b['tier']] ?? 0) <=> ($tierPriority[$a['tier']] ?? 0));
+        return array_slice($earned, 0, $limit);
+    }
+
+    /**
      * Compute which badges the user has earned based on their stats.
      * Returns array with badge_id => earned_at (null = not earned)
      */

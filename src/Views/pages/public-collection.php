@@ -85,7 +85,7 @@ $baseUrl = '/collection/' . urlencode($collectionUser['username'] ?? '');
             <a href="/cards/<?= urlencode($card['card_set_id']) ?>" class="group card-hover">
                 <div class="glass rounded-xl overflow-hidden">
                     <div class="relative aspect-[5/7] bg-dark-700">
-                        <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?: 'about:blank' ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
+                        <img src="<?= htmlspecialchars(card_img_url($card)) ?: 'about:blank' ?>" data-ext-src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
                         <span class="absolute top-1.5 right-1.5 px-2 py-0.5 bg-dark-900/80 text-white text-xs font-bold rounded-full"><?= (int)($card['quantity'] ?? 1) ?>x</span>
                         <?php if (!empty($card['rarity'])): ?>
                             <?php

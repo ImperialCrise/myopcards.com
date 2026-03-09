@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Core\Database;
 use App\Models\Card;
 use App\Models\CardSet;
+use App\Services\StorageService;
 
 class CardSyncService
 {
@@ -144,6 +145,27 @@ class CardSyncService
             'inventory_price' => $card['inventory_price'] ?? null,
             'is_parallel' => $isParallel ? 1 : 0,
         ]);
+
+        $imgUrl = $card['card_image'] ?? null;
+        if ($imgUrl && StorageService::isConfigured()) {
+            $filename = basename(parse_url($imgUrl, PHP_URL_PATH));
+            if ($filename) {
+                $key = 'cards/' . $filename;
+                if (StorageService::get($key) === null) {
+                    $img = @file_get_contents($imgUrl);
+                    if ($img) {
+                        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                        $ctype = match ($ext) {
+                            'png' => 'image/png',
+                            'gif' => 'image/gif',
+                            'webp' => 'image/webp',
+                            default => 'image/jpeg',
+                        };
+                        StorageService::put($key, $img, $ctype);
+                    }
+                }
+            }
+        }
     }
 
     public static function deriveUniqueId(array $card): array

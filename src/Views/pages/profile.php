@@ -240,7 +240,7 @@ $activeTheme = $blockThemes[$currentCardStyle] ?? $blockThemes['default'];
                 <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
                     <?php foreach (array_slice($recentCards, 0, 12) as $card): ?>
                     <a href="/cards/<?= htmlspecialchars($card['card_set_id']) ?>" class="card-show" title="<?= htmlspecialchars($card['card_name']) ?>">
-                        <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?: 'about:blank' ?>" alt="<?= htmlspecialchars($card['card_name']) ?>"
+                        <img src="<?= htmlspecialchars(card_img_url($card)) ?: 'about:blank' ?>" data-ext-src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="<?= htmlspecialchars($card['card_name']) ?>"
                              class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
                         <?php if (($card['quantity'] ?? 0) > 1): ?>
                         <span class="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 bg-black/70 rounded-full flex items-center justify-center text-[10px] font-bold text-white"><?= $card['quantity'] ?></span>

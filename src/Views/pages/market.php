@@ -14,7 +14,7 @@
                 <template x-if="gainers.length === 0"><p class="text-sm text-dark-400 text-center py-4"><?= t('market.no_price_data') ?></p></template>
                 <template x-for="card in gainers" :key="card.id">
                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition">
-                        <img :src="card.card_image_url || __PLACEHOLDER" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="cardImgErr(this)">
+                        <img :src="cardImgSrc(card.card_image_url)" class="w-8 h-11 rounded object-cover bg-dark-700" :data-ext-src="card.card_image_url" onerror="cardImgErr(this)">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-white truncate" x-text="card.card_name"></p>
                             <p class="text-xs text-dark-400" x-text="card.card_set_id"></p>
@@ -35,7 +35,7 @@
                 <template x-if="losers.length === 0"><p class="text-sm text-dark-400 text-center py-4"><?= t('market.no_price') ?></p></template>
                 <template x-for="card in losers" :key="card.id">
                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition">
-                        <img :src="card.card_image_url || __PLACEHOLDER" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="cardImgErr(this)">
+                        <img :src="cardImgSrc(card.card_image_url)" class="w-8 h-11 rounded object-cover bg-dark-700" :data-ext-src="card.card_image_url" onerror="cardImgErr(this)">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-white truncate" x-text="card.card_name"></p>
                             <p class="text-xs text-dark-400" x-text="card.card_set_id"></p>
@@ -63,7 +63,7 @@
                     <a href="/cards/<?= urlencode($card['card_set_id']) ?>" class="group card-hover">
                         <div class="glass rounded-xl overflow-hidden">
                             <div class="relative aspect-[5/7] bg-dark-700">
-                                <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?: 'about:blank' ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
+                                <img src="<?= htmlspecialchars(card_img_url($card)) ?: 'about:blank' ?>" data-ext-src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
                                 <span class="absolute top-1.5 left-1.5 px-2 py-0.5 bg-dark-900/80 text-gold-400 text-xs font-bold rounded">#<?= $i + 1 ?></span>
                             </div>
                             <div class="p-2.5">
@@ -100,7 +100,7 @@
                             <td class="py-3 pr-4 text-dark-400 font-bold"><?= $i + 1 ?></td>
                             <td class="py-3 pr-4">
                                 <a href="/cards/<?= urlencode($c['card_set_id']) ?>" class="flex items-center gap-3 hover:text-gold-400 transition">
-                                    <img src="<?= htmlspecialchars($c['card_image_url'] ?? '') ?: 'about:blank' ?>" class="w-7 h-10 rounded object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
+                                    <img src="<?= htmlspecialchars(card_img_url($c)) ?: 'about:blank' ?>" data-ext-src="<?= htmlspecialchars($c['card_image_url'] ?? '') ?>" class="w-7 h-10 rounded object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
                                     <div><p class="text-white font-medium"><?= htmlspecialchars($c['card_name']) ?></p><p class="text-xs text-dark-400"><?= htmlspecialchars($c['card_set_id']) ?></p></div>
                                 </a>
                             </td>
@@ -156,7 +156,7 @@
                 <a href="/cards/<?= urlencode($card['card_set_id']) ?>" class="group card-hover">
                     <div class="glass rounded-xl overflow-hidden">
                         <div class="aspect-[5/7] bg-dark-700">
-                            <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.classList.add('skeleton');this.style.display='none'">
+                            <img src="<?= htmlspecialchars(card_img_url($card)) ?>" data-ext-src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" class="w-full h-full object-cover" loading="lazy" :data-ext-src="card.card_image_url" onerror="cardImgErr(this)">
                         </div>
                         <div class="p-2">
                             <p class="text-xs font-bold text-white truncate"><?= htmlspecialchars($card['card_name']) ?></p>

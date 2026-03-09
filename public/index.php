@@ -163,17 +163,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uriPath !== null && $uriPath !== fa
         (new App\Controllers\UploadController())->serveAvatars($path);
         exit;
     }
+    if (str_starts_with($uriPath, '/uploads/cards/')) {
+        $path = substr($uriPath, strlen('/uploads/cards/'));
+        (new App\Controllers\UploadController())->serveCards($path);
+        exit;
+    }
     if (str_starts_with($uriPath, '/uploads/banners/')) {
         $path = substr($uriPath, strlen('/uploads/banners/'));
-        $file = BASE_PATH . '/public/uploads/banners/' . ltrim($path, '/');
-        if (is_file($file)) {
-            $mime = mime_content_type($file) ?: 'image/jpeg';
-            header('Content-Type: ' . $mime);
-            header('Cache-Control: public, max-age=86400');
-            readfile($file);
-            exit;
-        }
-        http_response_code(404);
+        (new App\Controllers\UploadController())->serveBanners($path);
         exit;
     }
 }

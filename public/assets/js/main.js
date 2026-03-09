@@ -171,7 +171,17 @@ function unifiedNotifications() {
 }
 
 var __PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='350' viewBox='0 0 250 350'%3E%3Crect fill='%23e5e7eb' width='250' height='350' rx='12'/%3E%3Ctext x='125' y='165' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%239ca3af'%3ENo Image%3C/text%3E%3Cpath d='M113 185 l12 15 8-6 17 21H100z' fill='%239ca3af' opacity='.4'/%3E%3Ccircle cx='150' cy='190' r='6' fill='%239ca3af' opacity='.4'/%3E%3C/svg%3E";
-function cardImgErr(el) { el.src = __PLACEHOLDER; el.onerror = null; }
+function cardImgErr(el) {
+    var ext = el.dataset && el.dataset.extSrc;
+    if (ext && el.src !== ext) { el.src = ext; el.onerror = null; return; }
+    el.src = __PLACEHOLDER; el.onerror = null;
+}
+
+function cardImgSrc(url) {
+    if (url == null || typeof url !== 'string') return __PLACEHOLDER;
+    if (url.indexOf('optcgapi.com') !== -1) return '/uploads/cards/' + url.split('/').pop();
+    return url;
+}
 
 function updateNavBadge(count) {
     var badge = document.getElementById('nav-notif-count');

@@ -226,7 +226,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider" x-text="typeof __LANG !== 'undefined' && __LANG['nav.cards_label'] ? __LANG['nav.cards_label'] : 'Cards'"></div>
                                 <template x-for="(card, i) in results.cards" :key="'c'+card.id">
                                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition" :class="activeIdx === i ? 'search-result-active' : ''">
-                                        <img :src="card.card_image_url || __PLACEHOLDER" class="w-8 h-11 rounded object-cover bg-gray-100" onerror="cardImgErr(this)">
+                                        <img :src="cardImgSrc(card.card_image_url)" :data-ext-src="card.card_image_url" class="w-8 h-11 rounded object-cover bg-gray-100" onerror="cardImgErr(this)">
                                         <div class="flex-1 min-w-0"><p class="text-sm text-gray-900 truncate" x-text="card.display_name || card.card_name"></p><p class="text-xs text-gray-400" x-text="card.card_set_id + ' · ' + card.rarity"></p></div>
                                         <span x-show="getCardPrice(card) > 0" class="text-xs font-bold text-gray-900" x-text="formatCardPrice(card)"></span>
                                     </a>
@@ -402,7 +402,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
             <div x-show="open && results.cards.length > 0" class="mt-2 glass rounded-lg max-h-60 overflow-y-auto">
                 <template x-for="card in results.cards" :key="'mc'+card.id">
                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition">
-                        <img :src="card.card_image_url || __PLACEHOLDER" class="w-6 h-8 rounded object-cover" onerror="cardImgErr(this)">
+                        <img :src="cardImgSrc(card.card_image_url)" :data-ext-src="card.card_image_url" class="w-6 h-8 rounded object-cover" onerror="cardImgErr(this)">
                         <span class="text-sm text-gray-900 truncate" x-text="card.display_name || card.card_name"></span>
                     </a>
                 </template>

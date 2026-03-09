@@ -246,7 +246,7 @@ $categories = ['collection'=>'Collection','value'=>'Value','completion'=>'Comple
             <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 <?php foreach (array_slice($recentCards, 0, 12) as $card): ?>
                 <a href="/cards/<?= htmlspecialchars($card['card_set_id']) ?>" class="card-showcase-item group" title="<?= htmlspecialchars($card['card_name']) ?>">
-                    <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?: 'about:blank' ?>" alt="<?= htmlspecialchars($card['card_name']) ?>"
+                    <img src="<?= htmlspecialchars(card_img_url($card)) ?: 'about:blank' ?>" data-ext-src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="<?= htmlspecialchars($card['card_name']) ?>"
                          class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
                     <?php if (($card['quantity'] ?? 0) > 1): ?>
                     <span class="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 bg-black/70 rounded-full flex items-center justify-center text-[10px] font-bold text-white"><?= $card['quantity'] ?></span>
@@ -266,7 +266,7 @@ $categories = ['collection'=>'Collection','value'=>'Value','completion'=>'Comple
             </div>
             <div class="flex flex-col items-center text-center flex-1">
                 <div class="relative mb-4">
-                    <img src="<?= htmlspecialchars($featuredCard['card_image_url']) ?>"
+                    <img src="<?= htmlspecialchars(card_img_url($featuredCard)) ?>"
                          alt="<?= htmlspecialchars($featuredCard['card_name']) ?>"
                          class="w-28 rounded-xl shadow-xl border-2" style="border-color:<?= $accentColor ?>55">
                     <div class="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center shadow" style="background:<?= $accentColor ?>">

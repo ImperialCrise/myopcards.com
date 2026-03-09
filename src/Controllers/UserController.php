@@ -387,11 +387,19 @@ class UserController
             default      => 'jpg',
         };
         $relativePath = date('Y/m/') . uniqid() . '_' . Auth::id() . '.' . $ext;
-        $dir = self::BANNER_UPLOAD_DIR . dirname($relativePath);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+
+        $saved = false;
+        if (StorageService::isConfigured()) {
+            $content = file_get_contents($file['tmp_name']);
+            $saved = ($content !== false && StorageService::put('banners/' . $relativePath, $content, $mime));
         }
-        $saved = move_uploaded_file($file['tmp_name'], self::BANNER_UPLOAD_DIR . $relativePath);
+        if (!$saved) {
+            $dir = self::BANNER_UPLOAD_DIR . dirname($relativePath);
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            $saved = move_uploaded_file($file['tmp_name'], self::BANNER_UPLOAD_DIR . $relativePath);
+        }
 
         if ($saved) {
             User::update(Auth::id(), ['banner_image' => $relativePath, 'banner_gradient' => null]);
@@ -404,6 +412,15 @@ class UserController
     public function removeBanner(): void
     {
         Auth::requireAuth();
+        $user = Auth::user();
+        $bannerPath = $user['banner_image'] ?? null;
+        if ($bannerPath && StorageService::isConfigured()) {
+            StorageService::delete('banners/' . $bannerPath);
+        }
+        $localPath = self::BANNER_UPLOAD_DIR . $bannerPath;
+        if ($bannerPath && is_file($localPath)) {
+            @unlink($localPath);
+        }
         User::update(Auth::id(), ['banner_image' => null]);
         header('Content-Type: application/json');
         echo json_encode(['success' => true]);

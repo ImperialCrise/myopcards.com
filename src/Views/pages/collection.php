@@ -83,7 +83,7 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
         </div>
         <div class="flex items-center gap-6 p-4 bg-gradient-to-r from-yellow-900/20 to-amber-900/20 rounded-xl border border-yellow-700/30">
             <div class="relative flex-shrink-0">
-                <img src="<?= htmlspecialchars($featuredCard['card_image_url']) ?>" 
+                <img src="<?= htmlspecialchars(card_img_url($featuredCard)) ?>" 
                      alt="<?= htmlspecialchars($featuredCard['card_name']) ?>"
                      class="w-20 h-28 object-cover rounded-lg shadow-lg border-2 border-yellow-300/50">
                 <div class="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-full flex items-center justify-center shadow-lg">
@@ -196,7 +196,7 @@ $appUrl = $_ENV['APP_URL'] ?? 'https://myopcards.com';
                 <div class="glass rounded-xl overflow-hidden relative">
                     <a href="/cards/<?= urlencode($card['card_set_id']) ?>">
                         <div class="relative aspect-[5/7] bg-dark-700">
-                            <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?: 'about:blank' ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
+                            <img src="<?= htmlspecialchars(card_img_url($card)) ?: 'about:blank' ?>" data-ext-src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="" class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
                             <span class="absolute top-1.5 right-1.5 px-2 py-0.5 bg-dark-900/80 text-white text-xs font-bold rounded-full" x-text="qty + 'x'"></span>
                             <?php if (!empty($card['rarity'])): ?>
                                 <?php

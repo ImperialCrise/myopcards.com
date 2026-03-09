@@ -10,7 +10,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="glass rounded-2xl p-4">
             <div class="aspect-[5/7] rounded-xl overflow-hidden bg-gray-100">
-                <img src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?: 'about:blank' ?>" alt="" class="w-full h-full object-cover" onerror="cardImgErr(this)">
+                <img src="<?= htmlspecialchars(card_img_url($card)) ?: 'about:blank' ?>" data-ext-src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="" class="w-full h-full object-cover" onerror="cardImgErr(this)">
             </div>
             <div class="mt-3 text-center">
                 <a href="/cards/<?= urlencode($card['card_set_id']) ?>" class="text-sm text-blue-600 hover:underline">View public page</a>
