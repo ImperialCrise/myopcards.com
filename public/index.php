@@ -93,7 +93,11 @@ $router->get('/play', [App\Controllers\GameController::class, 'lobby']);
 $router->get('/play/game/{id}', [App\Controllers\GameController::class, 'board']);
 $router->get('/leaderboard', [App\Controllers\GameController::class, 'leaderboard']);
 $router->get('/api/leaderboard', [App\Controllers\GameController::class, 'leaderboardApi']);
+$router->get('/api/game/history/global', [App\Controllers\GameController::class, 'globalHistory']);
 $router->get('/api/game/history', [App\Controllers\GameController::class, 'history']);
+$router->get('/api/game/{id}/moves', [App\Controllers\GameController::class, 'gameMoves']);
+$router->get('/history', [App\Controllers\GameController::class, 'historyPage']);
+$router->get('/history/{id}', [App\Controllers\GameController::class, 'replayPage']);
 
 $router->get('/api/search', [App\Controllers\SearchController::class, 'search']);
 $router->get('/api/cards/price-history/{id}', [App\Controllers\CardController::class, 'priceHistory']);

@@ -80,6 +80,12 @@
 .sb-status.your-turn { background: rgba(245,158,11,0.15); color: #f59e0b !important; }
 .sb-status.opp-turn { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4) !important; }
 
+.sb-timer-row { font-size: 0.9rem; }
+.sb-timer-name { color: rgba(255,255,255,0.6); }
+.sb-timer-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+.sb-timer-warn { color: #ef4444 !important; animation: sb-timer-pulse 1s ease-in-out infinite; }
+@keyframes sb-timer-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
 .sb-log {
   flex: 1;
   min-height: 80px;

@@ -246,7 +246,10 @@ $streak = (int)($elo['streak'] ?? 0);
             <div style="text-align:center;"><span style="display:block;font-size:1.2rem;font-weight:700;color:<?= $streak > 0 ? '#22c55e' : '#ef4444' ?>;"><?= $streak > 0 ? '+' . $streak : $streak ?></span><span style="font-size:0.7rem;color:rgba(255,255,255,0.35);">Streak</span></div>
             <?php endif; ?>
         </div>
-        <a href="/leaderboard" style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:rgba(255,255,255,0.7);font-size:0.85rem;font-weight:600;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(245,158,11,0.4)';this.style.color='#f59e0b'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.7)'">&#127942; Leaderboard</a>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <a href="/history" style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:rgba(255,255,255,0.7);font-size:0.85rem;font-weight:600;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(245,158,11,0.4)';this.style.color='#f59e0b'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.7)'">&#128337; <?= t('game.history') ?></a>
+            <a href="/leaderboard" style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:rgba(255,255,255,0.7);font-size:0.85rem;font-weight:600;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(245,158,11,0.4)';this.style.color='#f59e0b'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.7)'">&#127942; Leaderboard</a>
+        </div>
     </div>
 
     <template x-if="!decks.length">

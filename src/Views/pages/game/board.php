@@ -99,6 +99,17 @@
             <div class="sb-row"><span>Status</span><span class="sb-status" :class="isMyTurn() ? 'your-turn' : 'opp-turn'" x-text="isMyTurn() ? 'Your Turn' : 'Opponent'"></span></div>
         </div>
         <div class="sb-section">
+            <div class="sb-label"><?= t('game.time_left') ?></div>
+            <div class="sb-row sb-timer-row">
+                <span class="sb-timer-name" x-text="me() && me().username ? me().username : 'You'"></span>
+                <span class="sb-timer-val" :class="{ 'sb-timer-warn': timerWarning(0) }" x-text="playerTimeDisplay(0)"></span>
+            </div>
+            <div class="sb-row sb-timer-row">
+                <span class="sb-timer-name" x-text="opp() && opp().username ? opp().username : 'Opponent'"></span>
+                <span class="sb-timer-val" :class="{ 'sb-timer-warn': timerWarning(1) }" x-text="playerTimeDisplay(1)"></span>
+            </div>
+        </div>
+        <div class="sb-section">
             <div class="sb-label" x-text="me() && me().username ? me().username : 'You'"></div>
             <div class="sb-row"><span>ELO</span><span style="color:#f59e0b;font-weight:700;" x-text="me() && me().elo ? me().elo : '—'"></span></div>
             <div class="sb-row"><span>Life</span><span class="sb-life" x-text="myLife()"></span></div>
@@ -338,7 +349,9 @@
             </div>
             <div class="go-stats">
                 <div class="go-stat"><span class="go-stat-val" x-text="gameOverData ? gameOverData.turns : turnCount()"></span><span class="go-stat-lbl">Turns</span></div>
-                <div class="go-stat"><span class="go-stat-val" x-text="gameDuration()"></span><span class="go-stat-lbl">Duration</span></div>
+                <div class="go-stat"><span class="go-stat-val" x-text="gameOverData && gameOverData.duration != null ? (Math.floor(gameOverData.duration/60) + ':' + (gameOverData.duration%60 < 10 ? '0' : '') + (gameOverData.duration%60)) : gameDuration()"></span><span class="go-stat-lbl"><?= t('game.duration') ?></span></div>
+                <div class="go-stat"><span class="go-stat-val" x-text="gameOverData && gameOverData.you && gameOverData.you.timeRemaining != null ? (Math.floor(gameOverData.you.timeRemaining/60) + ':' + (gameOverData.you.timeRemaining%60 < 10 ? '0' : '') + (gameOverData.you.timeRemaining%60)) : '—'"></span><span class="go-stat-lbl"><?= t('game.your_time_left') ?></span></div>
+                <div class="go-stat"><span class="go-stat-val" x-text="gameOverData && gameOverData.opponent && gameOverData.opponent.timeRemaining != null ? (Math.floor(gameOverData.opponent.timeRemaining/60) + ':' + (gameOverData.opponent.timeRemaining%60 < 10 ? '0' : '') + (gameOverData.opponent.timeRemaining%60)) : '—'"></span><span class="go-stat-lbl"><?= t('game.opp_time_left') ?></span></div>
                 <div class="go-stat"><span class="go-stat-val" x-text="gameOverData && gameOverData.gameType ? gameOverData.gameType.charAt(0).toUpperCase() + gameOverData.gameType.slice(1) : 'Casual'"></span><span class="go-stat-lbl">Mode</span></div>
             </div>
             <div class="go-matchup" x-show="gameOverData && gameOverData.opponent">

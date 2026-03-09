@@ -21,6 +21,7 @@ const PORT = parseInt(process.env.GAME_SERVER_PORT || '3001', 10);
 const BIND = process.env.BIND_ADDRESS || '127.0.0.1';
 let gameIdCounter = 1;
 const customRooms = new Map();
+const CHESS_CLOCK_SECONDS = 600;
 
 async function getElo(userId) {
   if (!userId) return 1000;
@@ -39,8 +40,105 @@ async function insertGameRow(room) {
       [room.player1UserId, p2Id, dbType]
     );
     room.dbGameId = (result && result.insertId) ? result.insertId : null;
+    if (room.dbGameId) recordMove(room, null, 'snapshot', buildSnapshotData(room));
   } catch (e) {
     console.error('[DB] insertGameRow failed:', e.message);
+  }
+}
+
+function initChessClock(room) {
+  room.playerTimes = [CHESS_CLOCK_SECONDS, CHESS_CLOCK_SECONDS];
+  room.turnStartTime = Date.now();
+  room.gameStartTime = Date.now();
+  room.timeoutHandle = null;
+}
+
+function clearTimer(room) {
+  if (room.timeoutHandle) {
+    clearTimeout(room.timeoutHandle);
+    room.timeoutHandle = null;
+  }
+}
+
+function scheduleTimeout(room) {
+  clearTimer(room);
+  var game = room.game;
+  if (!game || game.status !== 'active') return;
+  var cpIdx = game.turnManager.currentPlayerIndex;
+  if (room.player2SocketId === null && cpIdx === 1) return;
+  var remainingMs = (room.playerTimes[cpIdx] || 0) * 1000;
+  if (remainingMs <= 0) return;
+  room.timeoutHandle = setTimeout(function () { handlePlayerTimeout(room); }, remainingMs);
+}
+
+function handlePlayerTimeout(room) {
+  room.timeoutHandle = null;
+  var game = room.game;
+  if (!game || game.status !== 'active') return;
+  var cpIdx = game.turnManager.currentPlayerIndex;
+  var loser = game.board.getPlayer(cpIdx);
+  var winner = game.board.getOpponent(cpIdx);
+  game.status = 'finished';
+  game.winnerId = winner.userId;
+  game._log((loser.username || 'Player') + ' ran out of time!');
+  emitStateToBoth(room);
+  checkAndProcessEnd(room);
+}
+
+function buildSnapshotData(room) {
+  var game = room.game;
+  if (!game) return null;
+  var p1 = game.board.player1;
+  var p2 = game.board.player2;
+  function serPlayer(p) {
+    return {
+      userId: p.userId,
+      username: p.username,
+      life: p.life.length,
+      lifeStartCount: p.lifeStartCount,
+      leader: p.leader ? { card_name: p.leader.card_name, card_image_url: p.leader.card_image_url, card_power: p.leader.card_power, rested: p.leader.rested, attachedDon: p.leader.attachedDon || 0 } : null,
+      characters: (p.characters || []).map(function (c) { return { card_name: c.card_name, card_image_url: c.card_image_url, card_power: c.card_power, rested: c.rested, attachedDon: c.attachedDon || 0 }; }),
+      stage: p.stage ? { card_name: p.stage.card_name, card_image_url: p.stage.card_image_url } : null,
+      handCount: p.hand.length,
+      deckCount: p.deck.length,
+      donCount: (p.donArea || []).length
+    };
+  }
+  return {
+    turn: game.turnManager.turnCount,
+    currentPlayerIndex: game.turnManager.currentPlayerIndex,
+    p1: serPlayer(p1),
+    p2: serPlayer(p2)
+  };
+}
+
+function performEndTurn(room) {
+  var game = room.game;
+  if (!game || game.status !== 'active') return false;
+  var cpIdx = game.turnManager.currentPlayerIndex;
+  var cp = game.board.getPlayer(cpIdx);
+  var elapsed = Math.floor((Date.now() - (room.turnStartTime || Date.now())) / 1000);
+  if (room.playerTimes) {
+    room.playerTimes[cpIdx] = Math.max(0, (room.playerTimes[cpIdx] || CHESS_CLOCK_SECONDS) - elapsed);
+  }
+  clearTimer(room);
+  game.endTurn();
+  recordMove(room, cp.userId || null, 'snapshot', buildSnapshotData(room));
+  if (game.status === 'finished') return true;
+  room.turnStartTime = Date.now();
+  scheduleTimeout(room);
+  return true;
+}
+
+async function recordMove(room, playerId, moveType, moveData) {
+  if (!room.dbGameId) return;
+  try {
+    await db.query(
+      'INSERT INTO game_moves (game_id, player_id, move_type, move_data) VALUES (?, ?, ?, ?)',
+      [room.dbGameId, playerId || null, moveType, moveData ? JSON.stringify(moveData) : null]
+    );
+  } catch (e) {
+    console.error('[DB] recordMove failed:', e.message);
   }
 }
 
@@ -49,10 +147,13 @@ async function updateGameRow(room) {
   var game = room.game;
   var winnerId = game.winnerId || null;
   if (winnerId === 0) winnerId = null;
+  var duration = room.gameStartTime ? Math.floor((Date.now() - room.gameStartTime) / 1000) : null;
+  var p1Rem = room.playerTimes ? room.playerTimes[0] : null;
+  var p2Rem = room.playerTimes ? room.playerTimes[1] : null;
   try {
     await db.query(
-      "UPDATE games SET status = 'finished', winner_id = ?, turn_count = ?, finished_at = NOW() WHERE id = ?",
-      [winnerId, game.turnManager.turnCount, room.dbGameId]
+      "UPDATE games SET status = 'finished', winner_id = ?, turn_count = ?, finished_at = NOW(), duration_seconds = ?, player1_time_remaining = ?, player2_time_remaining = ? WHERE id = ?",
+      [winnerId, game.turnManager.turnCount, duration, p1Rem, p2Rem, room.dbGameId]
     );
   } catch (e) {
     console.error('[DB] updateGameRow failed:', e.message);
@@ -69,6 +170,7 @@ function calcEloChange(playerElo, opponentElo, won, K) {
 async function processGameEnd(room) {
   if (room.eloProcessed) return null;
   room.eloProcessed = true;
+  clearTimer(room);
 
   var game = room.game;
   if (!game || game.status !== 'finished' || !game.winnerId) return null;
@@ -83,12 +185,18 @@ async function processGameEnd(room) {
   var p1Won = game.winnerId === p1.userId;
   var p2Won = game.winnerId === p2.userId;
 
+  var duration = room.gameStartTime ? Math.floor((Date.now() - room.gameStartTime) / 1000) : null;
+  var p1Rem = room.playerTimes ? room.playerTimes[0] : null;
+  var p2Rem = room.playerTimes ? room.playerTimes[1] : null;
   var result = {
     winnerId: game.winnerId,
-    p1: { userId: p1.userId, username: p1.username, oldElo: p1.elo, newElo: p1.elo, change: 0 },
-    p2: { userId: p2.userId, username: p2.username, oldElo: p2.elo, newElo: p2.elo, change: 0 },
+    p1: { userId: p1.userId, username: p1.username, oldElo: p1.elo, newElo: p1.elo, change: 0, timeRemaining: p1Rem },
+    p2: { userId: p2.userId, username: p2.username, oldElo: p2.elo, newElo: p2.elo, change: 0, timeRemaining: p2Rem },
     turns: game.turnManager.turnCount,
-    gameType: room.gameType || 'casual'
+    gameType: room.gameType || 'casual',
+    duration: duration,
+    p1TimeRemaining: p1Rem,
+    p2TimeRemaining: p2Rem
   };
 
   if (isRanked && !isBot) {
@@ -128,13 +236,20 @@ async function processGameEnd(room) {
 
 function emitGameOver(room, eloResult) {
   if (!eloResult) return;
-  var baseData = { winnerId: eloResult.winnerId, turns: eloResult.turns, gameType: eloResult.gameType };
+  var baseData = {
+    winnerId: eloResult.winnerId,
+    turns: eloResult.turns,
+    gameType: eloResult.gameType,
+    duration: eloResult.duration,
+    p1TimeRemaining: eloResult.p1TimeRemaining,
+    p2TimeRemaining: eloResult.p2TimeRemaining
+  };
   if (room.player1SocketId) {
     var s = io.sockets.sockets.get(room.player1SocketId);
     if (s) s.emit('gameOver', Object.assign({}, baseData, {
       won: eloResult.winnerId === eloResult.p1.userId,
       you: eloResult.p1,
-      opponent: { username: eloResult.p2.username, oldElo: eloResult.p2.oldElo, newElo: eloResult.p2.newElo }
+      opponent: { username: eloResult.p2.username, oldElo: eloResult.p2.oldElo, newElo: eloResult.p2.newElo, timeRemaining: eloResult.p2TimeRemaining }
     }));
   }
   if (room.player2SocketId) {
@@ -142,7 +257,7 @@ function emitGameOver(room, eloResult) {
     if (s) s.emit('gameOver', Object.assign({}, baseData, {
       won: eloResult.winnerId === eloResult.p2.userId,
       you: eloResult.p2,
-      opponent: { username: eloResult.p1.username, oldElo: eloResult.p1.oldElo, newElo: eloResult.p1.newElo }
+      opponent: { username: eloResult.p1.username, oldElo: eloResult.p1.oldElo, newElo: eloResult.p1.newElo, timeRemaining: eloResult.p1TimeRemaining }
     }));
   }
 }
@@ -176,8 +291,10 @@ async function createGameFromMatch(player1, player2, gameType) {
     player1SocketId: player1.socketId, player2SocketId: player2.socketId,
     eloProcessed: false, dbGameId: null, botAttackQueue: null
   };
+  initChessClock(roomData);
   setRoom(gameId, roomData);
-  insertGameRow(roomData);
+  await insertGameRow(roomData);
+  scheduleTimeout(roomData);
   return gameId;
 }
 
@@ -196,12 +313,19 @@ function emitToPlayer(room, pIndex, event, data) {
 
 function emitStateToBoth(room) {
   var g = room.game;
+  var turnStartMs = room.turnStartTime ? Math.floor((Date.now() - room.turnStartTime) / 1000) : 0;
+  var timerData = {
+    playerTimes: room.playerTimes ? [room.playerTimes[0], room.playerTimes[1]] : [CHESS_CLOCK_SECONDS, CHESS_CLOCK_SECONDS],
+    turnStartMs: turnStartMs
+  };
   if (room.player1SocketId) {
     var s = io.sockets.sockets.get(room.player1SocketId);
     if (s) {
       var st = g.getStateForPlayer(0);
       st.playerIndex = 0;
       st.gameType = room.gameType || 'casual';
+      st.playerTimes = timerData.playerTimes;
+      st.turnStartMs = timerData.turnStartMs;
       s.emit('gameState', st);
     }
   }
@@ -211,6 +335,8 @@ function emitStateToBoth(room) {
       var st = g.getStateForPlayer(1);
       st.playerIndex = 1;
       st.gameType = room.gameType || 'casual';
+      st.playerTimes = timerData.playerTimes;
+      st.turnStartMs = timerData.turnStartMs;
       s.emit('gameState', st);
     }
   }
@@ -384,7 +510,7 @@ function emitAttackAnimation(room, combat, attackerPlayerIndex) {
 function processNextBotAttack(room, humanSocket) {
   if (!room.botAttackQueue || room.botAttackQueue.length === 0) {
     room.botAttackQueue = null;
-    room.game.endTurn();
+    performEndTurn(room);
     emitStateToBoth(room);
     if (room.game.status === 'finished') checkAndProcessEnd(room);
     return;
@@ -575,8 +701,10 @@ io.on('connection', function (socket) {
         player1SocketId: socket.id, player2SocketId: null,
         eloProcessed: false, dbGameId: null, botAttackQueue: null, botAttacking: false
       };
+      initChessClock(roomData);
       setRoom(gameId, roomData);
-      insertGameRow(roomData);
+      await insertGameRow(roomData);
+      scheduleTimeout(roomData);
       socket.emit('gameStart', { gameId: gameId });
     } catch (e) {
       socket.emit('error', { message: e && e.sqlMessage ? 'Database error' : (e && e.message) || 'Failed to start game' });
@@ -640,6 +768,9 @@ io.on('connection', function (socket) {
       var state = room.game.getStateForPlayer(pIndex);
       state.playerIndex = pIndex;
       state.gameType = room.gameType || 'casual';
+      var turnStartMs = room.turnStartTime ? Math.floor((Date.now() - room.turnStartTime) / 1000) : 0;
+      state.playerTimes = room.playerTimes ? [room.playerTimes[0], room.playerTimes[1]] : [CHESS_CLOCK_SECONDS, CHESS_CLOCK_SECONDS];
+      state.turnStartMs = turnStartMs;
       socket.emit('gameState', state);
     } catch (e) {
       socket.emit('error', { message: (e && e.message) || 'Failed to load game state' });
@@ -657,6 +788,8 @@ io.on('connection', function (socket) {
       var result = room.game.playCard(pIndex, handIndex);
       socket.emit('actionResult', result);
       if (result.ok) {
+        var playerId = pIndex === 0 ? room.player1UserId : room.player2UserId;
+        recordMove(room, playerId, 'playCard', { handIndex: handIndex });
         emitStateToBoth(room);
         checkAndProcessEnd(room);
       }
@@ -686,6 +819,14 @@ io.on('connection', function (socket) {
         socket.emit('actionResult', declareResult);
         return;
       }
+
+      var playerId = pIndex === 0 ? room.player1UserId : room.player2UserId;
+      recordMove(room, playerId, 'attack', {
+        attackerType: data.attackerType,
+        attackerIndex: data.attackerIndex,
+        targetType: data.targetType,
+        targetIndex: data.targetIndex
+      });
 
       var defenderIdx = 1 - pIndex;
 
@@ -800,7 +941,7 @@ io.on('connection', function (socket) {
         return;
       }
 
-      game.endTurn();
+      performEndTurn(room);
 
       if (game.status === 'finished') {
         emitStateToBoth(room);
@@ -814,7 +955,7 @@ io.on('connection', function (socket) {
         var attacks = botPlanAttacks(game);
 
         if (attacks.length === 0) {
-          game.endTurn();
+          performEndTurn(room);
           emitStateToBoth(room);
           if (game.status === 'finished') checkAndProcessEnd(room);
           return;

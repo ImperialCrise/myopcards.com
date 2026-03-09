@@ -18,6 +18,9 @@
         phase: '',
         gameStartTime: Date.now(),
         durationTick: 0,
+        syncedTimes: [600, 600],
+        lastTimerSync: Date.now(),
+        currentTimerPlayer: 0,
         showTutorial: false,
         tutorialStep: 1,
         screenFlash: false,
@@ -62,6 +65,13 @@
               if (typeof plain.playerIndex === 'number') self.playerIndex = plain.playerIndex;
               if (plain && plain.log && plain.log.length > 0) {
                 self.lastAction = plain.log[plain.log.length - 1].msg || '';
+              }
+              if (plain && plain.playerTimes && Array.isArray(plain.playerTimes)) {
+                self.syncedTimes = [plain.playerTimes[0] || 600, plain.playerTimes[1] || 600];
+                self.lastTimerSync = Date.now();
+              }
+              if (plain && plain.turn && typeof plain.turn.currentPlayerIndex === 'number') {
+                self.currentTimerPlayer = plain.turn.currentPlayerIndex;
               }
             } catch (e) { /* ignore */ }
           });
@@ -334,6 +344,28 @@
           var m = Math.floor(s / 60);
           s = s % 60;
           return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        },
+
+        playerTimeDisplay: function (idx) {
+          void this.durationTick;
+          var remaining = this.syncedTimes[idx] || 600;
+          if (this.state && this.state.turn && this.state.turn.currentPlayerIndex === idx) {
+            var elapsed = Math.floor((Date.now() - this.lastTimerSync) / 1000);
+            remaining = Math.max(0, remaining - elapsed);
+          }
+          var m = Math.floor(remaining / 60);
+          var s = remaining % 60;
+          return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        },
+
+        timerWarning: function (idx) {
+          void this.durationTick;
+          var remaining = this.syncedTimes[idx] || 600;
+          if (this.state && this.state.turn && this.state.turn.currentPlayerIndex === idx) {
+            var elapsed = Math.floor((Date.now() - this.lastTimerSync) / 1000);
+            remaining = Math.max(0, remaining - elapsed);
+          }
+          return remaining < 60 && remaining > 0;
         },
 
         gameLog: function () { return (this.state && this.state.log) ? this.state.log : []; },
