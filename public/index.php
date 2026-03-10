@@ -54,13 +54,28 @@ $router->post('/collection/share/revoke', [App\Controllers\CollectionController:
 $router->get('/s/{token}', [App\Controllers\CollectionController::class, 'sharedView']);
 $router->get('/collection/{username}', [App\Controllers\CollectionController::class, 'publicView']);
 
+$router->get('/messages', [App\Controllers\MessageController::class, 'inbox']);
+$router->get('/messages/new/{username}', [App\Controllers\MessageController::class, 'newConversation']);
+$router->get('/messages/{id}', [App\Controllers\MessageController::class, 'conversation']);
+$router->post('/api/messages/send', [App\Controllers\MessageController::class, 'sendMessage']);
+$router->post('/api/messages/start', [App\Controllers\MessageController::class, 'startConversation']);
+$router->get('/api/messages/{id}/poll', [App\Controllers\MessageController::class, 'poll']);
+$router->post('/api/messages/{id}/typing', [App\Controllers\MessageController::class, 'setTyping']);
+$router->post('/api/messages/edit', [App\Controllers\MessageController::class, 'editMessage']);
+$router->post('/api/messages/delete', [App\Controllers\MessageController::class, 'deleteMessage']);
+$router->post('/api/messages/upload', [App\Controllers\MessageController::class, 'uploadMedia']);
+
 $router->get('/friends', [App\Controllers\FriendController::class, 'index']);
 $router->post('/friends/request', [App\Controllers\FriendController::class, 'sendRequest']);
 $router->post('/friends/accept', [App\Controllers\FriendController::class, 'accept']);
 $router->post('/friends/decline', [App\Controllers\FriendController::class, 'decline']);
 $router->post('/friends/remove', [App\Controllers\FriendController::class, 'remove']);
+$router->post('/friends/block', [App\Controllers\FriendController::class, 'block']);
+$router->post('/friends/unblock', [App\Controllers\FriendController::class, 'unblock']);
+$router->post('/report/user', [App\Controllers\ReportController::class, 'submitUserReport']);
 $router->get('/api/users/search', [App\Controllers\FriendController::class, 'searchUsers']);
 $router->get('/api/notifications/pending', [App\Controllers\FriendController::class, 'pendingJson']);
+$router->get('/api/notifications/recent', [App\Controllers\NotificationController::class, 'getRecent']);
 
 $router->get('/profile', [App\Controllers\UserController::class, 'profile']);
 $router->post('/profile/update', [App\Controllers\UserController::class, 'updateProfile']);
@@ -73,6 +88,7 @@ $router->post('/profile/banner', [App\Controllers\UserController::class, 'update
 $router->post('/profile/banner/remove', [App\Controllers\UserController::class, 'removeBanner']);
 $router->post('/settings/language', [App\Controllers\UserController::class, 'changeLanguage']);
 $router->post('/settings/currency', [App\Controllers\UserController::class, 'changeCurrency']);
+$router->post('/settings/messages-privacy', [App\Controllers\UserController::class, 'changeMessagesPrivacy']);
 
 $router->get('/analytics', [App\Controllers\AnalyticsController::class, 'index']);
 $router->get('/api/analytics/value-history', [App\Controllers\AnalyticsController::class, 'valueHistory']);
@@ -99,11 +115,16 @@ $router->get('/api/game/{id}/moves', [App\Controllers\GameController::class, 'ga
 $router->get('/history', [App\Controllers\GameController::class, 'historyPage']);
 $router->get('/history/{id}', [App\Controllers\GameController::class, 'replayPage']);
 
+$router->get('/api/gif/search',   [App\Controllers\GifController::class, 'search']);
+$router->get('/api/gif/trending', [App\Controllers\GifController::class, 'trending']);
+
 $router->get('/api/search', [App\Controllers\SearchController::class, 'search']);
 $router->get('/api/cards/price-history/{id}', [App\Controllers\CardController::class, 'priceHistory']);
 $router->post('/api/cards/{id}/set-featured', [App\Controllers\CardController::class, 'setFeatured']);
 
 $router->get('/admin', [App\Controllers\AdminController::class, 'dashboard']);
+$router->get('/admin/reports', [App\Controllers\AdminController::class, 'reports']);
+$router->post('/admin/reports/review', [App\Controllers\AdminController::class, 'reviewReport']);
 $router->get('/admin/users', [App\Controllers\AdminController::class, 'users']);
 $router->post('/admin/users/toggle-admin', [App\Controllers\AdminController::class, 'toggleAdmin']);
 $router->post('/admin/users/delete', [App\Controllers\AdminController::class, 'deleteUser']);
@@ -157,6 +178,11 @@ $router->get('/api/notifications/count', [App\Controllers\NotificationController
 // Uploads proxy (MinIO or local) - must match before dispatch for path with slashes
 $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uriPath !== null && $uriPath !== false) {
+    if (str_starts_with($uriPath, '/uploads/messages/')) {
+        $path = substr($uriPath, strlen('/uploads/messages/'));
+        (new App\Controllers\UploadController())->serveMessages($path);
+        exit;
+    }
     if (str_starts_with($uriPath, '/uploads/forum/')) {
         $path = substr($uriPath, strlen('/uploads/forum/'));
         (new App\Controllers\UploadController())->serveForum($path);

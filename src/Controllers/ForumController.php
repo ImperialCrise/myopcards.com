@@ -8,6 +8,7 @@ use App\Core\Auth;
 use App\Core\Cache;
 use App\Core\Database;
 use App\Core\View;
+use App\Models\User;
 use App\Services\NotificationService;
 use App\Services\StorageService;
 use PDO;
@@ -342,6 +343,8 @@ class ForumController
 
         $topicId = (int)$db->lastInsertId();
 
+        $this->processMentions(trim($_POST['content'] ?? ''), $topicId, null, Auth::id());
+
         $this->processAttachments($topicId, null);
 
         // Clear forum cache
@@ -405,6 +408,7 @@ class ForumController
         $this->processAttachments(null, $postId);
 
         NotificationService::createForumReply($topic['user_id'], Auth::id(), $topicId, $topic['title']);
+        $this->processMentions(trim($_POST['content'] ?? ''), $topicId, $postId, Auth::id());
 
         // Clear forum cache
         Cache::forget('forum_categories');
@@ -931,6 +935,30 @@ class ForumController
                     'mt' => $mime,
                     'fs' => $files['size'][$i],
                 ]);
+            }
+        }
+    }
+
+    private function processMentions(string $content, int $topicId, ?int $postId, int $authorId): void
+    {
+        if (!preg_match_all('/@(\w+)/u', $content, $matches)) {
+            return;
+        }
+        $db = Database::getConnection();
+        $authorStmt = $db->prepare("SELECT username FROM users WHERE id = ?");
+        $authorStmt->execute([$authorId]);
+        $authorRow = $authorStmt->fetch();
+        $authorUsername = $authorRow['username'] ?? 'Someone';
+
+        $seen = [];
+        foreach (array_unique($matches[1]) as $username) {
+            if (isset($seen[$username])) {
+                continue;
+            }
+            $seen[$username] = true;
+            $user = User::findByUsername($username);
+            if ($user && (int)$user['id'] !== $authorId) {
+                NotificationService::createForumMention((int)$user['id'], $authorId, $authorUsername, $topicId, $postId);
             }
         }
     }

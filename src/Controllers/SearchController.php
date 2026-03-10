@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Database;
+use App\Models\User;
 use PDO;
 
 class SearchController
@@ -48,6 +49,10 @@ class SearchController
         );
         $userStmt->execute(['q' => $like]);
         $users = $userStmt->fetchAll();
+        foreach ($users as &$u) {
+            $u['avatar_url'] = User::getAvatarUrl($u);
+        }
+        unset($u);
 
         $setStmt = $db->prepare(
             "SELECT set_id, set_name, card_count FROM sets WHERE set_name LIKE :q1 OR set_id LIKE :q2 LIMIT 5"

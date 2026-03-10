@@ -46,6 +46,7 @@ $_r1 = array_slice($_bgCards, 0, 12);
 $_r2 = array_slice($_bgCards, 12, 12);
 $_r3 = array_slice($_bgCards, 24, 12);
 $_r4 = array_slice($_bgCards, 36, 12);
+$__v = '20260310a';
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($currentLang, ENT_QUOTES, 'UTF-8') ?>">
@@ -121,6 +122,11 @@ $_r4 = array_slice($_bgCards, 36, 12);
             }
         }
     </script>
+    <script>
+    window.__CURRENCY = <?= json_encode(\App\Core\Currency::info()) ?>;
+    window.__LANG = <?= isset($t) ? json_encode($t, JSON_UNESCAPED_UNICODE) : '{}' ?>;
+    </script>
+    <script src="/assets/js/main.js?v=<?= $__v ?>"></script>
 </head>
 <body class="font-sans min-h-screen" x-data="{ mobileMenu: false, mobileSearch: false }">
 
@@ -185,9 +191,16 @@ $_r4 = array_slice($_bgCards, 36, 12);
                         <a href="/forum" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
                             <i data-lucide="message-square" class="w-4 h-4"></i> <?= t('nav.forum') ?>
                         </a>
-                        <a href="/play" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
-                            <i data-lucide="gamepad-2" class="w-4 h-4"></i> <?= t('nav.play') ?>
-                        </a>
+                        <div class="relative" x-data="{ playDrop: false }" @click.outside="playDrop = false">
+                            <button @click="playDrop = !playDrop" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
+                                <i data-lucide="gamepad-2" class="w-4 h-4"></i> <?= t('nav.play') ?> <i data-lucide="chevron-down" class="w-3 h-3 transition" :class="playDrop && 'rotate-180'"></i>
+                            </button>
+                            <div x-show="playDrop" x-transition.opacity x-cloak class="absolute top-full left-0 mt-1 glass-strong rounded-xl shadow-2xl py-1 w-44 z-50">
+                                <a href="/play" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="gamepad-2" class="w-4 h-4"></i> <?= t('nav.play') ?></a>
+                                <a href="/decks" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="layers" class="w-4 h-4"></i> <?= t('nav.decks') ?></a>
+                                <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="trophy" class="w-4 h-4"></i> <?= t('nav.leaderboard') ?><?php if ($isLoggedIn): ?> <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?></span><?php endif; ?></a>
+                            </div>
+                        </div>
                         <?php if ($isLoggedIn): ?>
                         <div class="relative" x-data="{ navDrop: false }" @click.outside="navDrop = false">
                             <button @click="navDrop = !navDrop" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
@@ -196,10 +209,9 @@ $_r4 = array_slice($_bgCards, 36, 12);
                             <div x-show="navDrop" x-transition.opacity x-cloak class="absolute top-full left-0 mt-1 glass-strong rounded-xl shadow-2xl py-1 w-48 z-50">
                                 <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="home" class="w-4 h-4"></i> <?= t('nav.dashboard') ?></a>
                                 <a href="/collection" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="folder-open" class="w-4 h-4"></i> <?= t('nav.collection') ?></a>
-                                <a href="/decks" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="layers" class="w-4 h-4"></i> <?= t('nav.decks') ?></a>
                                 <a href="/analytics" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> <?= t('nav.analytics') ?></a>
+                                <a href="/messages" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="mail" class="w-4 h-4"></i> <?= t('nav.messages') ?></a>
                                 <a href="/friends" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="users" class="w-4 h-4"></i> <?= t('nav.friends') ?></a>
-                                <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="trophy" class="w-4 h-4"></i> <?= t('nav.leaderboard') ?> <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?></span></a>
                                 <a href="/settings" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="settings" class="w-4 h-4"></i> <?= t('nav.settings') ?></a>
                                 <?php if ($currentUser && !empty($currentUser['is_admin'])): ?>
                                 <div class="border-t my-1" style="border-color:var(--nav-border)"></div>
@@ -236,7 +248,10 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider border-t border-gray-200" x-text="typeof __LANG !== 'undefined' && __LANG['nav.users_label'] ? __LANG['nav.users_label'] : 'Users'"></div>
                                 <template x-for="u in results.users" :key="'u'+u.id">
                                     <a :href="'/user/' + u.username" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition">
-                                        <div class="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center font-bold text-xs" style="color:#fff !important" x-text="u.username.charAt(0).toUpperCase()"></div>
+                                        <div class="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center bg-gray-900">
+                                            <img x-show="u.avatar_url" :src="u.avatar_url" class="w-full h-full object-cover" alt="">
+                                            <span x-show="!u.avatar_url" class="font-bold text-xs" style="color:#fff !important" x-text="(u.username || '').charAt(0).toUpperCase()"></span>
+                                        </div>
                                         <span class="text-sm text-gray-900" x-text="u.username"></span>
                                     </a>
                                 </template>
@@ -253,57 +268,17 @@ $_r4 = array_slice($_bgCards, 36, 12);
                         </div>
                     </div>
 
-                    <?php
-                    $currentCurrency = 'usd';
-                    if ($isLoggedIn && $currentUser) {
-                        $currentCurrency = $currentUser['preferred_currency'] ?? 'usd';
-                    } elseif (isset($_COOKIE['currency'])) {
-                        $currentCurrency = $_COOKIE['currency'];
-                    }
-                    $currencyMap = [
-                        'usd' => ['$', 'USD', 'TCGPlayer'],
-                        'eur_en' => ['€', 'EUR', 'EN Edition'],
-                        'eur_fr' => ['€', 'EUR', 'FR Edition'],
-                        'eur_jp' => ['€', 'EUR', 'JP Edition'],
-                    ];
-                    if (!isset($currencyMap[$currentCurrency])) {
-                        $currentCurrency = 'usd';
-                    }
-                    $curSymbol = $currencyMap[$currentCurrency][0];
-                    $curLabel = $currencyMap[$currentCurrency][1];
-                    ?>
-                    <div class="relative hidden md:block" x-data="{ curOpen: false }">
-                        <button @click="curOpen = !curOpen" class="px-2 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition flex items-center gap-1">
-                            <span class="text-sm"><?= $curSymbol ?></span> <?= $curLabel ?>
-                        </button>
-                        <div x-show="curOpen" @click.outside="curOpen = false" x-transition class="absolute right-0 mt-1 glass-strong rounded-lg shadow-xl py-1 min-w-[160px] z-50">
-                            <button onclick="setCurrency('usd')" class="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition <?= $currentCurrency === 'usd' ? 'font-bold text-gray-900' : '' ?>">
-                                <span class="inline-block w-5 text-center mr-1">$</span> USD <span class="text-xs text-gray-400">TCGPlayer</span>
-                            </button>
-                            <button onclick="setCurrency('eur_en')" class="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition <?= $currentCurrency === 'eur_en' ? 'font-bold text-gray-900' : '' ?>">
-                                <span class="inline-block w-5 text-center mr-1">€</span> EUR <span class="text-xs text-gray-400">EN Edition</span>
-                            </button>
-                            <button onclick="setCurrency('eur_fr')" class="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition <?= $currentCurrency === 'eur_fr' ? 'font-bold text-gray-900' : '' ?>">
-                                <span class="inline-block w-5 text-center mr-1">€</span> EUR <span class="text-xs text-gray-400">FR Edition</span>
-                            </button>
-                            <button onclick="setCurrency('eur_jp')" class="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition <?= $currentCurrency === 'eur_jp' ? 'font-bold text-gray-900' : '' ?>">
-                                <span class="inline-block w-5 text-center mr-1">€</span> EUR <span class="text-xs text-gray-400">JP Edition</span>
-                            </button>
-                            <div class="border-t my-1" style="border-color:var(--nav-border)"></div>
-                            <p class="px-3 py-1 text-[10px] text-gray-300 uppercase font-bold tracking-wider"><?= t('nav.language') ?></p>
-                            <?php foreach ($langs as $code => $name): ?>
-                                <button onclick="setLanguage('<?= $code ?>')" class="block w-full text-left px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition <?= $currentLang === $code ? 'font-bold text-gray-900' : '' ?>"><?= $name ?></button>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
+                    <span class="hidden md:inline-flex items-center gap-1 px-2 py-1.5 text-xs font-bold text-gray-500 select-none">
+                        <span class="text-sm">$</span> USD
+                    </span>
 
                     <?php if ($isLoggedIn): ?>
-                    <div class="relative hidden md:block" x-data="unifiedNotifications()" @click.outside="open = false" x-init="loadNotifications()">
+                    <div class="relative hidden md:block" x-data="unifiedNotifications()" @click.outside="open = false" x-init="init()">
                         <button @click="toggle()" class="relative p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
                             <i data-lucide="bell" class="w-4 h-4"></i>
-                            <span id="unified-notif-dot" class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" x-show="totalCount > 0"></span>
+                            <span id="unified-notif-dot" class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" x-show="totalCount > 0" x-cloak></span>
                             <span id="unified-notif-count" class="absolute -top-0.5 -right-1 min-w-[16px] h-4 px-0.5 bg-red-500 rounded-full flex items-center justify-center" 
-                                  style="color:#fff !important;font-size:10px;font-weight:700;" x-show="totalCount > 0" x-text="totalCount"></span>
+                                  style="color:#fff !important;font-size:10px;font-weight:700;" x-show="totalCount > 0" x-text="totalCount" x-cloak></span>
                         </button>
                         <div x-show="open" x-transition x-cloak class="absolute top-full right-0 mt-1 glass-strong rounded-xl shadow-2xl w-80 z-50 overflow-hidden">
                             <div class="px-4 py-3 border-b" style="border-color:var(--nav-border)">
@@ -313,51 +288,37 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 </div>
                             </div>
                             <div class="max-h-80 overflow-y-auto">
-                                <!-- Friend Requests Section -->
-                                <template x-if="friendRequests.length > 0">
-                                    <div>
-                                        <div class="px-4 py-2 bg-gray-50 border-b" style="border-color:var(--nav-border)">
-                                            <p class="text-xs font-medium text-gray-600"><?= t('nav.friend_requests') ?></p>
-                                        </div>
-                                        <template x-for="req in friendRequests" :key="'fr-' + req.id">
-                                            <div class="px-4 py-3 border-b hover:bg-gray-50 transition" style="border-color:var(--nav-border)">
+                                <template x-for="item in notifications.slice(0, 10)" :key="'n-' + item.id">
+                                    <div class="border-b" style="border-color:var(--nav-border)">
+                                        <template x-if="item.type === 'friend_request' && !item.is_read">
+                                            <div class="px-4 py-3 hover:bg-gray-50 transition">
                                                 <div class="flex items-center gap-3">
-                                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0" x-text="req.username.charAt(0).toUpperCase()"></div>
-                                                    <p class="text-sm text-gray-900 flex-1 min-w-0"><span class="font-bold" x-text="req.username"></span> <span class="text-gray-500" x-text="typeof __LANG !== 'undefined' && __LANG['nav.wants_to_be_friends'] ? __LANG['nav.wants_to_be_friends'] : 'wants to be friends'"></span></p>
+                                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0" x-text="(item.data?.sender_username || '?').charAt(0).toUpperCase()"></div>
+                                                    <p class="text-sm text-gray-900 flex-1 min-w-0"><span class="font-bold" x-text="item.data?.sender_username || 'User'"></span> <span class="text-gray-500" x-text="typeof __LANG !== 'undefined' && __LANG['nav.wants_to_be_friends'] ? __LANG['nav.wants_to_be_friends'] : 'wants to be friends'"></span></p>
                                                 </div>
                                                 <div class="flex gap-2 mt-2 ml-11">
-                                                    <button @click="acceptFriend(req)" class="flex-1 px-3 py-1.5 bg-green-500 rounded-lg text-xs font-bold hover:bg-green-600 transition" style="color:#fff !important" x-text="typeof __LANG !== 'undefined' && __LANG['nav.accept'] ? __LANG['nav.accept'] : 'Accept'"></button>
-                                                    <button @click="declineFriend(req)" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-200 transition" x-text="typeof __LANG !== 'undefined' && __LANG['nav.decline'] ? __LANG['nav.decline'] : 'Decline'"></button>
+                                                    <button @click="acceptFriend(item)" class="flex-1 px-3 py-1.5 bg-green-500 rounded-lg text-xs font-bold hover:bg-green-600 transition" style="color:#fff !important" x-text="typeof __LANG !== 'undefined' && __LANG['nav.accept'] ? __LANG['nav.accept'] : 'Accept'"></button>
+                                                    <button @click="declineFriend(item)" class="flex-1 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-200 transition" x-text="typeof __LANG !== 'undefined' && __LANG['nav.decline'] ? __LANG['nav.decline'] : 'Decline'"></button>
                                                 </div>
                                             </div>
                                         </template>
-                                    </div>
-                                </template>
-                                
-                                <!-- Forum Notifications Section -->
-                                <template x-if="forumNotifications.length > 0">
-                                    <div>
-                                        <div class="px-4 py-2 bg-gray-50 border-b" style="border-color:var(--nav-border)">
-                                            <p class="text-xs font-medium text-gray-600"><?= t('nav.forum_activity') ?></p>
-                                        </div>
-                                        <template x-for="item in forumNotifications.slice(0, 3)" :key="'fn-' + item.id">
-                                            <div class="p-3 border-b hover:bg-gray-50 transition cursor-pointer" style="border-color:var(--nav-border)" @click="markAsRead(item.id)">
+                                        <template x-if="item.type !== 'friend_request' || item.is_read">
+                                            <div class="p-3 hover:bg-gray-50 transition cursor-pointer" @click="markAsRead(item)">
                                                 <div class="flex items-center gap-3">
                                                     <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                                                        <i :data-lucide="item.type === 'forum_reply' ? 'message-circle' : 'heart'" class="w-3 h-3 text-blue-500"></i>
+                                                        <i :data-lucide="notifIcon(item.type)" class="w-3 h-3 text-blue-500"></i>
                                                     </div>
                                                     <div class="flex-1 min-w-0">
                                                         <p class="text-xs text-gray-900 font-medium" x-text="item.title"></p>
                                                         <p class="text-xs text-gray-500 truncate" x-text="item.message"></p>
                                                     </div>
-                                                    <div x-show="!item.is_read" class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                                    <div x-show="!item.is_read" class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
                                                 </div>
                                             </div>
                                         </template>
                                     </div>
                                 </template>
-                                
-                                <template x-if="totalCount === 0">
+                                <template x-if="notifications.length === 0">
                                     <div class="px-4 py-8 text-center text-gray-400 text-sm">
                                         <i data-lucide="bell-off" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
                                         <p x-text="typeof __LANG !== 'undefined' && __LANG['nav.no_new_notifications'] ? __LANG['nav.no_new_notifications'] : 'No new notifications'"></p>
@@ -377,7 +338,7 @@ $_r4 = array_slice($_bgCards, 36, 12);
                                 <div class="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center font-bold text-xs" style="color:#fff !important"><?= strtoupper(substr($currentUser['username'], 0, 1)) ?></div>
                             <?php endif; ?>
                             <span class="text-sm font-medium text-gray-600 hidden lg:block"><?= htmlspecialchars($currentUser['username']) ?></span>
-                            <span class="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));color:#f59e0b;border:1px solid rgba(245,158,11,0.2);" title="ELO Rating<?= $_userRank ? ' — Rank #' . $_userRank : '' ?>"><?= $_userElo ?></span>
+                            <span class="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold ml-0.5" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));color:#f59e0b;border:1px solid rgba(245,158,11,0.2);" title="ELO Rating<?= $_userRank ? ' — Rank #' . $_userRank : '' ?>"><?= $_userElo ?></span>
                         </a>
                         <a href="/logout" class="p-2 text-gray-400 hover:text-red-500 transition" title="<?= htmlspecialchars(t('nav.logout')) ?>"><i data-lucide="log-out" class="w-4 h-4"></i></a>
                     <?php else: ?>
@@ -413,12 +374,15 @@ $_r4 = array_slice($_bgCards, 36, 12);
             <a href="/cards" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layers" class="w-4 h-4"></i> <?= t('nav.cards') ?></a>
             <a href="/market" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trending-up" class="w-4 h-4"></i> <?= t('nav.market') ?></a>
             <a href="/forum" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="message-square" class="w-4 h-4"></i> <?= t('nav.forum') ?></a>
+            <a href="/play" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="gamepad-2" class="w-4 h-4"></i> <?= t('nav.play') ?></a>
+            <a href="/decks" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layers" class="w-4 h-4"></i> <?= t('nav.decks') ?></a>
+            <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trophy" class="w-4 h-4"></i> <?= t('nav.leaderboard') ?><?php if ($isLoggedIn): ?> <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?> ELO</span><?php endif; ?></a>
             <?php if ($isLoggedIn): ?>
                 <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> <?= t('nav.dashboard') ?></a>
                 <a href="/collection" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="folder-open" class="w-4 h-4"></i> <?= t('nav.collection') ?></a>
                 <a href="/analytics" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> <?= t('nav.analytics') ?></a>
+                <a href="/messages" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="mail" class="w-4 h-4"></i> <?= t('nav.messages', 'Messages') ?></a>
                 <a href="/friends" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="users" class="w-4 h-4"></i> <?= t('nav.friends') ?> <?php if ($pendingCount > 0): ?><span class="ml-auto px-1.5 py-0.5 bg-red-500 rounded-full text-xs font-bold" style="color:#fff !important"><?= $pendingCount ?></span><?php endif; ?></a>
-                <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trophy" class="w-4 h-4"></i> <?= t('nav.leaderboard') ?> <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?> ELO</span></a>
                 <a href="/profile" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="user" class="w-4 h-4"></i> <?= t('nav.profile') ?></a>
                 <a href="/settings" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="settings" class="w-4 h-4"></i> <?= t('nav.settings') ?></a>
                 <a href="/logout" class="flex items-center gap-2 px-3 py-2 rounded text-red-500 text-sm"><i data-lucide="log-out" class="w-4 h-4"></i> <?= t('nav.logout') ?></a>
@@ -442,14 +406,6 @@ $_r4 = array_slice($_bgCards, 36, 12);
     </div>
     <?php endif; ?>
 
-    <?php $__v = '20260209'; ?>
-    <script>
-    window.__NOTIF_ITEMS = <?= $isLoggedIn ? json_encode(array_values($_pendingReqs)) : '[]' ?>;
-    window.__CURRENCY = <?= json_encode(\App\Core\Currency::info()) ?>;
-    window.__LANG = <?= isset($t) ? json_encode($t, JSON_UNESCAPED_UNICODE) : '{}' ?>;
-    </script>
-    <script src="/assets/js/main.js?v=<?= $__v ?>"></script>
-
     <main id="main-content">
         <?php if (!empty($fullWidth)): ?>
             <?= $content ?>
@@ -471,6 +427,11 @@ $_r4 = array_slice($_bgCards, 36, 12);
                     <?= t('footer.join_discord') ?>
                 </a>
             </p>
+            <div class="pt-2 flex items-center justify-center gap-2 flex-wrap">
+                <?php foreach ($langs as $code => $name): ?>
+                    <button type="button" onclick="setLanguage('<?= htmlspecialchars($code) ?>')" class="text-xs font-medium transition <?= $currentLang === $code ? 'font-bold text-gray-300' : 'text-gray-500 hover:text-gray-400' ?>"><?= htmlspecialchars($name) ?></button>
+                <?php endforeach; ?>
+            </div>
         </div>
     </footer>
 
@@ -481,14 +442,9 @@ $_r4 = array_slice($_bgCards, 36, 12);
     <?php if ($isLoggedIn): ?>
     <script>
     // Auto-refresh unified notifications every 30 seconds
-    if (typeof Alpine !== 'undefined' && Alpine.store && Alpine.store('unifiedNotifications')) {
-        setInterval(() => {
-            const store = Alpine.store('unifiedNotifications');
-            if (store && store.loadNotifications) {
-                store.loadNotifications();
-            }
-        }, 30000);
-    }
+    setInterval(function() {
+        document.dispatchEvent(new Event('refresh-notifications'));
+    }, 30000);
     </script>
     <?php endif; ?>
 </body>

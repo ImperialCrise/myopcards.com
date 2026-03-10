@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Currency;
 use App\Core\View;
 use App\Models\PriceHistory;
 
@@ -33,9 +34,10 @@ class MarketController
 
         $direction = $_GET['direction'] ?? 'up';
         $days = max(1, min(30, (int)($_GET['days'] ?? 7)));
-        $source = $_GET['source'] ?? 'tcgplayer';
+        $source = $_GET['source'] ?? Currency::source();
+        $edition = $_GET['edition'] ?? Currency::edition();
 
-        $movers = PriceHistory::getTopMovers($source, $days, 10, $direction);
+        $movers = PriceHistory::getTopMovers($source, $days, 10, $direction, $edition);
         echo json_encode($movers);
     }
 }

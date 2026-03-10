@@ -6,8 +6,6 @@ namespace App\Core;
 
 class Currency
 {
-    private static ?string $current = null;
-
     private static array $map = [
         'usd'    => ['symbol' => '$', 'label' => 'USD', 'column' => 'market_price', 'source' => 'tcgplayer', 'edition' => 'en'],
         'eur_en' => ['symbol' => '€', 'label' => 'EUR', 'column' => 'price_en',     'source' => 'cardmarket', 'edition' => 'en'],
@@ -17,19 +15,7 @@ class Currency
 
     public static function current(): string
     {
-        if (self::$current !== null) return self::$current;
-
-        if (Auth::check()) {
-            $user = Auth::user();
-            self::$current = $user['preferred_currency'] ?? 'usd';
-        } elseif (isset($_COOKIE['currency'])) {
-            self::$current = $_COOKIE['currency'];
-        } else {
-            self::$current = 'usd';
-        }
-
-        if (!isset(self::$map[self::$current])) self::$current = 'usd';
-        return self::$current;
+        return 'usd';
     }
 
     public static function symbol(): string

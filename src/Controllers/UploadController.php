@@ -114,6 +114,34 @@ class UploadController
         http_response_code(404);
     }
 
+    public function serveMessages(string $path): void
+    {
+        // Must be authenticated to view message images
+        if (!\App\Core\Auth::check()) {
+            http_response_code(403);
+            return;
+        }
+        $path = ltrim($path, '/');
+        if ($path === '' || str_contains($path, '..')) {
+            http_response_code(400);
+            return;
+        }
+        $key = 'messages/' . $path;
+
+        if (StorageService::isConfigured()) {
+            $content = StorageService::get($key);
+            if ($content !== null) {
+                $contentType = StorageService::getContentType($key) ?? 'application/octet-stream';
+                header('Content-Type: ' . $contentType);
+                header('Cache-Control: private, max-age=86400');
+                echo $content;
+                return;
+            }
+        }
+
+        http_response_code(404);
+    }
+
     public function serveBanners(string $path): void
     {
         $path = ltrim($path, '/');

@@ -98,6 +98,7 @@ body { background: var(--body-bg); color: var(--body-color); transition: backgro
 nav.glass-strong { border-bottom:1px solid var(--nav-border); }
 footer { border-top:1px solid var(--nav-border) !important; }
 #site-wrapper { position:relative; z-index:1; }
+#main-content { position:relative; z-index:2; min-height:200px; }
 
 /* ===== SEMANTIC COLOR OVERRIDES ===== */
 .text-green-400 { color:#059669 !important; } html.dark .text-green-400 { color:#22c55e !important; }

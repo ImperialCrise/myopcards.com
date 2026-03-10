@@ -127,6 +127,8 @@ class AuthController
             'password_hash' => password_hash($password, PASSWORD_ARGON2ID),
         ]);
 
+        try { \App\Models\Message::sendWelcomeMessage($userId); } catch (\Throwable $e) {}
+
         RateLimiter::recordAttempt($ipKey, 3600);
         Auth::login($userId);
         header('Location: /dashboard');
@@ -187,6 +189,7 @@ class AuthController
                     'provider' => 'google',
                     'provider_id' => $googleUser['id'],
                 ]);
+                try { \App\Models\Message::sendWelcomeMessage($userId); } catch (\Throwable $e) {}
                 $user = User::findById($userId);
             }
         }
@@ -243,6 +246,7 @@ class AuthController
                     'provider' => 'discord',
                     'provider_id' => $discordUser['id'],
                 ]);
+                try { \App\Models\Message::sendWelcomeMessage($userId); } catch (\Throwable $e) {}
                 $user = User::findById($userId);
             }
         }

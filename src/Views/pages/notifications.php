@@ -31,6 +31,22 @@
                         <div class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
                             <i data-lucide="heart" class="w-5 h-5 text-red-600 dark:text-red-400"></i>
                         </div>
+                        <?php elseif ($notification['type'] === 'forum_mention'): ?>
+                        <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                            <i data-lucide="at-sign" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <?php elseif ($notification['type'] === 'friend_request'): ?>
+                        <div class="w-10 h-10 bg-cyan-100 dark:bg-cyan-900/30 rounded-full flex items-center justify-center">
+                            <i data-lucide="user-plus" class="w-5 h-5 text-cyan-600 dark:text-cyan-400"></i>
+                        </div>
+                        <?php elseif ($notification['type'] === 'friend_accepted'): ?>
+                        <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                            <i data-lucide="user-check" class="w-5 h-5 text-green-600 dark:text-green-400"></i>
+                        </div>
+                        <?php elseif ($notification['type'] === 'private_message'): ?>
+                        <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                            <i data-lucide="mail" class="w-5 h-5 text-amber-600 dark:text-amber-400"></i>
+                        </div>
                         <?php else: ?>
                         <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
                             <i data-lucide="bell" class="w-5 h-5 text-gray-600 dark:text-gray-400"></i>
@@ -55,9 +71,9 @@
                             </span>
                             
                             <div class="flex items-center gap-2">
-                                <?php if ($notification['type'] === 'forum_reply' && isset($notification['data']['topic_id'])): ?>
-                                <a href="/forum/general/<?= $notification['data']['topic_id'] ?>-<?= urlencode(strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $notification['title']))) ?>" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                                    <?= t('notifications.view_topic') ?>
+                                <?php if (!empty($notification['url']) && $notification['url'] !== '/notifications'): ?>
+                                <a href="<?= htmlspecialchars($notification['url']) ?>" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                                    <?= in_array($notification['type'], ['forum_reply', 'forum_like', 'forum_mention']) ? t('notifications.view_topic') : t('notifications.view') ?>
                                 </a>
                                 <?php endif; ?>
                                 

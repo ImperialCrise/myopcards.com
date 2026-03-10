@@ -14,7 +14,7 @@ class NotificationController
     {
         Auth::requireAuth();
         
-        $notifications = NotificationService::getNotifications(Auth::id());
+        $notifications = NotificationService::getRecentWithUrls(Auth::id(), 50);
         
         View::render('pages/notifications', [
             'title' => 'Notifications',
@@ -54,5 +54,15 @@ class NotificationController
         
         header('Content-Type: application/json');
         echo json_encode(['count' => $count]);
+    }
+
+    public function getRecent(): void
+    {
+        Auth::requireAuth();
+        
+        $notifications = NotificationService::getRecentWithUrls(Auth::id(), 10);
+        
+        header('Content-Type: application/json');
+        echo json_encode(['notifications' => $notifications]);
     }
 }

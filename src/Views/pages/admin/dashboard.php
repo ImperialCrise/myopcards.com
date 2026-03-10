@@ -9,6 +9,10 @@
             <a href="/admin/cards" class="px-3 py-2 glass rounded-lg text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-1.5"><i data-lucide="layers" class="w-4 h-4"></i> Cards</a>
             <a href="/admin/prices" class="px-3 py-2 glass rounded-lg text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-1.5"><i data-lucide="banknote" class="w-4 h-4"></i> Prices</a>
             <a href="/admin/forum-categories" class="px-3 py-2 glass rounded-lg text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-1.5"><i data-lucide="message-square" class="w-4 h-4"></i> Forum</a>
+            <a href="/admin/reports" class="px-3 py-2 glass rounded-lg text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-1.5">
+                <i data-lucide="flag" class="w-4 h-4"></i> Reports
+                <?php if (($pendingReports ?? 0) > 0): ?><span class="px-1.5 py-0.5 bg-red-500 rounded-full text-xs font-bold text-white"><?= $pendingReports ?></span><?php endif; ?>
+            </a>
             <a href="/admin/logs" class="px-3 py-2 glass rounded-lg text-sm text-gray-600 hover:text-gray-900 transition flex items-center gap-1.5"><i data-lucide="file-text" class="w-4 h-4"></i> Logs</a>
         </div>
     </div>

@@ -64,12 +64,19 @@ $langs = \App\Services\OfficialSiteScraper::getAvailableLanguages();
             </div>
             <div>
                 <label class="block text-sm font-medium text-dark-300 mb-1"><?= t('settings.currency') ?></label>
-                <select onchange="apiPost('/settings/currency', { currency: this.value }).then(() => location.reload())"
-                    class="w-full px-3 py-2.5 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
-                    <option value="usd" <?= ($user['preferred_currency'] ?? 'usd') === 'usd' ? 'selected' : '' ?>><?= t('settings.usd') ?></option>
-                    <option value="eur" <?= ($user['preferred_currency'] ?? 'usd') === 'eur' ? 'selected' : '' ?>><?= t('settings.eur') ?></option>
-                </select>
+                <div class="w-full px-3 py-2.5 bg-dark-800 border border-dark-600 rounded-lg text-sm text-dark-200 flex items-center gap-2">
+                    <span>$</span> USD <span class="text-dark-500 text-xs">(TCGPlayer)</span>
+                </div>
             </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-dark-600">
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="allow-non-friends-msg" <?= !empty($user['allow_messages_from_non_friends']) ? 'checked' : '' ?>
+                    onchange="apiPost('/settings/messages-privacy', { allow: this.checked ? '1' : '0' }).then(() => location.reload())"
+                    class="w-4 h-4 rounded border-dark-500 text-gold-500 focus:ring-gold-500/50 bg-dark-800">
+                <span class="text-sm text-dark-200"><?= t('settings.allow_messages_non_friends') ?></span>
+            </label>
+            <p class="text-xs text-dark-400 mt-1 ml-7"><?= t('settings.allow_messages_non_friends_desc') ?></p>
         </div>
     </div>
 

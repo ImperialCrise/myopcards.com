@@ -17,6 +17,11 @@ class AdminController
         Auth::requireAdmin();
         $db = Database::getConnection();
 
+        $pendingReports = 0;
+        try {
+            $pendingReports = (int)$db->query("SELECT COUNT(*) FROM user_reports WHERE status = 'pending'")->fetchColumn();
+        } catch (\Throwable $e) {}
+
         $stats = [
             'total_users' => (int)$db->query('SELECT COUNT(*) FROM users')->fetchColumn(),
             'total_cards' => (int)$db->query('SELECT COUNT(*) FROM cards')->fetchColumn(),
@@ -43,6 +48,7 @@ class AdminController
             'stats' => $stats,
             'recentUsers' => $recentUsers,
             'priceSources' => $priceSources,
+            'pendingReports' => $pendingReports,
         ]);
     }
 
@@ -90,6 +96,74 @@ class AdminController
         }
         $db = Database::getConnection();
         $db->prepare('UPDATE users SET is_admin = NOT is_admin WHERE id = :id')->execute(['id' => $userId]);
+        echo json_encode(['success' => true]);
+    }
+
+    public function reports(): void
+    {
+        Auth::requireAdmin();
+        $db = Database::getConnection();
+        $reports = [];
+        $pendingCount = 0;
+        $filter = $_GET['status'] ?? 'all';
+        try {
+            $where = '1=1';
+            if ($filter === 'pending') $where = "r.status = 'pending'";
+            elseif ($filter === 'reviewed') $where = "r.status = 'reviewed'";
+            elseif ($filter === 'dismissed') $where = "r.status = 'dismissed'";
+            $reports = $db->query(
+            "SELECT r.*, reporter.username as reporter_username, reported.username as reported_username
+             FROM user_reports r
+             JOIN users reporter ON reporter.id = r.reporter_id
+             JOIN users reported ON reported.id = r.reported_id
+             WHERE $where
+             ORDER BY r.created_at DESC
+             LIMIT 100"
+            )->fetchAll();
+            $pendingCount = (int)$db->query("SELECT COUNT(*) FROM user_reports WHERE status = 'pending'")->fetchColumn();
+        } catch (\Throwable $e) {
+            $filter = $_GET['status'] ?? 'all';
+        }
+        View::render('pages/admin/reports', [
+            'title' => 'Admin - User Reports',
+            'reports' => $reports,
+            'filter' => $filter,
+            'pendingCount' => $pendingCount,
+        ]);
+    }
+
+    public function reviewReport(): void
+    {
+        Auth::requireAdmin();
+        header('Content-Type: application/json');
+        $reportId = (int)($_POST['report_id'] ?? 0);
+        $action = $_POST['action'] ?? '';
+        if ($reportId <= 0 || !in_array($action, ['dismiss', 'delete_user'])) {
+            echo json_encode(['success' => false, 'message' => 'Invalid request']);
+            return;
+        }
+        $db = Database::getConnection();
+        $report = $db->prepare("SELECT * FROM user_reports WHERE id = ?");
+        $report->execute([$reportId]);
+        $report = $report->fetch();
+        if (!$report) {
+            echo json_encode(['success' => false, 'message' => 'Report not found']);
+            return;
+        }
+        if ($action === 'dismiss') {
+            $db->prepare("UPDATE user_reports SET status = 'dismissed', reviewed_by = ?, reviewed_at = NOW(), admin_notes = ?")
+               ->execute([Auth::id(), trim($_POST['notes'] ?? '')]);
+        } elseif ($action === 'delete_user') {
+            $userId = (int)$report['reported_id'];
+            if ($userId !== Auth::id()) {
+                $db->prepare('DELETE FROM user_cards WHERE user_id = ?')->execute([$userId]);
+                $db->prepare('DELETE FROM friendships WHERE user_id = ? OR friend_id = ?')->execute([$userId, $userId]);
+                $db->prepare('DELETE FROM collection_snapshots WHERE user_id = ?')->execute([$userId]);
+                $db->prepare('DELETE FROM users WHERE id = ?')->execute([$userId]);
+            }
+            $db->prepare("UPDATE user_reports SET status = 'reviewed', reviewed_by = ?, reviewed_at = NOW(), admin_notes = ?")
+               ->execute([Auth::id(), trim($_POST['notes'] ?? '') . ' [User deleted]']);
+        }
         echo json_encode(['success' => true]);
     }
 

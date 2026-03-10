@@ -289,6 +289,15 @@ class UserController
         echo json_encode(['success' => true, 'currency' => $currency]);
     }
 
+    public function changeMessagesPrivacy(): void
+    {
+        Auth::requireAuth();
+        $allow = ($_POST['allow'] ?? '0') === '1';
+        User::update(Auth::id(), ['allow_messages_from_non_friends' => $allow ? 1 : 0]);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true]);
+    }
+
     private const AVATAR_MAX_SIZE = 2 * 1024 * 1024;
     private const AVATAR_ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     private const AVATAR_UPLOAD_DIR = BASE_PATH . '/public/uploads/avatars/';

@@ -14,6 +14,9 @@ class Friendship
         if ($userId === $friendId) {
             return false;
         }
+        if (self::isBlocked($userId, $friendId)) {
+            return false;
+        }
 
         $existing = self::getRelationship($userId, $friendId);
         if ($existing) {
@@ -141,5 +144,48 @@ class Friendship
         );
         $stmt->execute(['uid' => $userId, 'uid2' => $userId, 'accepted' => 'accepted']);
         return (int)$stmt->fetchColumn();
+    }
+
+    public static function isBlocked(int $userId, int $otherId): bool
+    {
+        $rel = self::getRelationship($userId, $otherId);
+        if (!$rel || $rel['status'] !== 'blocked') {
+            return false;
+        }
+        return (int)$rel['friend_id'] === $userId;
+    }
+
+    public static function blockUser(int $userId, int $targetId): bool
+    {
+        if ($userId === $targetId) {
+            return false;
+        }
+        $db = Database::getConnection();
+        $existing = self::getRelationship($userId, $targetId);
+        $db->prepare('DELETE FROM friendships WHERE (user_id = :u1 AND friend_id = :f1) OR (user_id = :u2 AND friend_id = :f2)')
+           ->execute(['u1' => $userId, 'f1' => $targetId, 'u2' => $targetId, 'f2' => $userId]);
+        $stmt = $db->prepare('INSERT INTO friendships (user_id, friend_id, status) VALUES (:uid, :fid, :status)');
+        $stmt->execute(['uid' => $userId, 'fid' => $targetId, 'status' => 'blocked']);
+        return true;
+    }
+
+    public static function unblockUser(int $userId, int $targetId): bool
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare('DELETE FROM friendships WHERE user_id = :uid AND friend_id = :fid AND status = :status');
+        $stmt->execute(['uid' => $userId, 'fid' => $targetId, 'status' => 'blocked']);
+        return $stmt->rowCount() > 0;
+    }
+
+    public static function getBlockedUsers(int $userId): array
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare(
+            'SELECT u.id, u.username, u.avatar, u.custom_avatar FROM friendships f
+             JOIN users u ON u.id = f.friend_id
+             WHERE f.user_id = :uid AND f.status = :status'
+        );
+        $stmt->execute(['uid' => $userId, 'status' => 'blocked']);
+        return $stmt->fetchAll();
     }
 }

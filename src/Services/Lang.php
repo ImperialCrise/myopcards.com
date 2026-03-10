@@ -63,10 +63,11 @@ class Lang
         }
     }
 
-    public static function get(string $key, array $replace = []): string
+    public static function get(string $key, array $replace = [], ?string $fallback = null): string
     {
         self::load();
-        $value = self::$translations[$key] ?? self::$fallback[$key] ?? $key;
+        $default = $fallback ?? $key;
+        $value = self::$translations[$key] ?? self::$fallback[$key] ?? $default;
         foreach ($replace as $k => $v) {
             $value = str_replace((string) $k, (string) $v, $value);
         }

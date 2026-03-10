@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 if (!function_exists('t')) {
-    function t(string $key, array $replace = []): string
+    function t(string $key, array|string $replace = []): string
     {
-        return \App\Services\Lang::get($key, $replace);
+        return \App\Services\Lang::get($key, is_array($replace) ? $replace : [], is_string($replace) ? $replace : null);
     }
 }
 

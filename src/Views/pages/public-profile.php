@@ -145,9 +145,18 @@ $categories = ['collection'=>'Collection','value'=>'Value','completion'=>'Comple
                     <button @click="dropOpen = !dropOpen" class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500/10 text-green-400 rounded-lg text-sm font-bold hover:bg-green-500/20 transition">
                         <i data-lucide="user-check" class="w-4 h-4"></i> Friends <i data-lucide="chevron-down" class="w-3 h-3"></i>
                     </button>
-                    <div x-show="dropOpen" x-transition x-cloak class="absolute right-0 mt-1 glass-strong rounded-xl shadow-2xl py-1 w-44 z-50">
+                    <div x-show="dropOpen" x-transition x-cloak class="absolute right-0 mt-1 glass-strong rounded-xl shadow-2xl py-1 w-48 z-50">
+                        <a :href="'/messages/new/' + username" class="flex items-center gap-2 w-full px-3 py-2 text-sm text-dark-200 hover:bg-white/5 transition text-left">
+                            <i data-lucide="mail" class="w-4 h-4"></i> <?= t('friends.message', 'Message') ?>
+                        </a>
                         <button @click="removeFriend()" class="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:bg-red-900/20 transition text-left">
-                            <i data-lucide="user-minus" class="w-4 h-4"></i> Remove Friend
+                            <i data-lucide="user-minus" class="w-4 h-4"></i> <?= t('friends.remove') ?>
+                        </button>
+                        <button @click="openReportModal()" class="flex items-center gap-2 w-full px-3 py-2 text-sm text-amber-400 hover:bg-amber-900/20 transition text-left">
+                            <i data-lucide="flag" class="w-4 h-4"></i> <?= t('friends.report', 'Report') ?>
+                        </button>
+                        <button @click="blockUser()" class="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:bg-red-900/20 transition text-left">
+                            <i data-lucide="ban" class="w-4 h-4"></i> <?= t('friends.block', 'Block') ?>
                         </button>
                     </div>
                 </div>
@@ -164,9 +173,18 @@ $categories = ['collection'=>'Collection','value'=>'Value','completion'=>'Comple
                         <i data-lucide="x" class="w-4 h-4"></i> Decline
                     </button>
                 </div>
-                <div x-show="relation === 'none'" x-cloak>
+                <div x-show="relation === 'none'" x-cloak class="flex items-center gap-2">
                     <button @click="addFriend()" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-bold hover:opacity-90 transition" style="background:<?= $accentColor ?>22;color:<?= $accentColor ?>;border:1px solid <?= $accentColor ?>44">
                         <i data-lucide="user-plus" class="w-4 h-4"></i> Add Friend
+                    </button>
+                    <a :href="'/messages/new/' + username" class="p-2 text-dark-400 hover:text-blue-400 rounded-lg transition" title="<?= t('friends.message', 'Message') ?>">
+                        <i data-lucide="mail" class="w-4 h-4"></i>
+                    </a>
+                    <button @click="openReportModal()" class="p-2 text-dark-400 hover:text-amber-500 transition" title="<?= t('friends.report', 'Report') ?>">
+                        <i data-lucide="flag" class="w-4 h-4"></i>
+                    </button>
+                    <button @click="blockUser()" class="p-2 text-dark-400 hover:text-red-500 transition" title="<?= t('friends.block', 'Block') ?>">
+                        <i data-lucide="ban" class="w-4 h-4"></i>
                     </button>
                 </div>
             <?php elseif ($isOwnProfile): ?>
@@ -559,6 +577,34 @@ $categories = ['collection'=>'Collection','value'=>'Value','completion'=>'Comple
         </div>
     </div>
 
+    <!-- Report Modal -->
+    <div x-show="reportModalOpen" x-cloak x-transition class="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-black/50" @keydown.escape.window="reportModalOpen = false" @click.self="reportModalOpen = false">
+        <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-xl max-w-md w-full p-6" @click.stop>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4"><?= t('friends.report_user', 'Report user') ?></h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4" x-show="username">Reporting <span class="font-medium text-gray-900 dark:text-white" x-text="username"></span></p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= t('friends.report_reason', 'Reason') ?></label>
+                    <select x-model="reportReason" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-dark-700 border border-gray-200 dark:border-dark-600 rounded-lg text-gray-900 dark:text-white">
+                        <option value="spam"><?= t('friends.reason_spam', 'Spam') ?></option>
+                        <option value="harassment"><?= t('friends.reason_harassment', 'Harassment') ?></option>
+                        <option value="inappropriate_content"><?= t('friends.reason_inappropriate', 'Inappropriate content') ?></option>
+                        <option value="cheating"><?= t('friends.reason_cheating', 'Cheating') ?></option>
+                        <option value="other"><?= t('friends.reason_other', 'Other') ?></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= t('friends.report_details', 'Details (optional)') ?></label>
+                    <textarea x-model="reportDetails" rows="3" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-dark-700 border border-gray-200 dark:border-dark-600 rounded-lg text-gray-900 dark:text-white" placeholder="<?= htmlspecialchars(t('friends.report_details_placeholder', 'Provide additional context...')) ?>"></textarea>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button @click="submitReport()" class="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-sm"><?= t('friends.submit_report', 'Submit Report') ?></button>
+                <button @click="reportModalOpen = false" class="px-4 py-2.5 bg-gray-200 dark:bg-dark-600 text-gray-800 dark:text-white rounded-lg font-medium text-sm"><?= t('friends.cancel', 'Cancel') ?></button>
+            </div>
+            <p x-show="reportError" x-text="reportError" class="text-red-500 text-sm mt-2"></p>
+        </div>
+    </div>
 </div>
 
 <script>

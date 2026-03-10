@@ -26,18 +26,18 @@ class PriceHistory
         return $stmt->fetchAll();
     }
 
-    public static function getTopMovers(string $source = 'tcgplayer', int $days = 7, int $limit = 10, string $direction = 'up'): array
+    public static function getTopMovers(string $source = 'tcgplayer', int $days = 7, int $limit = 10, string $direction = 'up', string $edition = 'en'): array
     {
         $db = Database::getConnection();
         $order = $direction === 'up' ? 'DESC' : 'ASC';
 
-        $latestDate = $db->prepare("SELECT MAX(recorded_at) FROM price_history WHERE source = :src");
-        $latestDate->execute(['src' => $source]);
+        $latestDate = $db->prepare("SELECT MAX(recorded_at) FROM price_history WHERE source = :src AND edition = :ed");
+        $latestDate->execute(['src' => $source, 'ed' => $edition]);
         $maxDate = $latestDate->fetchColumn();
         if (!$maxDate) return [];
 
-        $oldestDate = $db->prepare("SELECT MIN(recorded_at) FROM price_history WHERE source = :src");
-        $oldestDate->execute(['src' => $source]);
+        $oldestDate = $db->prepare("SELECT MIN(recorded_at) FROM price_history WHERE source = :src AND edition = :ed");
+        $oldestDate->execute(['src' => $source, 'ed' => $edition]);
         $minDate = $oldestDate->fetchColumn();
         if (!$minDate || $minDate === $maxDate) return [];
 
@@ -52,12 +52,12 @@ class PriceHistory
                        ELSE 0
                    END as pct_change
             FROM cards c
-            JOIN price_history ph_new ON ph_new.card_id = c.id AND ph_new.source = :src1
+            JOIN price_history ph_new ON ph_new.card_id = c.id AND ph_new.source = :src1 AND ph_new.edition = :ed1
                 AND ph_new.recorded_at = :max_date
-            JOIN price_history ph_old ON ph_old.card_id = c.id AND ph_old.source = :src2
+            JOIN price_history ph_old ON ph_old.card_id = c.id AND ph_old.source = :src2 AND ph_old.edition = :ed2
                 AND ph_old.recorded_at = (
                     SELECT MIN(recorded_at) FROM price_history
-                    WHERE card_id = c.id AND source = :src3
+                    WHERE card_id = c.id AND source = :src3 AND edition = :ed3
                       AND recorded_at <= DATE_SUB(:max_date2, INTERVAL :days DAY)
                 )
             WHERE ph_old.price > 0.50
@@ -73,6 +73,9 @@ class PriceHistory
         $stmt->bindValue('src1', $source);
         $stmt->bindValue('src2', $source);
         $stmt->bindValue('src3', $source);
+        $stmt->bindValue('ed1', $edition);
+        $stmt->bindValue('ed2', $edition);
+        $stmt->bindValue('ed3', $edition);
         $stmt->bindValue('max_date', $maxDate);
         $stmt->bindValue('max_date2', $maxDate);
         $stmt->bindValue('days', $days, PDO::PARAM_INT);
@@ -92,9 +95,9 @@ class PriceHistory
                            ELSE 0
                        END as pct_change
                 FROM cards c
-                JOIN price_history ph_new ON ph_new.card_id = c.id AND ph_new.source = :src1
+                JOIN price_history ph_new ON ph_new.card_id = c.id AND ph_new.source = :src1 AND ph_new.edition = :ed1
                     AND ph_new.recorded_at = :max_date
-                JOIN price_history ph_old ON ph_old.card_id = c.id AND ph_old.source = :src2
+                JOIN price_history ph_old ON ph_old.card_id = c.id AND ph_old.source = :src2 AND ph_old.edition = :ed2
                     AND ph_old.recorded_at = :min_date
                 WHERE ph_old.price > 0.50
                   AND ph_new.price > 0.50
@@ -108,6 +111,8 @@ class PriceHistory
             ");
             $stmt2->bindValue('src1', $source);
             $stmt2->bindValue('src2', $source);
+            $stmt2->bindValue('ed1', $edition);
+            $stmt2->bindValue('ed2', $edition);
             $stmt2->bindValue('max_date', $maxDate);
             $stmt2->bindValue('min_date', $minDate);
             $stmt2->bindValue('lim', $limit, PDO::PARAM_INT);
@@ -140,11 +145,13 @@ class PriceHistory
         $db = Database::getConnection();
         $stmt = $db->prepare(
             "SELECT c.id, c.card_set_id, c.card_name, c.card_image_url, c.rarity, c.set_name,
-                    c.market_price, COUNT(DISTINCT uc.user_id) as collector_count,
+                    c.market_price, c.price_en, c.price_fr, c.price_jp,
+                    COUNT(DISTINCT uc.user_id) as collector_count,
                     SUM(uc.quantity) as total_owned
              FROM cards c
              JOIN user_cards uc ON uc.card_id = c.id AND uc.is_wishlist = 0
-             GROUP BY c.id
+             GROUP BY c.id, c.card_set_id, c.card_name, c.card_image_url, c.rarity, c.set_name,
+                      c.market_price, c.price_en, c.price_fr, c.price_jp
              ORDER BY collector_count DESC, total_owned DESC
              LIMIT :lim"
         );

@@ -51,6 +51,7 @@ function globalSearch() {
         go() { if (this.activeIdx >= 0 && this.results.cards[this.activeIdx]) window.location = '/cards/' + this.results.cards[this.activeIdx].card_set_id; }
     }
 }
+window.globalSearch = globalSearch;
 
 async function setLanguage(lang) { await apiPost('/settings/language', { lang: lang }); location.reload(); }
 
@@ -77,10 +78,15 @@ function formatCardPrice(card) {
 function unifiedNotifications() {
     return {
         open: false,
-        friendRequests: window.__NOTIF_ITEMS || [],
-        forumNotifications: [],
+        notifications: [],
         totalCount: 0,
-        
+
+        init() {
+            this.loadNotifications();
+            var self = this;
+            document.addEventListener('refresh-notifications', function() { self.loadNotifications(); });
+        },
+
         toggle() { 
             this.open = !this.open; 
             if (this.open) {
@@ -89,86 +95,90 @@ function unifiedNotifications() {
         },
         
         async loadNotifications() {
-            // Load friend requests (already loaded via PHP)
-            this.friendRequests = window.__NOTIF_ITEMS || [];
-            
-            // Load forum notifications
             try {
-                const response = await fetch('/api/notifications/count');
-                const data = await response.json();
-                
-                if (data.count > 0) {
-                    const notifResponse = await fetch('/notifications');
-                    // For now, just show the count in forum notifications
-                    this.forumNotifications = data.count > 0 ? [{ 
-                        id: 'forum-count',
-                        type: 'forum_reply',
-                        title: data.count === 1 ? t('nav.one_new_notification') : t('nav.new_notifications_count', { '%count%': data.count }),
-                        message: t('nav.view_all_forum_notifications'),
-                        is_read: false,
-                        created_at: new Date().toISOString()
-                    }] : [];
-                } else {
-                    this.forumNotifications = [];
-                }
+                const [countRes, recentRes] = await Promise.all([
+                    fetch('/api/notifications/count'),
+                    fetch('/api/notifications/recent')
+                ]);
+                const countData = await countRes.json();
+                const recentData = await recentRes.json();
+                this.notifications = recentData.notifications || [];
+                this.totalCount = countData.count || 0;
             } catch (error) {
-                console.error('Failed to load forum notifications:', error);
-                this.forumNotifications = [];
+                console.error('Failed to load notifications:', error);
+                this.notifications = [];
+                this.totalCount = 0;
             }
-            
-            this.updateTotalCount();
         },
         
-        updateTotalCount() {
-            this.totalCount = this.friendRequests.length + this.forumNotifications.filter(n => !n.is_read).length;
-        },
-        
-        async acceptFriend(req) {
-            var res = await apiPost('/friends/accept', { user_id: req.user_id });
+        async acceptFriend(notif) {
+            var senderId = notif.data && notif.data.sender_id;
+            if (!senderId) return;
+            var res = await apiPost('/friends/accept', { user_id: senderId });
             if (res.success) {
-                showToast(req.username + ' is now your friend');
-                this.friendRequests = this.friendRequests.filter(function(r){ return r.id !== req.id; });
-                this.updateTotalCount();
+                showToast((notif.data.sender_username || 'User') + ' is now your friend');
+                await this._markNotifRead(notif.id);
+                this.notifications = this.notifications.filter(function(n){ return n.id !== notif.id; });
+                this.totalCount = Math.max(0, this.totalCount - 1);
             }
         },
         
-        async declineFriend(req) {
-            var res = await apiPost('/friends/decline', { user_id: req.user_id });
+        async declineFriend(notif) {
+            var senderId = notif.data && notif.data.sender_id;
+            if (!senderId) return;
+            var res = await apiPost('/friends/decline', { user_id: senderId });
             if (res.success) {
                 showToast('Request declined');
-                this.friendRequests = this.friendRequests.filter(function(r){ return r.id !== req.id; });
-                this.updateTotalCount();
+                await this._markNotifRead(notif.id);
+                this.notifications = this.notifications.filter(function(n){ return n.id !== notif.id; });
+                this.totalCount = Math.max(0, this.totalCount - 1);
             }
         },
-        
-        async markAsRead(notificationId) {
-            if (notificationId === 'forum-count') {
-                // Navigate to full notifications page
-                window.location.href = '/notifications';
-                return;
-            }
-            
+
+        async _markNotifRead(notifId) {
             try {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                const body = `notification_id=${notificationId}` + (csrfToken ? `&csrf_token=${encodeURIComponent(csrfToken)}` : '');
-                const response = await fetch('/notifications/read', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: body
-                });
-                
-                if (response.ok) {
-                    this.forumNotifications = this.forumNotifications.map(n => 
-                        n.id === notificationId ? {...n, is_read: true} : n
-                    );
-                    this.updateTotalCount();
+                const body = 'notification_id=' + notifId + (csrfToken ? '&csrf_token=' + encodeURIComponent(csrfToken) : '');
+                await fetch('/notifications/read', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body });
+            } catch (e) {}
+        },
+        
+        async markAsRead(notif) {
+            if (notif.type === 'friend_request' && !notif.is_read) return;
+            if (notif.url) {
+                try {
+                    if (!notif.is_read) {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        const body = `notification_id=${notif.id}` + (csrfToken ? `&csrf_token=${encodeURIComponent(csrfToken)}` : '');
+                        await fetch('/notifications/read', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: body
+                        });
+                    }
+                    window.location.href = notif.url;
+                } catch (error) {
+                    console.error('Failed to mark notification as read:', error);
                 }
-            } catch (error) {
-                console.error('Failed to mark notification as read:', error);
+            } else {
+                window.location.href = '/notifications';
+            }
+        },
+
+        notifIcon(type) {
+            switch (type) {
+                case 'forum_reply': return 'message-circle';
+                case 'forum_like': return 'heart';
+                case 'forum_mention': return 'at-sign';
+                case 'friend_request': return 'user-plus';
+                case 'friend_accepted': return 'user-check';
+                case 'private_message': return 'mail';
+                default: return 'bell';
             }
         }
     }
 }
+window.unifiedNotifications = unifiedNotifications;
 
 var __PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='350' viewBox='0 0 250 350'%3E%3Crect fill='%23e5e7eb' width='250' height='350' rx='12'/%3E%3Ctext x='125' y='165' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%239ca3af'%3ENo Image%3C/text%3E%3Cpath d='M113 185 l12 15 8-6 17 21H100z' fill='%239ca3af' opacity='.4'/%3E%3Ccircle cx='150' cy='190' r='6' fill='%239ca3af' opacity='.4'/%3E%3C/svg%3E";
 function cardImgErr(el) {
@@ -189,3 +199,17 @@ function updateNavBadge(count) {
     if (badge) { badge.textContent = count; badge.style.display = count > 0 ? '' : 'none'; }
     if (dot) { dot.style.display = count > 0 ? '' : 'none'; }
 }
+
+// Register Alpine components before Alpine initializes (required for CDN build)
+document.addEventListener('alpine:init', function() {
+    try {
+        var gs = typeof window.globalSearch === 'function' ? window.globalSearch : function() {
+            return { query: '', open: false, loading: false, activeIdx: -1, results: { cards: [], users: [], sets: [] }, close: function(){}, search: function(){}, moveDown: function(){}, moveUp: function(){}, go: function(){} };
+        };
+        var un = typeof window.unifiedNotifications === 'function' ? window.unifiedNotifications : function() {
+            return { open: false, notifications: [], totalCount: 0, init: function(){}, toggle: function(){}, loadNotifications: function(){}, acceptFriend: function(){}, declineFriend: function(){}, markAsRead: function(){}, notifIcon: function(){ return 'bell'; } };
+        };
+        Alpine.data('globalSearch', gs);
+        Alpine.data('unifiedNotifications', un);
+    } catch (e) { console.error('[Alpine] Component registration failed:', e); }
+});
