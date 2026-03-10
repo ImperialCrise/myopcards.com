@@ -313,36 +313,48 @@ class MarketplaceController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        // Support both JSON and FormData (multipart)
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        if (str_contains($contentType, 'application/json')) {
+            $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        } else {
+            $input = $_POST;
+        }
 
+        $cardId = (int)($input['card_id'] ?? 0);
         $cardSetId = trim($input['card_set_id'] ?? '');
         $price = (float)($input['price'] ?? 0);
-        $condition = trim($input['condition'] ?? '');
+        $condition = trim($input['condition'] ?? 'NM');
         $description = trim($input['description'] ?? '');
-        $images = $input['images'] ?? [];
-        $allowBids = (bool)($input['allow_bids'] ?? true);
         $quantity = max(1, (int)($input['quantity'] ?? 1));
+        $shippingCountry = trim($input['shipping_country'] ?? '');
+        $shippingCost = (float)($input['shipping_cost'] ?? 0);
+        $shipsInternationally = (bool)($input['international_shipping'] ?? false);
 
-        // Validation
-        if (empty($cardSetId)) {
+        $db = Database::getConnection();
+
+        // Resolve card_id: accept integer id directly, or look up from card_set_id
+        if ($cardId <= 0 && !empty($cardSetId)) {
+            $cardStmt = $db->prepare("SELECT id FROM cards WHERE card_set_id = :csi");
+            $cardStmt->execute(['csi' => $cardSetId]);
+            $cardRow = $cardStmt->fetch();
+            if ($cardRow) $cardId = (int)$cardRow['id'];
+        }
+
+        if ($cardId <= 0) {
             http_response_code(422);
-            echo json_encode(['success' => false, 'message' => 'Card ID is required']);
+            echo json_encode(['success' => false, 'message' => 'Card is required']);
             return;
         }
 
-        // Look up the card's integer id from card_set_id
-        $db = Database::getConnection();
-        $cardStmt = $db->prepare("SELECT id FROM cards WHERE card_set_id = :csi");
-        $cardStmt->execute(['csi' => $cardSetId]);
-        $cardRow = $cardStmt->fetch();
-
-        if (!$cardRow) {
+        // Verify card exists
+        $cardCheck = $db->prepare("SELECT id FROM cards WHERE id = :id");
+        $cardCheck->execute(['id' => $cardId]);
+        if (!$cardCheck->fetch()) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Card not found']);
             return;
         }
-
-        $cardId = (int)$cardRow['id'];
 
         if ($price < 0.01) {
             http_response_code(422);
@@ -354,25 +366,48 @@ class MarketplaceController
             echo json_encode(['success' => false, 'message' => 'Price exceeds maximum allowed']);
             return;
         }
-        $validConditions = ['mint', 'near_mint', 'lightly_played', 'moderately_played', 'heavily_played', 'damaged'];
-        if (!empty($condition) && !in_array($condition, $validConditions)) {
+        $validConditions = ['NM', 'LP', 'MP', 'HP', 'DMG'];
+        if (!in_array($condition, $validConditions)) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Invalid condition']);
             return;
         }
 
+        // Handle image uploads
+        $uploadedImages = [];
+        if (!empty($_FILES['images'])) {
+            $files = $_FILES['images'];
+            $fileCount = is_array($files['name']) ? count($files['name']) : 1;
+            for ($i = 0; $i < min($fileCount, 4); $i++) {
+                $tmpName = is_array($files['tmp_name']) ? ($files['tmp_name'][$i] ?? '') : $files['tmp_name'];
+                $fileName = is_array($files['name']) ? ($files['name'][$i] ?? '') : $files['name'];
+                $error = is_array($files['error']) ? ($files['error'][$i] ?? 4) : $files['error'];
+                if ($error !== UPLOAD_ERR_OK || empty($tmpName)) continue;
+                try {
+                    $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                    $storageName = 'marketplace/' . Auth::id() . '/' . bin2hex(random_bytes(8)) . '.' . $ext;
+                    StorageService::put($storageName, file_get_contents($tmpName), 'image/' . $ext);
+                    $uploadedImages[] = $storageName;
+                } catch (\Throwable $e) {
+                    // Skip failed uploads
+                }
+            }
+        }
+
         try {
-            $listing = \App\Services\MarketplaceService::createListing([
+            $listingId = \App\Services\MarketplaceService::createListing([
                 'seller_id' => Auth::id(),
                 'card_id' => $cardId,
                 'price' => $price,
                 'condition' => $condition,
                 'description' => $description,
-                'images' => is_array($images) ? json_encode($images) : $images,
-                'allow_bids' => $allowBids,
+                'images' => !empty($uploadedImages) ? json_encode($uploadedImages) : null,
                 'quantity' => $quantity,
+                'shipping_from_country' => $shippingCountry ?: null,
+                'shipping_cost' => $shippingCost,
+                'ships_internationally' => $shipsInternationally ? 1 : 0,
             ]);
-            echo json_encode(['success' => true, 'listing' => $listing]);
+            echo json_encode(['success' => true, 'listing_id' => $listingId]);
         } catch (\Throwable $e) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);

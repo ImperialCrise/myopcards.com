@@ -13,7 +13,7 @@ $userAddressesJson = json_encode($userAddresses ?? [], JSON_HEX_APOS | JSON_HEX_
     </div>
 
     <!-- Card Search -->
-    <div class="glass rounded-2xl p-6">
+    <div class="glass rounded-2xl p-6 overflow-visible relative" style="z-index:10;">
         <h2 class="text-sm font-bold text-dark-400 uppercase tracking-wider mb-3"><?= t('marketplace.select_card', 'Select Card') ?></h2>
         <div class="relative">
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-dark-400"></i>
@@ -21,7 +21,7 @@ $userAddressesJson = json_encode($userAddresses ?? [], JSON_HEX_APOS | JSON_HEX_
                 placeholder="<?= htmlspecialchars(t('marketplace.search_card_placeholder', 'Search by card name or set ID...')) ?>"
                 class="w-full pl-9 pr-3 py-2.5 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white placeholder-dark-400 focus:outline-none focus:border-gold-500/50 transition">
             <!-- Search Results Dropdown -->
-            <div x-show="cardResults.length > 0 && !selectedCard" x-transition class="absolute top-full left-0 right-0 mt-1 glass-strong rounded-xl shadow-2xl max-h-72 overflow-y-auto z-20">
+            <div x-show="cardResults.length > 0 && !selectedCard" x-transition class="absolute top-full left-0 right-0 mt-1 glass-strong rounded-xl shadow-2xl max-h-72 overflow-y-auto z-50">
                 <template x-for="card in cardResults" :key="card.id">
                     <button @click="selectCard(card)" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-dark-800/50 transition text-left">
                         <img :src="cardImgSrc(card.card_image_url)" :data-ext-src="card.card_image_url" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="cardImgErr(this)">

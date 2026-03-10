@@ -18,7 +18,16 @@
       "Bash(git worktree:*)",
       "Bash(do php:*)",
       "Bash(mysql -u myopcards_user -p8jo6lulyiS8GwdX3kVdNIXKc myopcards -e \"SHOW TABLES LIKE ''wallets'';\")",
-      "Bash(mysql -u myopcards_user -p8jo6lulyiS8GwdX3kVdNIXKc myopcards -e \"SHOW TABLES LIKE ''marketplace%''; SHOW TABLES LIKE ''wallet%''; SHOW TABLES LIKE ''stripe%''; SHOW TABLES LIKE ''user_addresses'';\")"
+      "Bash(mysql -u myopcards_user -p8jo6lulyiS8GwdX3kVdNIXKc myopcards -e \"SHOW TABLES LIKE ''marketplace%''; SHOW TABLES LIKE ''wallet%''; SHOW TABLES LIKE ''stripe%''; SHOW TABLES LIKE ''user_addresses'';\")",
+      "Read(//var/log/nginx/**)",
+      "Read(//var/log/apache2/**)",
+      "Read(//var/log/**)",
+      "Bash(ls /var/log/caddy*)",
+      "Read(//etc/**)",
+      "Bash(find /var/log -name *.log -newer /var/log/wtmp -type f)",
+      "Bash(php -i)",
+      "Bash(sudo tail:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://myopcards.com/marketplace/sell -H \"Cookie: PHPSESSID=test\")"
     ]
   }
 }
