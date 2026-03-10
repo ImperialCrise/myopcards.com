@@ -123,12 +123,14 @@ class MessageController
         $messages = Message::pollMessages($id, Auth::id(), $afterId);
         $typing = Message::getTypingUsers($id, Auth::id());
         NotificationService::markConversationNotificationsRead(Auth::id(), $id);
+        $unreadCount = NotificationService::getUnreadCount(Auth::id());
 
         $formatted = array_map(fn($m) => self::formatMessage($m), $messages);
         echo json_encode([
-            'success' => true,
-            'messages' => $formatted,
-            'typing' => $typing,
+            'success'      => true,
+            'messages'     => $formatted,
+            'typing'       => $typing,
+            'unread_count' => $unreadCount,
         ]);
     }
 

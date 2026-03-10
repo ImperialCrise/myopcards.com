@@ -38,6 +38,8 @@ function conversationPage(convId, currentUserId) {
             window.__msgPage = this;
             this.scrollBottom();
             this.startPolling();
+            // Clear any pending notifications for this conversation right away
+            document.dispatchEvent(new Event('refresh-notifications'));
         },
 
         startPolling() {
@@ -71,6 +73,9 @@ function conversationPage(convId, currentUserId) {
                     this.$nextTick(() => this.scrollBottom());
                 }
                 this.typingUsers = data.typing ?? [];
+                if (typeof data.unread_count === 'number') {
+                    document.dispatchEvent(new CustomEvent('set-notif-count', { detail: data.unread_count }));
+                }
             } catch (e) { /* silent */ }
         },
 

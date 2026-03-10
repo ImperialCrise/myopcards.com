@@ -85,6 +85,13 @@ function unifiedNotifications() {
             this.loadNotifications();
             var self = this;
             document.addEventListener('refresh-notifications', function() { self.loadNotifications(); });
+            document.addEventListener('set-notif-count', function(e) {
+                var newCount = e.detail;
+                if (newCount < self.totalCount) {
+                    self.totalCount = newCount;
+                    self.loadNotifications();
+                }
+            });
         },
 
         toggle() { 

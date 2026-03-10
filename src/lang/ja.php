@@ -73,6 +73,8 @@ return [
     'home.create_account' => '無料アカウントを作成',
     'login.welcome' => 'おかえりなさい',
     'login.email' => 'メールアドレス',
+    'login.email_or_username' => 'メールまたはユーザー名',
+    'login.placeholder_email_or_username' => 'you@example.com またはユーザー名',
     'login.password' => 'パスワード',
     'login.remember' => '30日間ログイン状態を保持する',
     'login.submit' => 'ログイン',

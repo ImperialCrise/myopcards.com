@@ -73,6 +73,8 @@ return [
     'home.create_account' => 'สร้างบัญชีฟรี',
     'login.welcome' => 'ยินดีต้อนรับกลับมา',
     'login.email' => 'อีเมล',
+    'login.email_or_username' => 'อีเมลหรือชื่อผู้ใช้',
+    'login.placeholder_email_or_username' => 'you@example.com หรือชื่อผู้ใช้',
     'login.password' => 'รหัสผ่าน',
     'login.remember' => 'จดจำฉันไว้ 30 วัน',
     'login.submit' => 'เข้าสู่ระบบ',

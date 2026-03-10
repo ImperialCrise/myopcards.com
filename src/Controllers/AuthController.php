@@ -29,20 +29,20 @@ class AuthController
             return;
         }
 
-        $email = trim($_POST['email'] ?? '');
+        $login = trim($_POST['login'] ?? $_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $remember = isset($_POST['remember']);
 
-        if (empty($email) || empty($password)) {
+        if (empty($login) || empty($password)) {
             View::render('pages/login', ['title' => 'Login', 'error' => t('auth.all_fields_required')]);
             return;
         }
 
-        $user = User::findByEmail($email);
+        $user = User::findByEmail($login) ?: User::findByUsername($login);
 
         if (!$user || !password_verify($password, $user['password_hash'])) {
             RateLimiter::recordAttempt($ipKey);
-            View::render('pages/login', ['title' => 'Login', 'error' => t('auth.invalid_email_or_password')]);
+            View::render('pages/login', ['title' => 'Login', 'error' => t('auth.invalid_credentials')]);
             return;
         }
 

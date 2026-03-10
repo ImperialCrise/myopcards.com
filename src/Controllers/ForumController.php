@@ -50,7 +50,7 @@ class ForumController
             )->fetch();
         }, 600); // Cache for 10 minutes
 
-        $onlineUsers = Auth::getOnlineUsers(15000);
+        $onlineUsers = Auth::getOnlineUsers(60 * 24 * 2); // last 2 days
         $onlineCount = count($onlineUsers);
 
         View::render('pages/forum/index', [

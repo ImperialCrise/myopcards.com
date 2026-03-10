@@ -287,11 +287,12 @@ class Auth
         try {
             $db = Database::getConnection();
             $stmt = $db->prepare(
-                "SELECT DISTINCT u.id, u.username, u.avatar, u.custom_avatar, us.last_activity
+                "SELECT u.id, u.username, u.avatar, u.custom_avatar, MAX(us.last_activity) as last_activity
                  FROM user_sessions us
                  JOIN users u ON u.id = us.user_id
                  WHERE us.last_activity > DATE_SUB(NOW(), INTERVAL :mins MINUTE)
-                 ORDER BY us.last_activity DESC"
+                 GROUP BY u.id, u.username, u.avatar, u.custom_avatar
+                 ORDER BY last_activity DESC"
             );
             $stmt->execute(['mins' => $minutes]);
             return $stmt->fetchAll();

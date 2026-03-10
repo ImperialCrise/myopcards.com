@@ -73,6 +73,8 @@ return [
     'home.create_account' => '무료 계정 생성',
     'login.welcome' => '다시 오신 것을 환영합니다',
     'login.email' => '이메일',
+    'login.email_or_username' => '이메일 또는 사용자명',
+    'login.placeholder_email_or_username' => 'you@example.com 또는 사용자명',
     'login.password' => '비밀번호',
     'login.remember' => '30일 동안 로그인 유지',
     'login.submit' => '로그인',

@@ -73,6 +73,8 @@ return [
     'home.create_account' => '创建免费账号',
     'login.welcome' => '欢迎回来',
     'login.email' => '邮箱',
+    'login.email_or_username' => '邮箱或用户名',
+    'login.placeholder_email_or_username' => 'you@example.com 或用户名',
     'login.password' => '密码',
     'login.remember' => '记住我 (30天)',
     'login.submit' => '登录',
