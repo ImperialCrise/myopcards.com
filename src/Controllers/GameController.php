@@ -63,6 +63,7 @@ class GameController
             'gameId' => $id,
             'userId' => Auth::id(),
             'fullWidth' => true,
+            'noTicker' => true,
         ]);
     }
 

@@ -429,6 +429,19 @@ $_r4 = array_slice($_bgCards, 36, 12);
         </div>
     </nav>
 
+    <?php if (empty($noTicker)): ?>
+    <div class="ticker-wrap">
+        <div class="ticker-track">
+            <?php for ($i = 1; $i <= 10; $i++): ?>
+            <span><?= t('ticker.' . $i) ?></span>
+            <?php endfor; ?>
+            <?php for ($i = 1; $i <= 10; $i++): ?>
+            <span><?= t('ticker.' . $i) ?></span>
+            <?php endfor; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <?php $__v = '20260209'; ?>
     <script>
     window.__NOTIF_ITEMS = <?= $isLoggedIn ? json_encode(array_values($_pendingReqs)) : '[]' ?>;

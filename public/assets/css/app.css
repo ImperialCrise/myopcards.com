@@ -297,3 +297,28 @@ html.dark .forum-content h4, html.dark .forum-content h5, html.dark .forum-conte
 /* Fix for content editable areas */
 [contenteditable="true"] { color: #374151 !important; }
 html.dark [contenteditable="true"] { color: #e5e7eb !important; }
+
+/* ===== TICKER BANNER ===== */
+.ticker-wrap {
+    background: linear-gradient(90deg, #c0392b, #e74c3c, #f39c12, #e74c3c, #c0392b);
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+.ticker-track {
+    display: inline-block;
+    animation: ticker-scroll 40s linear infinite;
+}
+@keyframes ticker-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+.ticker-track span {
+    display: inline-block;
+    padding: 0 2.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.03em;
+}
