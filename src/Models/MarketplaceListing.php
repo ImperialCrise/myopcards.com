@@ -28,7 +28,7 @@ class MarketplaceListing
             'shipping_cost' => $data['shipping_cost'] ?? 0.00,
             'ships_internationally' => $data['ships_internationally'] ?? 0,
             'status' => $data['status'] ?? 'active',
-            'images' => isset($data['images']) ? json_encode($data['images']) : null,
+            'images' => is_string($data['images'] ?? null) ? $data['images'] : (isset($data['images']) ? json_encode($data['images']) : null),
             'expires_at' => $data['expires_at'] ?? null,
         ]);
         return (int) $db->lastInsertId();

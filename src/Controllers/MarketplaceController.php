@@ -347,10 +347,11 @@ class MarketplaceController
             return;
         }
 
-        // Verify card exists
-        $cardCheck = $db->prepare("SELECT id FROM cards WHERE id = :id");
+        // Verify card exists and get name for title
+        $cardCheck = $db->prepare("SELECT id, card_name, card_set_id FROM cards WHERE id = :id");
         $cardCheck->execute(['id' => $cardId]);
-        if (!$cardCheck->fetch()) {
+        $card = $cardCheck->fetch();
+        if (!$card) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Card not found']);
             return;
@@ -395,9 +396,11 @@ class MarketplaceController
         }
 
         try {
+            $title = $card['card_name'] . ' [' . $card['card_set_id'] . '] - ' . $condition;
             $listingId = \App\Services\MarketplaceService::createListing([
                 'seller_id' => Auth::id(),
                 'card_id' => $cardId,
+                'title' => $title,
                 'price' => $price,
                 'condition' => $condition,
                 'description' => $description,
