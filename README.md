@@ -170,7 +170,7 @@ myopcards.com/
 
 ---
 
-## Price updating (summary)
+## Price updating (summary):
 
 - **USD** — Fetched from OPTCG API (TCGPlayer). Run `php bin/sync-prices.php tcgplayer` (e.g. daily).
 - **EUR (EN/FR/JP)** — From Cardmarket:
