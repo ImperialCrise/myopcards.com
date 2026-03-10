@@ -349,13 +349,13 @@ class MarketplaceService
         return ['success' => true, 'dispute_id' => $disputeId];
     }
 
-    public static function resolveDispute(int $disputeId, string $resolution, int $resolvedBy, string $winner): array
+    public static function resolveDispute(int $disputeId, string $winner, int $resolvedBy, ?string $adminNotes = null): array
     {
         $dispute = MarketplaceDispute::findById($disputeId);
         if (!$dispute) {
             return ['success' => false, 'error' => 'Dispute not found.'];
         }
-        if ($dispute['status'] !== 'open') {
+        if (!in_array($dispute['status'], ['open', 'under_review'], true)) {
             return ['success' => false, 'error' => 'Dispute is already resolved.'];
         }
 
@@ -364,7 +364,9 @@ class MarketplaceService
             return ['success' => false, 'error' => 'Associated order not found.'];
         }
 
-        MarketplaceDispute::resolve($disputeId, $resolution, $resolvedBy);
+        // Map winner to dispute status ENUM value
+        $disputeStatus = $winner === 'buyer' ? 'resolved_buyer' : 'resolved_seller';
+        MarketplaceDispute::resolve($disputeId, $disputeStatus, $resolvedBy, $adminNotes);
 
         if ($winner === 'buyer') {
             // Refund the buyer

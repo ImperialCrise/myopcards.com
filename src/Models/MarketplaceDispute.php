@@ -13,15 +13,15 @@ class MarketplaceDispute
     {
         $db = Database::getConnection();
         $stmt = $db->prepare(
-            'INSERT INTO marketplace_disputes (order_id, opened_by, reason, description, evidence, status, resolution, resolved_by, resolved_at, created_at, updated_at)
-             VALUES (:order_id, :opened_by, :reason, :description, :evidence, :status, NULL, NULL, NULL, NOW(), NOW())'
+            'INSERT INTO marketplace_disputes (order_id, opened_by, reason, description, evidence_images, status, created_at)
+             VALUES (:order_id, :opened_by, :reason, :description, :evidence_images, :status, NOW())'
         );
         $stmt->execute([
             'order_id' => $data['order_id'],
             'opened_by' => $data['opened_by'],
             'reason' => $data['reason'],
             'description' => $data['description'] ?? null,
-            'evidence' => isset($data['evidence']) ? json_encode($data['evidence']) : null,
+            'evidence_images' => isset($data['evidence_images']) ? json_encode($data['evidence_images']) : null,
             'status' => $data['status'] ?? 'open',
         ]);
         return (int) $db->lastInsertId();
@@ -53,7 +53,7 @@ class MarketplaceDispute
         $total = (int) $countStmt->fetchColumn();
 
         $stmt = $db->prepare(
-            'SELECT md.*, mo.order_number, mo.total_amount,
+            'SELECT md.*, mo.order_number, mo.total_paid,
                     buyer.username AS buyer_username, seller.username AS seller_username,
                     opener.username AS opened_by_username,
                     c.card_name, c.card_set_id
@@ -79,17 +79,18 @@ class MarketplaceDispute
         ];
     }
 
-    public static function resolve(int $id, string $resolution, int $resolvedBy): void
+    public static function resolve(int $id, string $status, int $resolvedBy, ?string $adminNotes = null): void
     {
         $db = Database::getConnection();
         $stmt = $db->prepare(
             'UPDATE marketplace_disputes
-             SET status = \'resolved\', resolution = :resolution, resolved_by = :resolved_by,
+             SET status = :status, admin_notes = :admin_notes, resolved_by = :resolved_by,
                  resolved_at = NOW(), updated_at = NOW()
              WHERE id = :id'
         );
         $stmt->execute([
-            'resolution' => $resolution,
+            'status' => $status,
+            'admin_notes' => $adminNotes,
             'resolved_by' => $resolvedBy,
             'id' => $id,
         ]);

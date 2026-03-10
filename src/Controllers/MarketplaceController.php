@@ -454,6 +454,11 @@ class MarketplaceController
 
         try {
             $result = \App\Services\MarketplaceService::cancelListing(Auth::id(), $id);
+            if (!($result['success'] ?? false)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => $result['error'] ?? 'Failed to cancel listing']);
+                return;
+            }
             echo json_encode(['success' => true, 'message' => 'Listing cancelled']);
         } catch (\Throwable $e) {
             http_response_code(422);
@@ -492,8 +497,13 @@ class MarketplaceController
         }
 
         try {
-            $bid = \App\Services\MarketplaceService::placeBid(Auth::id(), $listingId, $amount);
-            echo json_encode(['success' => true, 'bid' => $bid]);
+            $result = \App\Services\MarketplaceService::placeBid(Auth::id(), $listingId, $amount);
+            if (!($result['success'] ?? false)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => $result['error'] ?? 'Failed to place bid']);
+                return;
+            }
+            echo json_encode(['success' => true, 'bid_id' => $result['bid_id']]);
         } catch (\Throwable $e) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -507,7 +517,12 @@ class MarketplaceController
 
         try {
             $result = \App\Services\MarketplaceService::acceptBid(Auth::id(), $id);
-            echo json_encode(['success' => true, 'order' => $result]);
+            if (!($result['success'] ?? false)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => $result['error'] ?? 'Failed to accept bid']);
+                return;
+            }
+            echo json_encode(['success' => true, 'order_id' => $result['order_id']]);
         } catch (\Throwable $e) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -521,6 +536,11 @@ class MarketplaceController
 
         try {
             $result = \App\Services\MarketplaceService::rejectBid(Auth::id(), $id);
+            if (!($result['success'] ?? false)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => $result['error'] ?? 'Failed to reject bid']);
+                return;
+            }
             echo json_encode(['success' => true, 'message' => 'Bid rejected']);
         } catch (\Throwable $e) {
             http_response_code(422);
@@ -535,6 +555,11 @@ class MarketplaceController
 
         try {
             $result = \App\Services\MarketplaceService::cancelBid(Auth::id(), $id);
+            if (!($result['success'] ?? false)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => $result['error'] ?? 'Failed to cancel bid']);
+                return;
+            }
             echo json_encode(['success' => true, 'message' => 'Bid cancelled']);
         } catch (\Throwable $e) {
             http_response_code(422);
@@ -557,8 +582,13 @@ class MarketplaceController
         }
 
         try {
-            $order = \App\Services\MarketplaceService::buyNow(Auth::id(), $listingId);
-            echo json_encode(['success' => true, 'order' => $order]);
+            $result = \App\Services\MarketplaceService::buyNow(Auth::id(), $listingId);
+            if (!($result['success'] ?? false)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => $result['error'] ?? 'Purchase failed']);
+                return;
+            }
+            echo json_encode(['success' => true, 'order_id' => $result['order_id']]);
         } catch (\Throwable $e) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);

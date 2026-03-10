@@ -11,7 +11,14 @@
       "Bash(php -l src/Controllers/WalletController.php)",
       "Bash(php -l src/Controllers/MarketplaceController.php)",
       "Bash(php -l src/Controllers/OrderController.php)",
-      "Bash(php -l src/Services/MarketplaceService.php)"
+      "Bash(php -l src/Services/MarketplaceService.php)",
+      "Bash(ls migrations/03*.sql)",
+      "Bash(ls migrations/029*.sql)",
+      "Bash(ls migrations/02*.sql)",
+      "Bash(git worktree:*)",
+      "Bash(do php:*)",
+      "Bash(mysql -u myopcards_user -p8jo6lulyiS8GwdX3kVdNIXKc myopcards -e \"SHOW TABLES LIKE ''wallets'';\")",
+      "Bash(mysql -u myopcards_user -p8jo6lulyiS8GwdX3kVdNIXKc myopcards -e \"SHOW TABLES LIKE ''marketplace%''; SHOW TABLES LIKE ''wallet%''; SHOW TABLES LIKE ''stripe%''; SHOW TABLES LIKE ''user_addresses'';\")"
     ]
   }
 }

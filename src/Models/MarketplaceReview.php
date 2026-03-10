@@ -13,16 +13,15 @@ class MarketplaceReview
     {
         $db = Database::getConnection();
         $stmt = $db->prepare(
-            'INSERT INTO marketplace_reviews (order_id, reviewer_id, reviewed_user_id, rating, title, comment, role, created_at, updated_at)
-             VALUES (:order_id, :reviewer_id, :reviewed_user_id, :rating, :title, :comment, :role, NOW(), NOW())'
+            'INSERT INTO marketplace_reviews (order_id, reviewer_id, reviewed_user_id, rating, review_text, role, created_at)
+             VALUES (:order_id, :reviewer_id, :reviewed_user_id, :rating, :review_text, :role, NOW())'
         );
         $stmt->execute([
             'order_id' => $data['order_id'],
             'reviewer_id' => $data['reviewer_id'],
             'reviewed_user_id' => $data['reviewed_user_id'],
             'rating' => $data['rating'],
-            'title' => $data['title'] ?? null,
-            'comment' => $data['comment'] ?? null,
+            'review_text' => $data['review_text'] ?? null,
             'role' => $data['role'] ?? 'buyer',
         ]);
         return (int) $db->lastInsertId();

@@ -141,7 +141,12 @@ class OrderController
 
         try {
             $result = \App\Services\MarketplaceService::markShipped(Auth::id(), $id, $trackingNumber, $carrier);
-            echo json_encode(['success' => true, 'message' => 'Order marked as shipped', 'order' => $result]);
+            if (!($result['success'] ?? false)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => $result['error'] ?? 'Failed to mark as shipped']);
+                return;
+            }
+            echo json_encode(['success' => true, 'message' => 'Order marked as shipped']);
         } catch (\Throwable $e) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -155,7 +160,12 @@ class OrderController
 
         try {
             $result = \App\Services\MarketplaceService::confirmDelivery(Auth::id(), $id);
-            echo json_encode(['success' => true, 'message' => 'Delivery confirmed', 'order' => $result]);
+            if (!($result['success'] ?? false)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => $result['error'] ?? 'Failed to confirm delivery']);
+                return;
+            }
+            echo json_encode(['success' => true, 'message' => 'Delivery confirmed']);
         } catch (\Throwable $e) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -177,7 +187,7 @@ class OrderController
             return;
         }
 
-        $validReasons = ['item_not_received', 'item_not_as_described', 'damaged_item', 'wrong_item', 'other'];
+        $validReasons = ['item_not_received', 'item_not_as_described', 'wrong_item', 'damaged_in_shipping', 'counterfeit', 'other'];
         if (!in_array($reason, $validReasons)) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Invalid reason']);
@@ -185,8 +195,13 @@ class OrderController
         }
 
         try {
-            $dispute = \App\Services\MarketplaceService::openDispute(Auth::id(), $id, $reason, $description);
-            echo json_encode(['success' => true, 'dispute' => $dispute]);
+            $result = \App\Services\MarketplaceService::openDispute(Auth::id(), $id, $reason, $description);
+            if (!($result['success'] ?? false)) {
+                http_response_code(422);
+                echo json_encode(['success' => false, 'message' => $result['error'] ?? 'Failed to open dispute']);
+                return;
+            }
+            echo json_encode(['success' => true, 'message' => 'Dispute opened']);
         } catch (\Throwable $e) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);

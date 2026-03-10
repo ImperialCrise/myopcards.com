@@ -119,24 +119,30 @@ class WalletController
         }
 
         try {
-            $confirmed = \App\Services\StripeService::confirmPaymentIntent($paymentIntentId, Auth::id());
-            if (!$confirmed) {
+            $confirmed = \App\Services\StripeService::confirmPaymentIntent($paymentIntentId);
+            if (!$confirmed || ($confirmed['status'] ?? '') !== 'succeeded') {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Payment could not be confirmed']);
                 return;
             }
 
-            $wallet = \App\Services\WalletService::deposit(
+            $deposited = \App\Services\WalletService::deposit(
                 Auth::id(),
-                $confirmed['amount'],
-                'deposit',
-                'Deposit via Stripe',
+                (float)$confirmed['amount'],
                 $paymentIntentId
             );
 
+            if (!$deposited) {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Failed to credit wallet']);
+                return;
+            }
+
+            $wallet = \App\Models\Wallet::findByUserId(Auth::id());
+
             echo json_encode([
                 'success' => true,
-                'balance' => number_format((float)$wallet['available_balance'], 2, '.', ''),
+                'balance' => number_format((float)($wallet['available_balance'] ?? 0), 2, '.', ''),
                 'message' => 'Deposit successful',
             ]);
         } catch (\Throwable $e) {
@@ -183,10 +189,11 @@ class WalletController
 
             // Create pending withdrawal transaction
             $db->prepare(
-                "INSERT INTO wallet_transactions (wallet_id, type, amount, balance_after, description, created_at)
-                 VALUES (:wid, 'withdrawal', :amt, :bal, 'Withdrawal request', NOW())"
+                "INSERT INTO wallet_transactions (wallet_id, user_id, type, amount, balance_after, description, created_at)
+                 VALUES (:wid, :uid, 'withdrawal', :amt, :bal, 'Withdrawal request', NOW())"
             )->execute([
                 'wid' => $wallet['id'],
+                'uid' => $userId,
                 'amt' => $amount,
                 'bal' => (float)$wallet['available_balance'] - $amount,
             ]);
