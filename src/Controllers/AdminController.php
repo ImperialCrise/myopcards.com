@@ -641,4 +641,124 @@ class AdminController
         header('Location: /admin/forum-categories');
         exit;
     }
+
+    public function marketplaceOverview(): void
+    {
+        Auth::requireAdmin();
+        $db = Database::getConnection();
+
+        $stats = [];
+        try {
+            $stats = [
+                'active_listings' => (int)$db->query("SELECT COUNT(*) FROM marketplace_listings WHERE status = 'active'")->fetchColumn(),
+                'total_listings' => (int)$db->query("SELECT COUNT(*) FROM marketplace_listings")->fetchColumn(),
+                'total_orders' => (int)$db->query("SELECT COUNT(*) FROM marketplace_orders")->fetchColumn(),
+                'completed_orders' => (int)$db->query("SELECT COUNT(*) FROM marketplace_orders WHERE status = 'completed'")->fetchColumn(),
+                'total_volume' => (float)$db->query("SELECT COALESCE(SUM(total_price), 0) FROM marketplace_orders WHERE status IN ('completed', 'delivered')")->fetchColumn(),
+                'open_disputes' => (int)$db->query("SELECT COUNT(*) FROM marketplace_disputes WHERE status = 'open'")->fetchColumn(),
+                'total_wallets' => (int)$db->query("SELECT COUNT(*) FROM wallets")->fetchColumn(),
+                'total_wallet_balance' => (float)$db->query("SELECT COALESCE(SUM(balance), 0) FROM wallets")->fetchColumn(),
+                'pending_withdrawals' => (int)$db->query("SELECT COUNT(*) FROM wallet_transactions WHERE type = 'withdrawal' AND status = 'pending'")->fetchColumn(),
+                'orders_today' => (int)$db->query("SELECT COUNT(*) FROM marketplace_orders WHERE DATE(created_at) = CURDATE()")->fetchColumn(),
+            ];
+        } catch (\Throwable $e) {
+            // Tables may not exist yet
+            $stats = array_fill_keys([
+                'active_listings', 'total_listings', 'total_orders', 'completed_orders',
+                'total_volume', 'open_disputes', 'total_wallets', 'total_wallet_balance',
+                'pending_withdrawals', 'orders_today',
+            ], 0);
+        }
+
+        // Recent orders
+        $recentOrders = [];
+        try {
+            $recentOrders = $db->query(
+                "SELECT mo.*, seller.username as seller_username, buyer.username as buyer_username
+                 FROM marketplace_orders mo
+                 JOIN users seller ON seller.id = mo.seller_id
+                 JOIN users buyer ON buyer.id = mo.buyer_id
+                 ORDER BY mo.created_at DESC
+                 LIMIT 20"
+            )->fetchAll();
+        } catch (\Throwable $e) {}
+
+        View::render('pages/admin/marketplace', [
+            'title' => 'Admin - Marketplace Overview',
+            'stats' => $stats,
+            'recentOrders' => $recentOrders,
+        ]);
+    }
+
+    public function marketplaceDisputes(): void
+    {
+        Auth::requireAdmin();
+        $db = Database::getConnection();
+
+        $filter = $_GET['status'] ?? 'open';
+        $validStatuses = ['open', 'resolved', 'all'];
+        if (!in_array($filter, $validStatuses)) {
+            $filter = 'open';
+        }
+
+        $disputes = [];
+        try {
+            $where = $filter === 'all' ? '1=1' : "md.status = '$filter'";
+            $disputes = $db->query(
+                "SELECT md.*, mo.total_price, mo.status as order_status,
+                        opener.username as opener_username,
+                        seller.username as seller_username,
+                        buyer.username as buyer_username,
+                        c.card_name, c.card_set_id
+                 FROM marketplace_disputes md
+                 JOIN marketplace_orders mo ON mo.id = md.order_id
+                 JOIN marketplace_listings ml ON ml.id = mo.listing_id
+                 JOIN cards c ON c.card_set_id = ml.card_set_id
+                 JOIN users opener ON opener.id = md.opened_by
+                 JOIN users seller ON seller.id = mo.seller_id
+                 JOIN users buyer ON buyer.id = mo.buyer_id
+                 WHERE $where
+                 ORDER BY md.created_at DESC
+                 LIMIT 100"
+            )->fetchAll();
+        } catch (\Throwable $e) {}
+
+        View::render('pages/admin/marketplace-disputes', [
+            'title' => 'Admin - Marketplace Disputes',
+            'disputes' => $disputes,
+            'filter' => $filter,
+        ]);
+    }
+
+    public function resolveDispute(int $id): void
+    {
+        Auth::requireAdmin();
+        header('Content-Type: application/json');
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $resolution = trim($input['resolution'] ?? '');
+        $action = trim($input['action'] ?? '');
+        $notes = trim($input['notes'] ?? '');
+
+        if (empty($resolution) || empty($action)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Resolution and action are required']);
+            return;
+        }
+
+        $validActions = ['refund_buyer', 'release_to_seller', 'partial_refund', 'no_action'];
+        if (!in_array($action, $validActions)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+            return;
+        }
+
+        try {
+            $result = \App\Services\MarketplaceService::resolveDispute($id, Auth::id(), $resolution, $action, $notes);
+            echo json_encode(['success' => true, 'message' => 'Dispute resolved', 'result' => $result]);
+        } catch (\Throwable $e) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
 }

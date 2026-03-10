@@ -191,6 +191,9 @@ $__v = '20260310a';
                         <a href="/forum" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
                             <i data-lucide="message-square" class="w-4 h-4"></i> <?= t('nav.forum') ?>
                         </a>
+                        <a href="/marketplace" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
+                            <i data-lucide="store" class="w-4 h-4"></i> <?= t('nav.marketplace', 'Marketplace') ?>
+                        </a>
                         <div class="relative" x-data="{ playDrop: false }" @click.outside="playDrop = false">
                             <button @click="playDrop = !playDrop" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
                                 <i data-lucide="gamepad-2" class="w-4 h-4"></i> <?= t('nav.play') ?> <i data-lucide="chevron-down" class="w-3 h-3 transition" :class="playDrop && 'rotate-180'"></i>
@@ -210,8 +213,12 @@ $__v = '20260310a';
                                 <a href="/dashboard" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="home" class="w-4 h-4"></i> <?= t('nav.dashboard') ?></a>
                                 <a href="/collection" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="folder-open" class="w-4 h-4"></i> <?= t('nav.collection') ?></a>
                                 <a href="/analytics" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> <?= t('nav.analytics') ?></a>
+                                <a href="/wallet" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="wallet" class="w-4 h-4"></i> <?= t('nav.wallet', 'Wallet') ?></a>
+                                <a href="/orders" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="package" class="w-4 h-4"></i> <?= t('nav.orders', 'Orders') ?></a>
                                 <a href="/messages" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="mail" class="w-4 h-4"></i> <?= t('nav.messages') ?></a>
                                 <a href="/friends" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="users" class="w-4 h-4"></i> <?= t('nav.friends') ?></a>
+                                <a href="/wallet" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="wallet" class="w-4 h-4"></i> <?= t('nav.wallet', 'Wallet') ?></a>
+                                <a href="/orders" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="package" class="w-4 h-4"></i> <?= t('nav.orders', 'Orders') ?></a>
                                 <a href="/settings" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="settings" class="w-4 h-4"></i> <?= t('nav.settings') ?></a>
                                 <?php if ($currentUser && !empty($currentUser['is_admin'])): ?>
                                 <div class="border-t my-1" style="border-color:var(--nav-border)"></div>
@@ -374,6 +381,7 @@ $__v = '20260310a';
             <a href="/cards" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layers" class="w-4 h-4"></i> <?= t('nav.cards') ?></a>
             <a href="/market" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trending-up" class="w-4 h-4"></i> <?= t('nav.market') ?></a>
             <a href="/forum" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="message-square" class="w-4 h-4"></i> <?= t('nav.forum') ?></a>
+            <a href="/marketplace" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="store" class="w-4 h-4"></i> <?= t('nav.marketplace', 'Marketplace') ?></a>
             <a href="/play" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="gamepad-2" class="w-4 h-4"></i> <?= t('nav.play') ?></a>
             <a href="/decks" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layers" class="w-4 h-4"></i> <?= t('nav.decks') ?></a>
             <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trophy" class="w-4 h-4"></i> <?= t('nav.leaderboard') ?><?php if ($isLoggedIn): ?> <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?> ELO</span><?php endif; ?></a>
@@ -383,6 +391,8 @@ $__v = '20260310a';
                 <a href="/analytics" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> <?= t('nav.analytics') ?></a>
                 <a href="/messages" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="mail" class="w-4 h-4"></i> <?= t('nav.messages', 'Messages') ?></a>
                 <a href="/friends" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="users" class="w-4 h-4"></i> <?= t('nav.friends') ?> <?php if ($pendingCount > 0): ?><span class="ml-auto px-1.5 py-0.5 bg-red-500 rounded-full text-xs font-bold" style="color:#fff !important"><?= $pendingCount ?></span><?php endif; ?></a>
+                <a href="/wallet" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="wallet" class="w-4 h-4"></i> <?= t('nav.wallet', 'Wallet') ?></a>
+                <a href="/orders" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="package" class="w-4 h-4"></i> <?= t('nav.orders', 'Orders') ?></a>
                 <a href="/profile" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="user" class="w-4 h-4"></i> <?= t('nav.profile') ?></a>
                 <a href="/settings" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="settings" class="w-4 h-4"></i> <?= t('nav.settings') ?></a>
                 <a href="/logout" class="flex items-center gap-2 px-3 py-2 rounded text-red-500 text-sm"><i data-lucide="log-out" class="w-4 h-4"></i> <?= t('nav.logout') ?></a>

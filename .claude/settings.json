@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /home/ubuntu/projects/myopcards.com/.claude/worktrees/agent-a028ef79/migrations/029* /home/ubuntu/projects/myopcards.com/.claude/worktrees/agent-a028ef79/migrations/030* /home/ubuntu/projects/myopcards.com/.claude/worktrees/agent-a028ef79/migrations/031* /home/ubuntu/projects/myopcards.com/.claude/worktrees/agent-a028ef79/migrations/032* /home/ubuntu/projects/myopcards.com/.claude/worktrees/agent-a028ef79/migrations/033* /home/ubuntu/projects/myopcards.com/.claude/worktrees/agent-a028ef79/migrations/034* /home/ubuntu/projects/myopcards.com/.claude/worktrees/agent-a028ef79/migrations/035* /home/ubuntu/projects/myopcards.com/.claude/worktrees/agent-a028ef79/migrations/036* /home/ubuntu/projects/myopcards.com/.claude/worktrees/agent-a028ef79/migrations/037* /home/ubuntu/projects/myopcards.com/.claude/worktrees/agent-a028ef79/migrations/038* /home/ubuntu/projects/myopcards.com/.claude/worktrees/agent-a028ef79/migrations/039*)",
+      "Bash(for lang:*)",
+      "Bash(do cp:*)",
+      "Bash(done)",
+      "Bash(for f:*)",
+      "Bash(do sed:*)",
+      "Bash(echo \"Fixed: $f\")",
+      "Bash(php -l src/Controllers/WalletController.php)",
+      "Bash(php -l src/Controllers/MarketplaceController.php)",
+      "Bash(php -l src/Controllers/OrderController.php)",
+      "Bash(php -l src/Services/MarketplaceService.php)"
+    ]
+  }
+}
