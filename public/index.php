@@ -175,6 +175,51 @@ $router->post('/notifications/read', [App\Controllers\NotificationController::cl
 $router->post('/notifications/read-all', [App\Controllers\NotificationController::class, 'markAllAsRead']);
 $router->get('/api/notifications/count', [App\Controllers\NotificationController::class, 'getUnreadCount']);
 
+// Marketplace
+$router->get('/marketplace', [App\Controllers\MarketplaceController::class, 'index']);
+$router->get('/marketplace/card/{id}', [App\Controllers\MarketplaceController::class, 'cardListings']);
+$router->get('/marketplace/listing/{id}', [App\Controllers\MarketplaceController::class, 'showListing']);
+$router->get('/marketplace/sell', [App\Controllers\MarketplaceController::class, 'createListingForm']);
+$router->get('/marketplace/my-listings', [App\Controllers\MarketplaceController::class, 'myListings']);
+$router->get('/marketplace/my-bids', [App\Controllers\MarketplaceController::class, 'myBids']);
+$router->get('/api/marketplace/search', [App\Controllers\MarketplaceController::class, 'search']);
+$router->get('/api/marketplace/floor-prices', [App\Controllers\MarketplaceController::class, 'floorPrices']);
+$router->get('/api/marketplace/recent-sales', [App\Controllers\MarketplaceController::class, 'recentSales']);
+$router->get('/api/marketplace/popular', [App\Controllers\MarketplaceController::class, 'popularCards']);
+$router->post('/api/marketplace/listings', [App\Controllers\MarketplaceController::class, 'createListing']);
+$router->post('/api/marketplace/listings/{id}/cancel', [App\Controllers\MarketplaceController::class, 'cancelListing']);
+$router->post('/api/marketplace/listings/{id}/edit', [App\Controllers\MarketplaceController::class, 'editListing']);
+$router->post('/api/marketplace/bids', [App\Controllers\MarketplaceController::class, 'placeBid']);
+$router->post('/api/marketplace/bids/{id}/accept', [App\Controllers\MarketplaceController::class, 'acceptBid']);
+$router->post('/api/marketplace/bids/{id}/reject', [App\Controllers\MarketplaceController::class, 'rejectBid']);
+$router->post('/api/marketplace/bids/{id}/cancel', [App\Controllers\MarketplaceController::class, 'cancelBid']);
+$router->post('/api/marketplace/buy', [App\Controllers\MarketplaceController::class, 'buyNow']);
+$router->post('/api/marketplace/upload', [App\Controllers\MarketplaceController::class, 'uploadImage']);
+
+// Wallet
+$router->get('/wallet', [App\Controllers\WalletController::class, 'index']);
+$router->get('/api/wallet/balance', [App\Controllers\WalletController::class, 'balance']);
+$router->get('/api/wallet/transactions', [App\Controllers\WalletController::class, 'transactions']);
+$router->post('/api/wallet/deposit', [App\Controllers\WalletController::class, 'createDeposit']);
+$router->post('/api/wallet/deposit/confirm', [App\Controllers\WalletController::class, 'confirmDeposit']);
+$router->post('/api/wallet/withdraw', [App\Controllers\WalletController::class, 'requestWithdrawal']);
+
+// Orders
+$router->get('/orders', [App\Controllers\OrderController::class, 'index']);
+$router->get('/orders/{id}', [App\Controllers\OrderController::class, 'show']);
+$router->post('/api/orders/{id}/ship', [App\Controllers\OrderController::class, 'markShipped']);
+$router->post('/api/orders/{id}/confirm-delivery', [App\Controllers\OrderController::class, 'confirmDelivery']);
+$router->post('/api/orders/{id}/dispute', [App\Controllers\OrderController::class, 'openDispute']);
+$router->post('/api/orders/{id}/review', [App\Controllers\OrderController::class, 'submitReview']);
+
+// Stripe webhook
+$router->post('/webhook/stripe', [App\Controllers\WalletController::class, 'stripeWebhook']);
+
+// Admin marketplace
+$router->get('/admin/marketplace', [App\Controllers\AdminController::class, 'marketplaceOverview']);
+$router->get('/admin/marketplace/disputes', [App\Controllers\AdminController::class, 'marketplaceDisputes']);
+$router->post('/admin/marketplace/disputes/{id}/resolve', [App\Controllers\AdminController::class, 'resolveDispute']);
+
 // Uploads proxy (MinIO or local) - must match before dispatch for path with slashes
 $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uriPath !== null && $uriPath !== false) {
@@ -196,6 +241,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $uriPath !== null && $uriPath !== fa
     if (str_starts_with($uriPath, '/uploads/cards/')) {
         $path = substr($uriPath, strlen('/uploads/cards/'));
         (new App\Controllers\UploadController())->serveCards($path);
+        exit;
+    }
+    if (str_starts_with($uriPath, '/uploads/marketplace/')) {
+        $path = substr($uriPath, strlen('/uploads/marketplace/'));
+        (new App\Controllers\UploadController())->serveMarketplace($path);
         exit;
     }
     if (str_starts_with($uriPath, '/uploads/banners/')) {

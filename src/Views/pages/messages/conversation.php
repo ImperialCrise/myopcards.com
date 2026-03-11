@@ -371,5 +371,5 @@ $formattedMessages = \App\Controllers\MessageController::getFormattedMessages($m
 }
 </style>
 
-<script src="/assets/js/pages/messages.js"></script>
+<script src="<?= asset_v('/assets/js/pages/messages.js') ?>"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{ if(window.lucide) lucide.createIcons(); });</script>

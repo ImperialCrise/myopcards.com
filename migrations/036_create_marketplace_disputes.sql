@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS marketplace_disputes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id INT UNSIGNED NOT NULL,
+    opened_by INT UNSIGNED NOT NULL,
+    reason ENUM('item_not_received','item_not_as_described','wrong_item','damaged_in_shipping','counterfeit','other') NOT NULL,
+    description TEXT NOT NULL,
+    evidence_images JSON NULL,
+    status ENUM('open','under_review','resolved_buyer','resolved_seller','closed') NOT NULL DEFAULT 'open',
+    admin_notes TEXT NULL,
+    resolved_by INT UNSIGNED NULL,
+    resolved_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_order_id (order_id),
+    INDEX idx_status (status),
+    INDEX idx_opened_by (opened_by),
+    FOREIGN KEY (order_id) REFERENCES marketplace_orders(id),
+    FOREIGN KEY (opened_by) REFERENCES users(id),
+    FOREIGN KEY (resolved_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

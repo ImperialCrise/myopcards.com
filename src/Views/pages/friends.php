@@ -183,4 +183,4 @@ window.__PAGE_DATA = {
     blockedUsers: <?= json_encode(array_values($blockedUsers ?? [])) ?>
 };
 </script>
-<script src="/assets/js/pages/friends.js"></script>
+<script src="<?= asset_v('/assets/js/pages/friends.js') ?>"></script>

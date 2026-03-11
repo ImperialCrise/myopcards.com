@@ -326,4 +326,4 @@ function removeFeaturedCard() {
     }
 }
 </script>
-<script src="/assets/js/pages/collection.js"></script>
+<script src="<?= asset_v('/assets/js/pages/collection.js') ?>"></script>

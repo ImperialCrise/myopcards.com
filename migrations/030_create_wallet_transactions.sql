@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    wallet_id INT UNSIGNED NOT NULL,
+    user_id INT UNSIGNED NOT NULL,
+    type ENUM('deposit','withdrawal','purchase','sale','buyer_fee','seller_fee','bid_lock','bid_release','escrow_lock','escrow_release','refund') NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    balance_after DECIMAL(12,2) NOT NULL,
+    reference_type VARCHAR(50) NULL,
+    reference_id INT UNSIGNED NULL,
+    description VARCHAR(500) NULL,
+    stripe_payment_intent_id VARCHAR(255) NULL,
+    metadata JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_wallet_id (wallet_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_type (type),
+    INDEX idx_reference (reference_type, reference_id),
+    INDEX idx_created (created_at),
+    INDEX idx_stripe_pi (stripe_payment_intent_id),
+    FOREIGN KEY (wallet_id) REFERENCES wallets(id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

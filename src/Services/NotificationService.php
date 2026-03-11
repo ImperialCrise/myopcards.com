@@ -261,6 +261,27 @@ class NotificationService
                 case 'private_message':
                     $url = !empty($data['conversation_id']) ? '/messages/' . $data['conversation_id'] : '/messages';
                     break;
+                case 'marketplace_bid_received':
+                    $url = '/marketplace/my-listings';
+                    break;
+                case 'marketplace_bid_rejected':
+                case 'marketplace_bid_expired':
+                    $url = '/marketplace/my-bids';
+                    break;
+                case 'marketplace_bid_accepted':
+                case 'marketplace_item_sold':
+                case 'marketplace_order_shipped':
+                case 'marketplace_order_completed':
+                case 'marketplace_funds_released':
+                case 'marketplace_order_delivered':
+                case 'marketplace_dispute_opened':
+                case 'marketplace_dispute_resolved':
+                case 'marketplace_review_received':
+                    $url = !empty($data['order_id']) ? '/orders/' . $data['order_id'] : '/orders';
+                    break;
+                case 'marketplace_watchlist_alert':
+                    $url = !empty($data['listing_id']) ? '/marketplace/listing/' . $data['listing_id'] : '/marketplace';
+                    break;
             }
             $n['url'] = $url;
         }
@@ -320,5 +341,241 @@ class NotificationService
             "INSERT IGNORE INTO notification_settings (user_id) VALUES (?)"
         );
         $stmt->execute([$userId]);
+    }
+
+    public static function createMarketplaceBidReceived(int $sellerId, int $bidderId, int $listingId, float $amount): void
+    {
+        if ($sellerId === $bidderId) {
+            return;
+        }
+
+        $db = Database::getConnection();
+        $settings = $db->prepare("SELECT marketplace_bids FROM notification_settings WHERE user_id = ?");
+        $settings->execute([$sellerId]);
+        $setting = $settings->fetch();
+        if (!$setting || ($setting['marketplace_bids'] ?? true) === false) {
+            return;
+        }
+
+        $bidder = $db->prepare("SELECT username FROM users WHERE id = ?");
+        $bidder->execute([$bidderId]);
+        $user = $bidder->fetch();
+
+        $db->prepare(
+            "INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, 'marketplace_bid_received', ?, ?, ?)"
+        )->execute([
+            $sellerId,
+            'New offer on your listing',
+            'New offer on your listing: $' . number_format($amount, 2),
+            json_encode(['listing_id' => $listingId, 'bidder_id' => $bidderId, 'bidder_username' => $user['username'], 'amount' => $amount])
+        ]);
+    }
+
+    public static function createMarketplaceBidAccepted(int $bidderId, int $sellerId, int $orderId): void
+    {
+        if ($bidderId === $sellerId) {
+            return;
+        }
+
+        $db = Database::getConnection();
+        $settings = $db->prepare("SELECT marketplace_bids FROM notification_settings WHERE user_id = ?");
+        $settings->execute([$bidderId]);
+        $setting = $settings->fetch();
+        if (!$setting || ($setting['marketplace_bids'] ?? true) === false) {
+            return;
+        }
+
+        $seller = $db->prepare("SELECT username FROM users WHERE id = ?");
+        $seller->execute([$sellerId]);
+        $user = $seller->fetch();
+
+        $db->prepare(
+            "INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, 'marketplace_bid_accepted', ?, ?, ?)"
+        )->execute([
+            $bidderId,
+            'Offer accepted',
+            'Your offer was accepted!',
+            json_encode(['order_id' => $orderId, 'seller_id' => $sellerId, 'seller_username' => $user['username']])
+        ]);
+    }
+
+    public static function createMarketplaceBidRejected(int $bidderId, int $listingId): void
+    {
+        $db = Database::getConnection();
+        $settings = $db->prepare("SELECT marketplace_bids FROM notification_settings WHERE user_id = ?");
+        $settings->execute([$bidderId]);
+        $setting = $settings->fetch();
+        if (!$setting || ($setting['marketplace_bids'] ?? true) === false) {
+            return;
+        }
+
+        $db->prepare(
+            "INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, 'marketplace_bid_rejected', ?, ?, ?)"
+        )->execute([
+            $bidderId,
+            'Offer rejected',
+            'Your offer was rejected',
+            json_encode(['listing_id' => $listingId])
+        ]);
+    }
+
+    public static function createMarketplaceBidExpired(int $bidderId, int $listingId): void
+    {
+        $db = Database::getConnection();
+        $settings = $db->prepare("SELECT marketplace_bids FROM notification_settings WHERE user_id = ?");
+        $settings->execute([$bidderId]);
+        $setting = $settings->fetch();
+        if (!$setting || ($setting['marketplace_bids'] ?? true) === false) {
+            return;
+        }
+
+        $db->prepare(
+            "INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, 'marketplace_bid_expired', ?, ?, ?)"
+        )->execute([
+            $bidderId,
+            'Offer expired',
+            'Your offer has expired',
+            json_encode(['listing_id' => $listingId])
+        ]);
+    }
+
+    public static function createMarketplaceItemSold(int $sellerId, int $orderId, float $amount): void
+    {
+        $db = Database::getConnection();
+        $settings = $db->prepare("SELECT marketplace_orders FROM notification_settings WHERE user_id = ?");
+        $settings->execute([$sellerId]);
+        $setting = $settings->fetch();
+        if (!$setting || ($setting['marketplace_orders'] ?? true) === false) {
+            return;
+        }
+
+        $db->prepare(
+            "INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, 'marketplace_item_sold', ?, ?, ?)"
+        )->execute([
+            $sellerId,
+            'Item sold',
+            'Your item sold for $' . number_format($amount, 2) . '!',
+            json_encode(['order_id' => $orderId, 'amount' => $amount])
+        ]);
+    }
+
+    public static function createMarketplaceOrderShipped(int $buyerId, int $orderId, string $tracking): void
+    {
+        $db = Database::getConnection();
+        $settings = $db->prepare("SELECT marketplace_orders FROM notification_settings WHERE user_id = ?");
+        $settings->execute([$buyerId]);
+        $setting = $settings->fetch();
+        if (!$setting || ($setting['marketplace_orders'] ?? true) === false) {
+            return;
+        }
+
+        $db->prepare(
+            "INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, 'marketplace_order_shipped', ?, ?, ?)"
+        )->execute([
+            $buyerId,
+            'Order shipped',
+            'Your order has shipped! Tracking: ' . $tracking,
+            json_encode(['order_id' => $orderId, 'tracking' => $tracking])
+        ]);
+    }
+
+    public static function createMarketplaceOrderCompleted(int $sellerId, int $orderId, float $payoutAmount): void
+    {
+        $db = Database::getConnection();
+        $settings = $db->prepare("SELECT marketplace_orders FROM notification_settings WHERE user_id = ?");
+        $settings->execute([$sellerId]);
+        $setting = $settings->fetch();
+        if (!$setting || ($setting['marketplace_orders'] ?? true) === false) {
+            return;
+        }
+
+        $db->prepare(
+            "INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, 'marketplace_order_completed', ?, ?, ?)"
+        )->execute([
+            $sellerId,
+            'Order completed',
+            'Order completed! $' . number_format($payoutAmount, 2) . ' released to your wallet',
+            json_encode(['order_id' => $orderId, 'payout_amount' => $payoutAmount])
+        ]);
+    }
+
+    public static function createMarketplaceDisputeOpened(int $sellerId, int $orderId): void
+    {
+        $db = Database::getConnection();
+        $settings = $db->prepare("SELECT marketplace_orders FROM notification_settings WHERE user_id = ?");
+        $settings->execute([$sellerId]);
+        $setting = $settings->fetch();
+        if (!$setting || ($setting['marketplace_orders'] ?? true) === false) {
+            return;
+        }
+
+        $db->prepare(
+            "INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, 'marketplace_dispute_opened', ?, ?, ?)"
+        )->execute([
+            $sellerId,
+            'Dispute opened',
+            'A dispute has been opened on your order',
+            json_encode(['order_id' => $orderId])
+        ]);
+    }
+
+    public static function createMarketplaceDisputeResolved(int $userId, int $orderId, string $resolution): void
+    {
+        $db = Database::getConnection();
+        $settings = $db->prepare("SELECT marketplace_orders FROM notification_settings WHERE user_id = ?");
+        $settings->execute([$userId]);
+        $setting = $settings->fetch();
+        if (!$setting || ($setting['marketplace_orders'] ?? true) === false) {
+            return;
+        }
+
+        $db->prepare(
+            "INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, 'marketplace_dispute_resolved', ?, ?, ?)"
+        )->execute([
+            $userId,
+            'Dispute resolved',
+            'Dispute resolved in ' . $resolution . '\'s favor',
+            json_encode(['order_id' => $orderId, 'resolution' => $resolution])
+        ]);
+    }
+
+    public static function createMarketplaceReviewReceived(int $userId, int $orderId, int $rating): void
+    {
+        $db = Database::getConnection();
+        $settings = $db->prepare("SELECT marketplace_reviews FROM notification_settings WHERE user_id = ?");
+        $settings->execute([$userId]);
+        $setting = $settings->fetch();
+        if (!$setting || ($setting['marketplace_reviews'] ?? true) === false) {
+            return;
+        }
+
+        $db->prepare(
+            "INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, 'marketplace_review_received', ?, ?, ?)"
+        )->execute([
+            $userId,
+            'New review',
+            'You received a ' . $rating . '-star review',
+            json_encode(['order_id' => $orderId, 'rating' => $rating])
+        ]);
+    }
+
+    public static function createMarketplaceFundsReleased(int $sellerId, float $amount, int $orderId): void
+    {
+        $db = Database::getConnection();
+        $settings = $db->prepare("SELECT marketplace_orders FROM notification_settings WHERE user_id = ?");
+        $settings->execute([$sellerId]);
+        $setting = $settings->fetch();
+        if (!$setting || ($setting['marketplace_orders'] ?? true) === false) {
+            return;
+        }
+
+        $db->prepare(
+            "INSERT INTO notifications (user_id, type, title, message, data) VALUES (?, 'marketplace_funds_released', ?, ?, ?)"
+        )->execute([
+            $sellerId,
+            'Funds released',
+            '$' . number_format($amount, 2) . ' has been released to your wallet',
+            json_encode(['order_id' => $orderId, 'amount' => $amount])
+        ]);
     }
 }

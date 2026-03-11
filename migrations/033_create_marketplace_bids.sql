@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS marketplace_bids (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    listing_id INT UNSIGNED NOT NULL,
+    bidder_id INT UNSIGNED NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    buyer_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    total_amount DECIMAL(10,2) NOT NULL,
+    message TEXT NULL,
+    status ENUM('pending','accepted','rejected','cancelled','expired','countered') NOT NULL DEFAULT 'pending',
+    counter_amount DECIMAL(10,2) NULL,
+    expires_at TIMESTAMP NOT NULL,
+    responded_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_listing_id (listing_id),
+    INDEX idx_bidder_id (bidder_id),
+    INDEX idx_status (status),
+    INDEX idx_expires (expires_at),
+    FOREIGN KEY (listing_id) REFERENCES marketplace_listings(id) ON DELETE CASCADE,
+    FOREIGN KEY (bidder_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

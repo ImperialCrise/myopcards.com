@@ -40,3 +40,13 @@ if (!function_exists('card_img_url')) {
         return '/uploads/cards/' . basename(parse_url($url, PHP_URL_PATH));
     }
 }
+
+
+if (!function_exists('asset_v')) {
+    function asset_v(string $path): string
+    {
+        $abs = ($_SERVER['DOCUMENT_ROOT'] ?? '') . $path;
+        $ts = file_exists($abs) ? filemtime($abs) : time();
+        return $path . '?v=' . $ts;
+    }
+}

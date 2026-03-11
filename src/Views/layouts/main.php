@@ -46,7 +46,7 @@ $_r1 = array_slice($_bgCards, 0, 12);
 $_r2 = array_slice($_bgCards, 12, 12);
 $_r3 = array_slice($_bgCards, 24, 12);
 $_r4 = array_slice($_bgCards, 36, 12);
-$__v = '20260310a';
+$__v = (string)(@filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/js/main.js') ?: time());
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($currentLang, ENT_QUOTES, 'UTF-8') ?>">
@@ -100,7 +100,7 @@ $__v = '20260310a';
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="stylesheet" href="<?= asset_v('/assets/css/app.css') ?>">
     <script>
         tailwind.config = {
             theme: {
@@ -126,7 +126,7 @@ $__v = '20260310a';
     window.__CURRENCY = <?= json_encode(\App\Core\Currency::info()) ?>;
     window.__LANG = <?= isset($t) ? json_encode($t, JSON_UNESCAPED_UNICODE) : '{}' ?>;
     </script>
-    <script src="/assets/js/main.js?v=<?= $__v ?>"></script>
+    <script src="<?= asset_v('/assets/js/main.js') ?>"></script>
 </head>
 <body class="font-sans min-h-screen" x-data="{ mobileMenu: false, mobileSearch: false }">
 
@@ -191,6 +191,26 @@ $__v = '20260310a';
                         <a href="/forum" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
                             <i data-lucide="message-square" class="w-4 h-4"></i> <?= t('nav.forum') ?>
                         </a>
+                        <?php if ($isLoggedIn): ?>
+                        <div class="relative" x-data="{ mpDrop: false }" @click.outside="mpDrop = false">
+                            <button @click="mpDrop = !mpDrop" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
+                                <i data-lucide="store" class="w-4 h-4"></i> <?= t('nav.marketplace', 'Marketplace') ?> <i data-lucide="chevron-down" class="w-3 h-3 transition" :class="mpDrop && 'rotate-180'"></i>
+                            </button>
+                            <div x-show="mpDrop" x-transition.opacity x-cloak class="absolute top-full left-0 mt-1 glass-strong rounded-xl shadow-2xl py-1 w-48 z-50">
+                                <a href="/marketplace" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="store" class="w-4 h-4"></i> <?= t('nav.marketplace', 'Marketplace') ?></a>
+                                <a href="/marketplace/sell" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="plus-circle" class="w-4 h-4"></i> <?= t('marketplace.sell', 'Sell a Card') ?></a>
+                                <a href="/marketplace/my-listings" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="list" class="w-4 h-4"></i> <?= t('marketplace.my_listings', 'My Listings') ?></a>
+                                <a href="/marketplace/my-bids" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="gavel" class="w-4 h-4"></i> <?= t('marketplace.my_bids', 'My Bids') ?></a>
+                                <div class="border-t my-1" style="border-color:var(--nav-border)"></div>
+                                <a href="/orders" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="package" class="w-4 h-4"></i> <?= t('nav.orders', 'Orders') ?></a>
+                                <a href="/wallet" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"><i data-lucide="wallet" class="w-4 h-4"></i> <?= t('nav.wallet', 'Wallet') ?></a>
+                            </div>
+                        </div>
+                        <?php else: ?>
+                        <a href="/marketplace" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
+                            <i data-lucide="store" class="w-4 h-4"></i> <?= t('nav.marketplace', 'Marketplace') ?>
+                        </a>
+                        <?php endif; ?>
                         <div class="relative" x-data="{ playDrop: false }" @click.outside="playDrop = false">
                             <button @click="playDrop = !playDrop" class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition">
                                 <i data-lucide="gamepad-2" class="w-4 h-4"></i> <?= t('nav.play') ?> <i data-lucide="chevron-down" class="w-3 h-3 transition" :class="playDrop && 'rotate-180'"></i>
@@ -331,16 +351,22 @@ $__v = '20260310a';
                     <?php endif; ?>
 
                     <?php if ($isLoggedIn): ?>
-                        <a href="/profile" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition">
-                            <?php if (avatar_url($currentUser)): ?>
-                                <img src="<?= htmlspecialchars(avatar_url($currentUser)) ?>" class="w-7 h-7 rounded-full border border-gray-200" alt="">
-                            <?php else: ?>
-                                <div class="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center font-bold text-xs" style="color:#fff !important"><?= strtoupper(substr($currentUser['username'], 0, 1)) ?></div>
-                            <?php endif; ?>
-                            <span class="text-sm font-medium text-gray-600 hidden lg:block"><?= htmlspecialchars($currentUser['username']) ?></span>
-                            <span class="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold ml-0.5" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));color:#f59e0b;border:1px solid rgba(245,158,11,0.2);" title="ELO Rating<?= $_userRank ? ' — Rank #' . $_userRank : '' ?>"><?= $_userElo ?></span>
-                        </a>
-                        <a href="/logout" class="p-2 text-gray-400 hover:text-red-500 transition" title="<?= htmlspecialchars(t('nav.logout')) ?>"><i data-lucide="log-out" class="w-4 h-4"></i></a>
+                        <div class="flex items-center rounded-lg hover:bg-gray-100 transition">
+                            <a href="/profile" class="flex items-center gap-2 pl-2 pr-1 py-1.5">
+                                <?php if (avatar_url($currentUser)): ?>
+                                    <img src="<?= htmlspecialchars(avatar_url($currentUser)) ?>" class="w-7 h-7 rounded-full border border-gray-200 flex-shrink-0" alt="">
+                                <?php else: ?>
+                                    <div class="w-7 h-7 rounded-full bg-gray-900 flex-shrink-0 flex items-center justify-center font-bold text-xs" style="color:#fff !important"><?= strtoupper(substr($currentUser['username'], 0, 1)) ?></div>
+                                <?php endif; ?>
+                                <span class="hidden lg:flex items-center gap-1.5">
+                                    <span class="text-sm font-medium text-gray-600 whitespace-nowrap"><?= htmlspecialchars($currentUser['username']) ?></span>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-bold whitespace-nowrap" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));color:#f59e0b;border:1px solid rgba(245,158,11,0.2);" title="ELO Rating<?= $_userRank ? ' — Rank #' . $_userRank : '' ?>"><?= $_userElo ?></span>
+                                </span>
+                            </a>
+                        </div>
+                        <div class="flex items-center rounded-lg hover:bg-gray-100 transition">
+                            <a href="/logout" class="p-2 text-gray-400 hover:text-red-500 transition" title="<?= htmlspecialchars(t('nav.logout')) ?>"><i data-lucide="log-out" class="w-4 h-4"></i></a>
+                        </div>
                     <?php else: ?>
                         <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition hidden sm:block"><?= t('nav.login') ?></a>
                         <a href="/register" class="px-4 py-2 bg-gray-900 rounded-lg text-sm font-bold transition hover:bg-gray-800 shadow-sm" style="color:#fff !important"><?= t('nav.sign_up') ?></a>
@@ -374,6 +400,13 @@ $__v = '20260310a';
             <a href="/cards" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layers" class="w-4 h-4"></i> <?= t('nav.cards') ?></a>
             <a href="/market" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trending-up" class="w-4 h-4"></i> <?= t('nav.market') ?></a>
             <a href="/forum" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="message-square" class="w-4 h-4"></i> <?= t('nav.forum') ?></a>
+            <a href="/marketplace" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="store" class="w-4 h-4"></i> <?= t('nav.marketplace', 'Marketplace') ?></a>
+            <?php if ($isLoggedIn): ?>
+                <a href="/marketplace/sell" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm pl-7"><i data-lucide="plus-circle" class="w-4 h-4"></i> <?= t('marketplace.sell', 'Sell a Card') ?></a>
+                <a href="/marketplace/my-listings" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm pl-7"><i data-lucide="list" class="w-4 h-4"></i> <?= t('marketplace.my_listings', 'My Listings') ?></a>
+                <a href="/orders" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm pl-7"><i data-lucide="package" class="w-4 h-4"></i> <?= t('nav.orders', 'Orders') ?></a>
+                <a href="/wallet" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm pl-7"><i data-lucide="wallet" class="w-4 h-4"></i> <?= t('nav.wallet', 'Wallet') ?></a>
+            <?php endif; ?>
             <a href="/play" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="gamepad-2" class="w-4 h-4"></i> <?= t('nav.play') ?></a>
             <a href="/decks" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="layers" class="w-4 h-4"></i> <?= t('nav.decks') ?></a>
             <a href="/leaderboard" class="flex items-center gap-2 px-3 py-2 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm"><i data-lucide="trophy" class="w-4 h-4"></i> <?= t('nav.leaderboard') ?><?php if ($isLoggedIn): ?> <span class="ml-auto text-xs font-bold" style="color:#f59e0b"><?= $_userElo ?> ELO</span><?php endif; ?></a>
@@ -437,7 +470,7 @@ $__v = '20260310a';
 
     </div>
 
-    <script src="/assets/js/app.js?v=<?= $__v ?>"></script>
+    <script src="<?= asset_v('/assets/js/app.js') ?>"></script>
     
     <?php if ($isLoggedIn): ?>
     <script>
