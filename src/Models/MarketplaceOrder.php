@@ -54,7 +54,7 @@ class MarketplaceOrder
 
     public static function generateOrderNumber(): string
     {
-        return 'ORD-' . strtoupper(bin2hex(random_bytes(4))) . '-' . time();
+        return 'ORD-' . strtoupper(bin2hex(random_bytes(4))) . '-' . substr((string)time(), -6);
     }
 
     public static function findById(int $id): ?array

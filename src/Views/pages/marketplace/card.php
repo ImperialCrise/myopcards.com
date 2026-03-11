@@ -20,13 +20,85 @@ $isLoggedIn = \App\Core\Auth::check();
         <!-- Left: Card Image + Stats -->
         <div class="lg:w-80 flex-shrink-0">
             <div class="glass rounded-2xl p-4 sticky top-24">
-                <div class="relative aspect-[5/7] bg-dark-700 rounded-xl overflow-hidden mb-4">
-                    <img :src="cardImgSrc(card.card_image_url)" :data-ext-src="card.card_image_url" alt="" class="w-full h-full object-cover" onerror="cardImgErr(this)">
-                    <template x-if="card.rarity">
-                        <span class="absolute top-2 left-2 px-2 py-0.5 text-xs font-bold text-white rounded shadow"
-                            :class="rarityClass(card.rarity)" x-text="card.rarity"></span>
-                    </template>
+                <!-- 3D Card -->
+                <div id="card3d" class="mb-4" style="perspective:1200px;cursor:grab;">
+                    <div id="card3dInner" class="relative aspect-[5/7]"
+                         style="transition:transform 0.1s ease-out;will-change:transform;border-radius:12px;">
+                        <img id="card3dImg" :src="cardImgSrc(card.card_image_url)" :data-ext-src="card.card_image_url" alt=""
+                             class="w-full h-full object-cover select-none"
+                             style="border-radius:12px;display:block;"
+                             onerror="cardImgErr(this)" draggable="false">
+                        <div id="card3dGlare" style="position:absolute;inset:0;border-radius:12px;pointer-events:none;opacity:0;transition:opacity 0.1s ease;"></div>
+                        <template x-if="card.rarity">
+                            <span class="absolute top-2 left-2 px-2 py-0.5 text-xs font-bold text-white rounded shadow"
+                                :class="rarityClass(card.rarity)" x-text="card.rarity"></span>
+                        </template>
+                    </div>
                 </div>
+                <script>
+                (function() {
+                    var wrap = document.getElementById('card3d');
+                    var inner = document.getElementById('card3dInner');
+                    var img = document.getElementById('card3dImg');
+                    var glare = document.getElementById('card3dGlare');
+                    if (!wrap || !inner || !img) return;
+
+                    var maxTilt = 20;
+                    var edgeLayers = 10;
+
+                    inner.style.boxShadow = '0 8px 30px rgba(0,0,0,0.35)';
+
+                    function onMove(e) {
+                        var rect = wrap.getBoundingClientRect();
+                        var cx = rect.left + rect.width / 2;
+                        var cy = rect.top + rect.height / 2;
+                        var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                        var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                        var dx = Math.max(-1, Math.min(1, (clientX - cx) / (rect.width / 2)));
+                        var dy = Math.max(-1, Math.min(1, (clientY - cy) / (rect.height / 2)));
+                        var rotY = dx * maxTilt;
+                        var rotX = -dy * maxTilt;
+
+                        inner.style.transition = 'transform 0.1s ease-out';
+                        inner.style.transform = 'rotateX(' + rotX + 'deg) rotateY(' + rotY + 'deg) scale3d(1.03,1.03,1.03)';
+
+                        // Edge thickness via stacked box-shadows (follows border-radius perfectly)
+                        var edgeShadows = [];
+                        for (var i = 1; i <= edgeLayers; i++) {
+                            var ox = (-rotY / maxTilt) * i * 0.6;
+                            var oy = (rotX / maxTilt) * i * 0.6;
+                            var b = Math.round(210 - (i / edgeLayers) * 80);
+                            edgeShadows.push(ox.toFixed(1) + 'px ' + oy.toFixed(1) + 'px 0 rgb(' + b + ',' + (b - 8) + ',' + (b - 16) + ')');
+                        }
+                        // Ground shadow
+                        var gsx = (-rotY / maxTilt) * 15;
+                        var gsy = 10 + (rotX / maxTilt) * 10;
+                        edgeShadows.push(gsx.toFixed(1) + 'px ' + gsy.toFixed(1) + 'px 30px rgba(0,0,0,0.45)');
+                        inner.style.boxShadow = edgeShadows.join(', ');
+
+                        // Glare
+                        if (glare) {
+                            var gx = ((dx + 1) / 2 * 100).toFixed(1);
+                            var gy = ((dy + 1) / 2 * 100).toFixed(1);
+                            var intensity = (Math.abs(dx) + Math.abs(dy)) / 2;
+                            glare.style.background = 'radial-gradient(ellipse at ' + gx + '% ' + gy + '%, rgba(255,255,255,' + (0.12 + intensity * 0.3).toFixed(2) + ') 0%, transparent 70%)';
+                            glare.style.opacity = '1';
+                        }
+                    }
+
+                    function onLeave() {
+                        inner.style.transition = 'transform 0.6s cubic-bezier(.03,.98,.52,.99), box-shadow 0.6s ease';
+                        inner.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
+                        inner.style.boxShadow = '0 8px 30px rgba(0,0,0,0.35)';
+                        if (glare) glare.style.opacity = '0';
+                    }
+
+                    wrap.addEventListener('mousemove', onMove);
+                    wrap.addEventListener('mouseleave', onLeave);
+                    wrap.addEventListener('touchmove', function(e) { e.preventDefault(); onMove(e); }, { passive: false });
+                    wrap.addEventListener('touchend', onLeave);
+                })();
+                </script>
                 <div class="space-y-2">
                     <div class="flex justify-between text-sm">
                         <span class="text-dark-400"><?= t('marketplace.set', 'Set') ?></span>
@@ -45,7 +117,7 @@ $isLoggedIn = \App\Core\Auth::check();
                         <span class="text-white font-medium" x-text="card.card_type"></span>
                     </div>
                 </div>
-                <a :href="'/cards/' + card.card_set_id" class="flex items-center justify-center gap-2 w-full mt-4 px-4 py-2 glass rounded-lg text-sm text-dark-300 hover:text-white transition">
+                <a :href="'/cards/' + card.card_set_id" target="_blank" class="flex items-center justify-center gap-2 w-full mt-4 px-4 py-2 glass rounded-lg text-sm text-dark-300 hover:text-white transition">
                     <i data-lucide="external-link" class="w-4 h-4"></i> <?= t('marketplace.view_card_details', 'View Card Details') ?>
                 </a>
             </div>
@@ -286,4 +358,4 @@ window.__PAGE_DATA = {
     recentSales: <?= $recentSalesJson ?>
 };
 </script>
-<script src="/assets/js/pages/marketplace.js"></script>
+<script src="<?= asset_v('/assets/js/pages/marketplace.js') ?>"></script>

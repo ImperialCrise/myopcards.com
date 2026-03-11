@@ -180,6 +180,19 @@ function unifiedNotifications() {
                 case 'friend_request': return 'user-plus';
                 case 'friend_accepted': return 'user-check';
                 case 'private_message': return 'mail';
+                case 'marketplace_bid_received': return 'gavel';
+                case 'marketplace_bid_accepted': return 'check-circle';
+                case 'marketplace_bid_rejected': return 'x-circle';
+                case 'marketplace_bid_expired': return 'clock';
+                case 'marketplace_item_sold': return 'shopping-bag';
+                case 'marketplace_order_shipped': return 'truck';
+                case 'marketplace_order_completed': return 'package-check';
+                case 'marketplace_order_delivered': return 'package';
+                case 'marketplace_funds_released': return 'wallet';
+                case 'marketplace_dispute_opened': return 'alert-triangle';
+                case 'marketplace_dispute_resolved': return 'shield-check';
+                case 'marketplace_review_received': return 'star';
+                case 'marketplace_watchlist_alert': return 'eye';
                 default: return 'bell';
             }
         }

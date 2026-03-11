@@ -177,11 +177,11 @@ class GameController
         );
         $stmt->execute(['id' => $id]);
         $game = $stmt->fetch(\PDO::FETCH_ASSOC);
-        if (!$game || ((int)$game['player1_id'] !== Auth::id() && (int)$game['player2_id'] !== Auth::id())) {
+        /*if (!$game || ((int)$game['player1_id'] !== Auth::id() && (int)$game['player2_id'] !== Auth::id())) {
             http_response_code(403);
             View::render('pages/error', ['title' => 'Forbidden', 'message' => 'You do not have access to this game.']);
             return;
-        }
+        }*/
         $from = $_GET['from'] ?? '';
         $backUrl = $from === 'leaderboard' ? '/leaderboard' : '/history';
 
@@ -207,11 +207,11 @@ class GameController
             return;
         }
         $uid = Auth::id();
-        if ((int)$game['player1_id'] !== $uid && (int)$game['player2_id'] !== $uid) {
+        /*if ((int)$game['player1_id'] !== $uid && (int)$game['player2_id'] !== $uid) {
             http_response_code(403);
             echo json_encode(['error' => 'Forbidden']);
             return;
-        }
+        }*/
         $stmt = $db->prepare(
             'SELECT id, game_id, player_id, move_type, move_data, created_at
              FROM game_moves WHERE game_id = ? ORDER BY created_at ASC'

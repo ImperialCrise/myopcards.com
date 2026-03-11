@@ -620,5 +620,5 @@ window.__PAGE_DATA = {
     ) ?>
 };
 </script>
-<script src="/assets/js/pages/public-profile.js"></script>
+<script src="<?= asset_v('/assets/js/pages/public-profile.js') ?>"></script>
 <script src="/assets/js/badge-3d.js"></script>

@@ -74,6 +74,9 @@ class MarketplaceService
         // Update listing
         MarketplaceListing::decrementQuantity($listingId);
 
+        // Notify seller
+        NotificationService::createMarketplaceItemSold((int) $listing['seller_id'], $orderId, $itemPrice);
+
         // Reject all pending bids on this listing
         $rejectedBidIds = MarketplaceBid::rejectAllPending($listingId);
 
@@ -82,6 +85,7 @@ class MarketplaceService
             $bid = MarketplaceBid::findById((int) $rejectedBidId);
             if ($bid) {
                 WalletService::releaseFromBid((int) $bid['bidder_id'], (float) $bid['amount'], (int) $bid['id']);
+                NotificationService::createMarketplaceBidRejected((int) $bid['bidder_id'], $listingId);
             }
         }
 
@@ -128,6 +132,9 @@ class MarketplaceService
             MarketplaceBid::cancel($bidId);
             return ['success' => false, 'error' => 'Failed to lock funds for bid.'];
         }
+
+        // Notify seller
+        NotificationService::createMarketplaceBidReceived((int) $listing['seller_id'], $bidderId, $listingId, $amount);
 
         return ['success' => true, 'bid_id' => $bidId];
     }
@@ -191,12 +198,16 @@ class MarketplaceService
         // Decrement listing quantity
         MarketplaceListing::decrementQuantity((int) $bid['listing_id']);
 
+        // Notify bidder (bid accepted)
+        NotificationService::createMarketplaceBidAccepted((int) $bid['bidder_id'], $sellerId, $orderId);
+
         // Reject all other pending bids and release their funds
         $rejectedBidIds = MarketplaceBid::rejectAllPending((int) $bid['listing_id'], $bidId);
         foreach ($rejectedBidIds as $rejectedBidId) {
             $rejectedBid = MarketplaceBid::findById((int) $rejectedBidId);
             if ($rejectedBid) {
                 WalletService::releaseFromBid((int) $rejectedBid['bidder_id'], (float) $rejectedBid['amount'], (int) $rejectedBid['id']);
+                NotificationService::createMarketplaceBidRejected((int) $rejectedBid['bidder_id'], (int) $bid['listing_id']);
             }
         }
 
@@ -218,6 +229,7 @@ class MarketplaceService
 
         MarketplaceBid::reject($bidId);
         WalletService::releaseFromBid((int) $bid['bidder_id'], (float) $bid['amount'], $bidId);
+        NotificationService::createMarketplaceBidRejected((int) $bid['bidder_id'], (int) $bid['listing_id']);
 
         return ['success' => true];
     }

@@ -93,4 +93,4 @@ window.__PAGE_DATA = {
     sellerOrders: <?= $sellerOrdersJson ?>
 };
 </script>
-<script src="/assets/js/pages/orders.js"></script>
+<script src="<?= asset_v('/assets/js/pages/orders.js') ?>"></script>

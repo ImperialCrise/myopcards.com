@@ -79,4 +79,4 @@ $bidsJson = json_encode($bids ?? [], JSON_HEX_APOS | JSON_HEX_TAG);
 <script>
 window.__PAGE_DATA = { bids: <?= $bidsJson ?> };
 </script>
-<script src="/assets/js/pages/marketplace.js"></script>
+<script src="<?= asset_v('/assets/js/pages/marketplace.js') ?>"></script>

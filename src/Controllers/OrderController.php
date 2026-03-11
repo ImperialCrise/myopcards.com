@@ -135,7 +135,7 @@ class OrderController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $input = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') ? (json_decode(file_get_contents('php://input'), true) ?? []) : $_POST;
         $trackingNumber = trim($input['tracking_number'] ?? '');
         $carrier = trim($input['carrier'] ?? '');
 
@@ -177,7 +177,7 @@ class OrderController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $input = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') ? (json_decode(file_get_contents('php://input'), true) ?? []) : $_POST;
         $reason = trim($input['reason'] ?? '');
         $description = trim($input['description'] ?? '');
 
@@ -213,7 +213,7 @@ class OrderController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $input = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') ? (json_decode(file_get_contents('php://input'), true) ?? []) : $_POST;
         $rating = (int)($input['rating'] ?? 0);
         $comment = trim($input['comment'] ?? '');
 

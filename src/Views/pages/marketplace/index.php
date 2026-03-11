@@ -191,4 +191,4 @@ window.__PAGE_DATA = {
     rarities: <?= $raritiesJson ?>
 };
 </script>
-<script src="/assets/js/pages/marketplace.js"></script>
+<script src="<?= asset_v('/assets/js/pages/marketplace.js') ?>"></script>

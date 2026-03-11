@@ -201,4 +201,4 @@ function setFeatured() {
     });
 }
 </script>
-<script src="/assets/js/pages/card-detail.js"></script>
+<script src="<?= asset_v('/assets/js/pages/card-detail.js') ?>"></script>

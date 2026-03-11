@@ -169,4 +169,4 @@
     </div>
 </div>
 
-<script src="/assets/js/pages/market.js"></script>
+<script src="<?= asset_v('/assets/js/pages/market.js') ?>"></script>

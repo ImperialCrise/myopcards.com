@@ -126,7 +126,6 @@ document.addEventListener('alpine:init', () => {
         },
 
         async buyNow(listing) {
-            if (!confirm('Buy this card for $' + parseFloat(listing.price).toFixed(2) + '?')) return;
             try {
                 const data = await apiPost('/api/marketplace/buy', { listing_id: listing.id });
                 if (data.success) {
@@ -193,13 +192,17 @@ document.addEventListener('alpine:init', () => {
         bidAmount: '',
         bidSubmitting: false,
         buying: false,
+        showBuyModal: false,
+        showLightbox: false,
+        lightboxIdx: 0,
 
         init() {
             const d = window.__PAGE_DATA || {};
             this.listing = d.listing || {};
             this.bids = d.bids || [];
             this.sellerStats = d.sellerStats || {};
-            this.images = this.listing.images || [];
+            const rawImages = this.listing.images || [];
+            this.images = rawImages.map(img => img.startsWith('http') ? img : '/uploads/' + img);
             if (this.images.length === 0 && this.listing.card_image_url) {
                 this.images = [typeof cardImgSrc === 'function' ? cardImgSrc(this.listing.card_image_url) : this.listing.card_image_url];
             }
@@ -218,19 +221,35 @@ document.addEventListener('alpine:init', () => {
             return parseFloat(this.listing.price || 0) + this.buyerFee + parseFloat(this.listing.shipping_cost || 0);
         },
 
-        async buyNow(listing) {
-            if (!confirm('Buy this card for $' + this.totalPrice.toFixed(2) + ' (including fees and shipping)?')) return;
+        openLightbox(idx) {
+            this.lightboxIdx = idx;
+            this.showLightbox = true;
+            this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        },
+
+        lightboxPrev() {
+            this.lightboxIdx = (this.lightboxIdx - 1 + this.images.length) % this.images.length;
+        },
+
+        lightboxNext() {
+            this.lightboxIdx = (this.lightboxIdx + 1) % this.images.length;
+        },
+
+        async confirmBuy() {
             this.buying = true;
             try {
-                const data = await apiPost('/api/marketplace/buy', { listing_id: listing.id });
+                const data = await apiPost('/api/marketplace/buy', { listing_id: this.listing.id });
                 if (data.success) {
-                    showToast('Purchase successful!', 'success');
+                    this.showBuyModal = false;
+                    showToast('Purchase successful! Redirecting...', 'success');
                     setTimeout(() => { window.location.href = '/orders/' + data.order_id; }, 1500);
                 } else {
                     showToast(data.message || 'Purchase failed', 'error');
+                    this.showBuyModal = false;
                 }
             } catch (e) {
                 showToast('An error occurred', 'error');
+                this.showBuyModal = false;
             }
             this.buying = false;
         },
@@ -271,6 +290,35 @@ document.addEventListener('alpine:init', () => {
             return map[c] || c;
         },
 
+        async acceptBid(bidId) {
+            try {
+                const data = await apiPost(`/api/marketplace/bids/${bidId}/accept`, {});
+                if (data.success) {
+                    showToast('Offer accepted! Order created.', 'success');
+                    setTimeout(() => { window.location.href = '/orders/' + data.order_id; }, 1500);
+                } else {
+                    showToast(data.message || 'Failed to accept offer', 'error');
+                }
+            } catch (e) {
+                showToast('An error occurred', 'error');
+            }
+        },
+
+        async rejectBid(bidId) {
+            try {
+                const data = await apiPost(`/api/marketplace/bids/${bidId}/reject`, {});
+                if (data.success) {
+                    showToast('Offer rejected', 'success');
+                    const bid = this.bids.find(b => b.id == bidId);
+                    if (bid) bid.status = 'rejected';
+                } else {
+                    showToast(data.message || 'Failed to reject offer', 'error');
+                }
+            } catch (e) {
+                showToast('An error occurred', 'error');
+            }
+        },
+
         formatDate(d) {
             if (!d) return '';
             const date = new Date((d + '').replace(' ', 'T'));
@@ -303,12 +351,59 @@ document.addEventListener('alpine:init', () => {
             { value: 'HP', label: 'Heavily Played' },
             { value: 'DMG', label: 'Damaged' }
         ],
+        countries: [
+            {code:'US',name:'United States'},{code:'CA',name:'Canada'},{code:'GB',name:'United Kingdom'},
+            {code:'FR',name:'France'},{code:'DE',name:'Germany'},{code:'JP',name:'Japan'},
+            {code:'KR',name:'South Korea'},{code:'TH',name:'Thailand'},{code:'CN',name:'China'},
+            {code:'TW',name:'Taiwan'},{code:'HK',name:'Hong Kong'},{code:'SG',name:'Singapore'},
+            {code:'AU',name:'Australia'},{code:'NZ',name:'New Zealand'},{code:'IT',name:'Italy'},
+            {code:'ES',name:'Spain'},{code:'PT',name:'Portugal'},{code:'NL',name:'Netherlands'},
+            {code:'BE',name:'Belgium'},{code:'CH',name:'Switzerland'},{code:'AT',name:'Austria'},
+            {code:'SE',name:'Sweden'},{code:'NO',name:'Norway'},{code:'DK',name:'Denmark'},
+            {code:'FI',name:'Finland'},{code:'PL',name:'Poland'},{code:'CZ',name:'Czech Republic'},
+            {code:'IE',name:'Ireland'},{code:'BR',name:'Brazil'},{code:'MX',name:'Mexico'},
+            {code:'AR',name:'Argentina'},{code:'CL',name:'Chile'},{code:'CO',name:'Colombia'},
+            {code:'PH',name:'Philippines'},{code:'MY',name:'Malaysia'},{code:'ID',name:'Indonesia'},
+            {code:'IN',name:'India'},{code:'RU',name:'Russia'},{code:'TR',name:'Turkey'},
+            {code:'ZA',name:'South Africa'},{code:'IL',name:'Israel'},{code:'AE',name:'UAE'},
+            {code:'SA',name:'Saudi Arabia'}
+        ],
         imagePreviews: [],
         imageFiles: [],
+        existingImages: [],
         dragOver: false,
         submitting: false,
+        editListingId: null,
 
         init() {
+            this.countries.sort((a, b) => a.name.localeCompare(b.name));
+            const d = window.__PAGE_DATA || {};
+            const edit = d.editListing;
+            if (edit) {
+                this.editListingId = edit.id;
+                // Pre-fill form
+                this.form.price = edit.price;
+                this.form.condition = edit.condition;
+                this.form.description = edit.description || '';
+                this.form.quantity = edit.quantity || 1;
+                this.form.shipping_country = edit.shipping_from_country || '';
+                this.form.shipping_cost = edit.shipping_cost || 0;
+                this.form.international_shipping = !!edit.ships_internationally;
+                this.form.card_id = edit.card_id;
+                // Pre-fill card
+                this.selectedCard = {
+                    id: edit.card_id,
+                    card_name: edit.card_name,
+                    card_set_id: edit.card_set_id,
+                    card_image_url: edit.card_image_url,
+                    rarity: edit.rarity,
+                    market_price: 0
+                };
+                this.cardQuery = edit.card_name;
+                // Show existing images as previews (already uploaded)
+                this.existingImages = (edit.images || []).map(p => '/uploads/' + p);
+                this.imagePreviews = this.existingImages.map(url => ({ url, existing: true }));
+            }
             this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
         },
 
@@ -359,9 +454,12 @@ document.addEventListener('alpine:init', () => {
         },
 
         removeImage(idx) {
-            URL.revokeObjectURL(this.imagePreviews[idx].url);
+            const preview = this.imagePreviews[idx];
+            if (!preview.existing) URL.revokeObjectURL(preview.url);
             this.imagePreviews.splice(idx, 1);
-            this.imageFiles.splice(idx, 1);
+            // Only remove from imageFiles if it's a new file (not existing)
+            const newIdx = this.imagePreviews.filter((p, i) => i < idx && !p.existing).length;
+            if (!preview.existing) this.imageFiles.splice(newIdx, 1);
         },
 
         get sellerFee() { return parseFloat(this.form.price || 0) * 0.05; },
@@ -374,6 +472,36 @@ document.addEventListener('alpine:init', () => {
             if (!this.canSubmit) return;
             this.submitting = true;
             try {
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                if (this.editListingId) {
+                    // EDIT MODE — send JSON PATCH
+                    const body = {
+                        price: this.form.price,
+                        condition: this.form.condition,
+                        description: this.form.description,
+                        shipping_country: this.form.shipping_country,
+                        shipping_cost: this.form.shipping_cost,
+                        international_shipping: this.form.international_shipping ? 1 : 0,
+                        csrf_token: csrf
+                    };
+                    const r = await fetch('/api/marketplace/listings/' + this.editListingId, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    const data = await r.json();
+                    if (data.success) {
+                        showToast('Listing updated!', 'success');
+                        setTimeout(() => { window.location.href = '/marketplace/listing/' + this.editListingId; }, 1200);
+                    } else {
+                        showToast(data.message || 'Failed to update listing', 'error');
+                    }
+                    this.submitting = false;
+                    return;
+                }
+
+                // CREATE MODE — FormData with images
                 const fd = new FormData();
                 fd.append('card_id', this.form.card_id);
                 fd.append('condition', this.form.condition);
@@ -384,7 +512,6 @@ document.addEventListener('alpine:init', () => {
                 fd.append('shipping_cost', this.form.shipping_cost);
                 fd.append('international_shipping', this.form.international_shipping ? 1 : 0);
                 this.imageFiles.forEach((f, i) => fd.append('images[' + i + ']', f));
-                const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                 if (csrf) fd.append('csrf_token', csrf);
                 const r = await fetch('/api/marketplace/listings', { method: 'POST', body: fd });
                 const data = await r.json();
@@ -436,7 +563,6 @@ document.addEventListener('alpine:init', () => {
         },
 
         async cancelListing(id) {
-            if (!confirm('Cancel this listing?')) return;
             try {
                 const data = await apiPost('/api/marketplace/listings/' + id + '/cancel', {});
                 if (data.success) {
@@ -506,7 +632,6 @@ document.addEventListener('alpine:init', () => {
         },
 
         async cancelBid(id) {
-            if (!confirm('Cancel this offer?')) return;
             try {
                 const data = await apiPost('/api/marketplace/bids/' + id + '/cancel', {});
                 if (data.success) {

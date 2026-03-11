@@ -115,7 +115,6 @@ document.addEventListener('alpine:init', () => {
         },
 
         async markShipped() {
-            if (!this.trackingNumber && !confirm('Ship without a tracking number?')) return;
             this.actionLoading = true;
             try {
                 const data = await apiPost('/api/orders/' + this.order.id + '/ship', {
@@ -140,7 +139,6 @@ document.addEventListener('alpine:init', () => {
         },
 
         async confirmDelivery() {
-            if (!confirm('Confirm you received the item? Funds will be released to the seller.')) return;
             this.actionLoading = true;
             try {
                 const data = await apiPost('/api/orders/' + this.order.id + '/confirm-delivery', {});

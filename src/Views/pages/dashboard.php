@@ -126,4 +126,4 @@ $user = \App\Core\Auth::user();
     </div>
 </div>
 
-<script src="/assets/js/pages/dashboard.js"></script>
+<script src="<?= asset_v('/assets/js/pages/dashboard.js') ?>"></script>

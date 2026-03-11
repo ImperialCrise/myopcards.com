@@ -146,4 +146,4 @@ window.__PAGE_DATA = {
     initialResult: <?= $initialResult ?>
 };
 </script>
-<script src="/assets/js/pages/cards.js"></script>
+<script src="<?= asset_v('/assets/js/pages/cards.js') ?>"></script>

@@ -187,4 +187,4 @@ window.__PAGE_DATA = {
     transactions: <?= $transactionsJson ?>
 };
 </script>
-<script src="/assets/js/pages/wallet.js"></script>
+<script src="<?= asset_v('/assets/js/pages/wallet.js') ?>"></script>

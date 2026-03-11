@@ -76,7 +76,7 @@ class WalletController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $input = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') ? (json_decode(file_get_contents('php://input'), true) ?? []) : $_POST;
         $amount = (float)($input['amount'] ?? 0);
 
         if ($amount < 10) {
@@ -109,7 +109,7 @@ class WalletController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $input = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') ? (json_decode(file_get_contents('php://input'), true) ?? []) : $_POST;
         $paymentIntentId = trim($input['payment_intent_id'] ?? '');
 
         if (empty($paymentIntentId)) {
@@ -156,7 +156,7 @@ class WalletController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $input = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') ? (json_decode(file_get_contents('php://input'), true) ?? []) : $_POST;
         $amount = (float)($input['amount'] ?? 0);
 
         if ($amount < 20) {

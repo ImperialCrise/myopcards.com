@@ -46,7 +46,7 @@ $_r1 = array_slice($_bgCards, 0, 12);
 $_r2 = array_slice($_bgCards, 12, 12);
 $_r3 = array_slice($_bgCards, 24, 12);
 $_r4 = array_slice($_bgCards, 36, 12);
-$__v = '20260310a';
+$__v = (string)(@filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/js/main.js') ?: time());
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($currentLang, ENT_QUOTES, 'UTF-8') ?>">
@@ -100,7 +100,7 @@ $__v = '20260310a';
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="stylesheet" href="<?= asset_v('/assets/css/app.css') ?>">
     <script>
         tailwind.config = {
             theme: {
@@ -126,7 +126,7 @@ $__v = '20260310a';
     window.__CURRENCY = <?= json_encode(\App\Core\Currency::info()) ?>;
     window.__LANG = <?= isset($t) ? json_encode($t, JSON_UNESCAPED_UNICODE) : '{}' ?>;
     </script>
-    <script src="/assets/js/main.js?v=<?= $__v ?>"></script>
+    <script src="<?= asset_v('/assets/js/main.js') ?>"></script>
 </head>
 <body class="font-sans min-h-screen" x-data="{ mobileMenu: false, mobileSearch: false }">
 
@@ -351,16 +351,22 @@ $__v = '20260310a';
                     <?php endif; ?>
 
                     <?php if ($isLoggedIn): ?>
-                        <a href="/profile" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition">
-                            <?php if (avatar_url($currentUser)): ?>
-                                <img src="<?= htmlspecialchars(avatar_url($currentUser)) ?>" class="w-7 h-7 rounded-full border border-gray-200" alt="">
-                            <?php else: ?>
-                                <div class="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center font-bold text-xs" style="color:#fff !important"><?= strtoupper(substr($currentUser['username'], 0, 1)) ?></div>
-                            <?php endif; ?>
-                            <span class="text-sm font-medium text-gray-600 hidden lg:block"><?= htmlspecialchars($currentUser['username']) ?></span>
-                            <span class="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold ml-0.5" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));color:#f59e0b;border:1px solid rgba(245,158,11,0.2);" title="ELO Rating<?= $_userRank ? ' — Rank #' . $_userRank : '' ?>"><?= $_userElo ?></span>
-                        </a>
-                        <a href="/logout" class="p-2 text-gray-400 hover:text-red-500 transition" title="<?= htmlspecialchars(t('nav.logout')) ?>"><i data-lucide="log-out" class="w-4 h-4"></i></a>
+                        <div class="flex items-center rounded-lg hover:bg-gray-100 transition">
+                            <a href="/profile" class="flex items-center gap-2 pl-2 pr-1 py-1.5">
+                                <?php if (avatar_url($currentUser)): ?>
+                                    <img src="<?= htmlspecialchars(avatar_url($currentUser)) ?>" class="w-7 h-7 rounded-full border border-gray-200 flex-shrink-0" alt="">
+                                <?php else: ?>
+                                    <div class="w-7 h-7 rounded-full bg-gray-900 flex-shrink-0 flex items-center justify-center font-bold text-xs" style="color:#fff !important"><?= strtoupper(substr($currentUser['username'], 0, 1)) ?></div>
+                                <?php endif; ?>
+                                <span class="hidden lg:flex items-center gap-1.5">
+                                    <span class="text-sm font-medium text-gray-600 whitespace-nowrap"><?= htmlspecialchars($currentUser['username']) ?></span>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-bold whitespace-nowrap" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));color:#f59e0b;border:1px solid rgba(245,158,11,0.2);" title="ELO Rating<?= $_userRank ? ' — Rank #' . $_userRank : '' ?>"><?= $_userElo ?></span>
+                                </span>
+                            </a>
+                        </div>
+                        <div class="flex items-center rounded-lg hover:bg-gray-100 transition">
+                            <a href="/logout" class="p-2 text-gray-400 hover:text-red-500 transition" title="<?= htmlspecialchars(t('nav.logout')) ?>"><i data-lucide="log-out" class="w-4 h-4"></i></a>
+                        </div>
                     <?php else: ?>
                         <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition hidden sm:block"><?= t('nav.login') ?></a>
                         <a href="/register" class="px-4 py-2 bg-gray-900 rounded-lg text-sm font-bold transition hover:bg-gray-800 shadow-sm" style="color:#fff !important"><?= t('nav.sign_up') ?></a>
@@ -464,7 +470,7 @@ $__v = '20260310a';
 
     </div>
 
-    <script src="/assets/js/app.js?v=<?= $__v ?>"></script>
+    <script src="<?= asset_v('/assets/js/app.js') ?>"></script>
     
     <?php if ($isLoggedIn): ?>
     <script>

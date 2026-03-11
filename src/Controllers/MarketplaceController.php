@@ -36,7 +36,8 @@ class MarketplaceController
         $recentSales = [];
         try {
             $recentSales = $db->query(
-                "SELECT mo.*, c.card_name, c.card_image_url, c.card_set_id, c.rarity,
+                "SELECT mo.id, mo.item_price as price, ml.condition, COALESCE(mo.completed_at, mo.created_at) as sold_at,
+                        mo.created_at, c.card_name, c.card_image_url, c.card_set_id, c.rarity,
                         seller.username as seller_username, buyer.username as buyer_username
                  FROM marketplace_orders mo
                  JOIN marketplace_listings ml ON ml.id = mo.listing_id
@@ -89,14 +90,17 @@ class MarketplaceController
 
         // Stats
         $stats = $db->prepare(
-            "SELECT COUNT(*) as total_listings,
+            "SELECT COUNT(*) as listing_count,
                     MIN(price) as floor_price,
                     AVG(price) as avg_price,
-                    MAX(price) as highest_price
+                    MAX(price) as highest_price,
+                    (SELECT COALESCE(SUM(mo.item_price), 0) FROM marketplace_orders mo
+                     JOIN marketplace_listings ml2 ON ml2.id = mo.listing_id
+                     WHERE ml2.card_id = :card_id2 AND mo.escrow_status IN ('completed','delivered','shipped','paid')) as volume
              FROM marketplace_listings
              WHERE card_id = :card_id AND status = 'active'"
         );
-        $stats->execute(['card_id' => $card['id']]);
+        $stats->execute(['card_id' => $card['id'], 'card_id2' => $card['id']]);
         $stats = $stats->fetch();
 
         // Recent bids on this card's listings
@@ -126,7 +130,7 @@ class MarketplaceController
         $db = Database::getConnection();
 
         $listing = $db->prepare(
-            "SELECT ml.*, c.card_name, c.card_image_url, c.rarity, c.set_name, c.card_color, c.card_type,
+            "SELECT ml.*, c.card_name, c.card_set_id, c.card_image_url, c.rarity, c.set_name, c.card_color, c.card_type,
                     u.username as seller_username
              FROM marketplace_listings ml
              JOIN cards c ON c.id = ml.card_id
@@ -144,7 +148,7 @@ class MarketplaceController
 
         // Bids
         $bids = $db->prepare(
-            "SELECT mb.*, u.username as bidder_username
+            "SELECT mb.*, u.username as bidder_username, u.username as buyer_username, u.avatar as buyer_avatar
              FROM marketplace_bids mb
              JOIN users u ON u.id = mb.bidder_id
              WHERE mb.listing_id = :lid AND mb.status = 'pending'
@@ -163,11 +167,17 @@ class MarketplaceController
         $sellerRating->execute(['sid' => $listing['seller_id']]);
         $sellerRating = $sellerRating->fetch();
 
+        // Decode images JSON string to array for the frontend
+        $listing['images'] = json_decode($listing['images'] ?? '[]', true) ?? [];
+
         View::render('pages/marketplace/listing', [
             'title' => $listing['card_name'] . ' - Listing #' . $id,
             'listing' => $listing,
             'bids' => $bids,
-            'sellerRating' => $sellerRating,
+            'sellerStats' => [
+                'avg_rating' => $sellerRating['avg_rating'] ?? 0,
+                'total_sales' => $sellerRating['review_count'] ?? 0,
+            ],
         ]);
     }
 
@@ -175,25 +185,101 @@ class MarketplaceController
     {
         header('Content-Type: application/json');
 
-        $filters = [
-            'q' => trim($_GET['q'] ?? ''),
-            'set_id' => trim($_GET['set_id'] ?? ''),
-            'color' => trim($_GET['color'] ?? ''),
-            'rarity' => trim($_GET['rarity'] ?? ''),
-            'type' => trim($_GET['type'] ?? ''),
-            'min_price' => $_GET['min_price'] ?? null,
-            'max_price' => $_GET['max_price'] ?? null,
-            'condition' => trim($_GET['condition'] ?? ''),
-            'sort' => $_GET['sort'] ?? 'price_asc',
+        $q         = trim($_GET['q'] ?? '');
+        $set_id    = trim($_GET['set_id'] ?? '');
+        $color     = trim($_GET['color'] ?? '');
+        $rarity    = trim($_GET['rarity'] ?? '');
+        $condition = trim($_GET['condition'] ?? '');
+        $price_min = strlen($_GET['price_min'] ?? '') ? (float)$_GET['price_min'] : null;
+        $price_max = strlen($_GET['price_max'] ?? '') ? (float)$_GET['price_max'] : null;
+        $sort      = $_GET['sort'] ?? 'price_asc';
+        $page      = max(1, (int)($_GET['page'] ?? 1));
+        $perPage   = 40;
+
+        $db = Database::getConnection();
+        $where = ["ml.status = 'active'"];
+        $params = [];
+
+        if ($q !== '') {
+            $where[] = '(c.card_name LIKE :q OR c.card_set_id LIKE :q2)';
+            $params['q']  = '%' . $q . '%';
+            $params['q2'] = '%' . $q . '%';
+        }
+        if ($set_id !== '') {
+            $where[] = 'c.set_id = :set_id';
+            $params['set_id'] = $set_id;
+        }
+        if ($color !== '') {
+            $where[] = 'c.card_color = :color';
+            $params['color'] = $color;
+        }
+        if ($rarity !== '') {
+            $where[] = 'c.rarity = :rarity';
+            $params['rarity'] = $rarity;
+        }
+        if ($condition !== '') {
+            $where[] = 'ml.`condition` = :cond';
+            $params['cond'] = $condition;
+        }
+        if ($price_min !== null) {
+            $where[] = 'ml.price >= :price_min';
+            $params['price_min'] = $price_min;
+        }
+        if ($price_max !== null) {
+            $where[] = 'ml.price <= :price_max';
+            $params['price_max'] = $price_max;
+        }
+
+        $whereClause = implode(' AND ', $where);
+
+        $sortMap = [
+            'price_asc'  => 'MIN(ml.price) ASC',
+            'price_desc' => 'MIN(ml.price) DESC',
+            'newest'     => 'MAX(ml.created_at) DESC',
+            'listings'   => 'listing_count DESC',
         ];
-        $page = max(1, (int)($_GET['page'] ?? 1));
+        $orderBy = $sortMap[$sort] ?? $sortMap['price_asc'];
 
         try {
-            $result = \App\Models\MarketplaceListing::search($filters, $page);
-            echo json_encode(['success' => true, 'data' => $result]);
+            $countStmt = $db->prepare(
+                "SELECT COUNT(DISTINCT c.id)
+                 FROM marketplace_listings ml
+                 JOIN cards c ON c.id = ml.card_id
+                 WHERE $whereClause"
+            );
+            $countStmt->execute($params);
+            $total = (int)$countStmt->fetchColumn();
+
+            $offset = ($page - 1) * $perPage;
+            $stmt = $db->prepare(
+                "SELECT c.id as card_id, c.card_name, c.card_set_id, c.card_image_url, c.rarity,
+                        MIN(ml.price) as floor_price,
+                        COUNT(ml.id) as listing_count
+                 FROM marketplace_listings ml
+                 JOIN cards c ON c.id = ml.card_id
+                 WHERE $whereClause
+                 GROUP BY c.id, c.card_name, c.card_set_id, c.card_image_url, c.rarity
+                 ORDER BY $orderBy
+                 LIMIT :limit OFFSET :offset"
+            );
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+            $stmt->bindValue('limit', $perPage, \PDO::PARAM_INT);
+            $stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
+            $stmt->execute();
+            $cards = $stmt->fetchAll();
+
+            echo json_encode([
+                'success'     => true,
+                'cards'       => $cards,
+                'total'       => $total,
+                'page'        => $page,
+                'total_pages' => (int)ceil($total / max($perPage, 1)),
+            ]);
         } catch (\Throwable $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Search failed']);
+            echo json_encode(['success' => false, 'message' => 'Search failed: ' . $e->getMessage()]);
         }
     }
 
@@ -302,9 +388,28 @@ class MarketplaceController
     public function createListingForm(): void
     {
         Auth::requireAuth();
+        $db = Database::getConnection();
+
+        $editListing = null;
+        $editId = (int)($_GET['edit'] ?? 0);
+        if ($editId > 0) {
+            $stmt = $db->prepare(
+                "SELECT ml.*, c.card_name, c.card_set_id, c.card_image_url, c.rarity
+                 FROM marketplace_listings ml
+                 JOIN cards c ON c.id = ml.card_id
+                 WHERE ml.id = :id AND ml.seller_id = :uid"
+            );
+            $stmt->execute(['id' => $editId, 'uid' => Auth::id()]);
+            $row = $stmt->fetch();
+            if ($row) {
+                $row['images'] = json_decode($row['images'] ?? '[]', true) ?? [];
+                $editListing = $row;
+            }
+        }
 
         View::render('pages/marketplace/sell', [
-            'title' => 'Sell a Card - Marketplace',
+            'title' => $editListing ? 'Edit Listing - Marketplace' : 'Sell a Card - Marketplace',
+            'editListing' => $editListing,
         ]);
     }
 
@@ -316,7 +421,7 @@ class MarketplaceController
         // Support both JSON and FormData (multipart)
         $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
         if (str_contains($contentType, 'application/json')) {
-            $input = json_decode(file_get_contents('php://input'), true) ?? [];
+            $input = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') ? (json_decode(file_get_contents('php://input'), true) ?? []) : $_POST;
         } else {
             $input = $_POST;
         }
@@ -422,7 +527,7 @@ class MarketplaceController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $input = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') ? (json_decode(file_get_contents('php://input'), true) ?? []) : $_POST;
         $db = Database::getConnection();
 
         // Validate ownership
@@ -462,7 +567,7 @@ class MarketplaceController
         }
 
         if (isset($input['condition'])) {
-            $validConditions = ['mint', 'near_mint', 'lightly_played', 'moderately_played', 'heavily_played', 'damaged'];
+            $validConditions = ['NM', 'LP', 'MP', 'HP', 'DMG'];
             if (!in_array($input['condition'], $validConditions)) {
                 http_response_code(422);
                 echo json_encode(['success' => false, 'message' => 'Invalid condition']);
@@ -470,6 +575,19 @@ class MarketplaceController
             }
             $updates[] = "`condition` = :cond";
             $params['cond'] = $input['condition'];
+        }
+
+        if (isset($input['shipping_country'])) {
+            $updates[] = "shipping_from_country = :sc";
+            $params['sc'] = substr(trim($input['shipping_country']), 0, 2);
+        }
+        if (isset($input['shipping_cost'])) {
+            $updates[] = "shipping_cost = :shc";
+            $params['shc'] = (float)$input['shipping_cost'];
+        }
+        if (isset($input['international_shipping'])) {
+            $updates[] = "ships_internationally = :si";
+            $params['si'] = (int)(bool)$input['international_shipping'];
         }
 
         if (empty($updates)) {
@@ -507,9 +625,29 @@ class MarketplaceController
     public function myListings(): void
     {
         Auth::requireAuth();
+        $db = Database::getConnection();
+
+        $stmt = $db->prepare(
+            "SELECT ml.*, c.card_name, c.card_set_id, c.card_image_url, c.rarity
+             FROM marketplace_listings ml
+             JOIN cards c ON c.id = ml.card_id
+             WHERE ml.seller_id = :uid
+             ORDER BY ml.created_at DESC"
+        );
+        $stmt->execute(['uid' => Auth::id()]);
+        $listings = $stmt->fetchAll();
+
+        // Decode images JSON and resolve first uploaded image
+        foreach ($listings as &$l) {
+            $imgs = json_decode($l['images'] ?? '[]', true) ?? [];
+            $l['first_image'] = !empty($imgs) ? '/uploads/' . $imgs[0] : null;
+            $l['images'] = $imgs;
+        }
+        unset($l);
 
         View::render('pages/marketplace/my-listings', [
             'title' => 'My Listings - Marketplace',
+            'listings' => $listings,
         ]);
     }
 
@@ -518,7 +656,7 @@ class MarketplaceController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $input = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') ? (json_decode(file_get_contents('php://input'), true) ?? []) : $_POST;
 
         $listingId = (int)($input['listing_id'] ?? 0);
         $amount = (float)($input['amount'] ?? 0);
@@ -610,7 +748,7 @@ class MarketplaceController
         Auth::requireAuth();
         header('Content-Type: application/json');
 
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $input = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') ? (json_decode(file_get_contents('php://input'), true) ?? []) : $_POST;
         $listingId = (int)($input['listing_id'] ?? 0);
 
         if ($listingId <= 0) {

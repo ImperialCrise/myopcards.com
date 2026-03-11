@@ -1,15 +1,18 @@
 <?php
 $setsJson = json_encode($sets ?? [], JSON_HEX_APOS | JSON_HEX_TAG);
 $userAddressesJson = json_encode($userAddresses ?? [], JSON_HEX_APOS | JSON_HEX_TAG);
+$editListingJson = json_encode($editListing ?? null, JSON_HEX_APOS | JSON_HEX_TAG);
+$isEdit = !empty($editListing);
 ?>
 
 <div class="max-w-3xl mx-auto space-y-6" x-data="createListing">
     <!-- Header -->
     <div>
         <h1 class="text-2xl font-display font-bold text-white flex items-center gap-3">
-            <i data-lucide="tag" class="w-7 h-7 text-gold-400"></i> <?= t('marketplace.create_listing', 'Create Listing') ?>
+            <i data-lucide="tag" class="w-7 h-7 text-gold-400"></i>
+            <?= $isEdit ? 'Edit Listing' : t('marketplace.create_listing', 'Create Listing') ?>
         </h1>
-        <p class="text-sm text-dark-400 mt-1"><?= t('marketplace.sell_subtitle', 'List your card for sale on the marketplace') ?></p>
+        <p class="text-sm text-dark-400 mt-1"><?= $isEdit ? 'Update your listing details' : t('marketplace.sell_subtitle', 'List your card for sale on the marketplace') ?></p>
     </div>
 
     <!-- Card Search -->
@@ -126,8 +129,13 @@ $userAddressesJson = json_encode($userAddresses ?? [], JSON_HEX_APOS | JSON_HEX_
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5"><?= t('marketplace.ships_from', 'Ships From') ?></label>
-                    <input type="text" x-model="form.shipping_country" placeholder="<?= htmlspecialchars(t('marketplace.country_placeholder', 'Country')) ?>"
-                        class="w-full px-3 py-2.5 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white placeholder-dark-400 focus:outline-none focus:border-gold-500/50 transition">
+                    <select x-model="form.shipping_country"
+                        class="w-full px-3 py-2.5 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
+                        <option value=""><?= t('marketplace.select_country', 'Select country...') ?></option>
+                        <template x-for="c in countries" :key="c.code">
+                            <option :value="c.code" x-text="c.name"></option>
+                        </template>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5"><?= t('marketplace.shipping_cost', 'Shipping Cost (USD)') ?></label>
@@ -192,8 +200,8 @@ $userAddressesJson = json_encode($userAddresses ?? [], JSON_HEX_APOS | JSON_HEX_
         <button @click="submitListing()" :disabled="submitting || !canSubmit"
             class="px-8 py-3 bg-gradient-to-r from-gold-500 to-amber-600 text-dark-900 rounded-lg text-sm font-bold hover:from-gold-400 hover:to-amber-500 transition shadow-lg shadow-gold-500/10 disabled:opacity-50 flex items-center gap-2">
             <i data-lucide="check" class="w-5 h-5"></i>
-            <span x-show="!submitting"><?= t('marketplace.publish_listing', 'Publish Listing') ?></span>
-            <span x-show="submitting"><?= t('marketplace.publishing', 'Publishing...') ?></span>
+            <span x-show="!submitting"><?= $isEdit ? 'Save Changes' : t('marketplace.publish_listing', 'Publish Listing') ?></span>
+            <span x-show="submitting"><?= $isEdit ? 'Saving...' : t('marketplace.publishing', 'Publishing...') ?></span>
         </button>
     </div>
 </div>
@@ -201,7 +209,8 @@ $userAddressesJson = json_encode($userAddresses ?? [], JSON_HEX_APOS | JSON_HEX_
 <script>
 window.__PAGE_DATA = {
     sets: <?= $setsJson ?>,
-    userAddresses: <?= $userAddressesJson ?>
+    userAddresses: <?= $userAddressesJson ?>,
+    editListing: <?= $editListingJson ?>
 };
 </script>
-<script src="/assets/js/pages/marketplace.js"></script>
+<script src="<?= asset_v('/assets/js/pages/marketplace.js') ?>"></script>

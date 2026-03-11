@@ -27,7 +27,19 @@
       "Bash(find /var/log -name *.log -newer /var/log/wtmp -type f)",
       "Bash(php -i)",
       "Bash(sudo tail:*)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://myopcards.com/marketplace/sell -H \"Cookie: PHPSESSID=test\")"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://myopcards.com/marketplace/sell -H \"Cookie: PHPSESSID=test\")",
+      "Bash(gh auth:*)",
+      "Bash(git remote:*)",
+      "Bash(git push:*)",
+      "Bash(php -l src/Models/MarketplaceListing.php)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git log:*)",
+      "Bash(git rebase:*)",
+      "Bash(git stash:*)",
+      "Bash(git fetch:*)",
+      "Bash(php -l /home/ubuntu/projects/myopcards.com/src/Controllers/MarketplaceController.php)",
+      "Bash(php -l /home/ubuntu/projects/myopcards.com/src/Views/pages/marketplace/sell.php)"
     ]
   }
 }
