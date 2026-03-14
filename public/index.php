@@ -64,6 +64,9 @@ $router->post('/api/messages/{id}/typing', [App\Controllers\MessageController::c
 $router->post('/api/messages/edit', [App\Controllers\MessageController::class, 'editMessage']);
 $router->post('/api/messages/delete', [App\Controllers\MessageController::class, 'deleteMessage']);
 $router->post('/api/messages/upload', [App\Controllers\MessageController::class, 'uploadMedia']);
+$router->get('/admin/messages', [App\Controllers\MessageController::class, 'adminInbox']);
+$router->get('/admin/messages/{id}', [App\Controllers\MessageController::class, 'adminConversation']);
+$router->get('/api/admin/messages/{id}/poll', [App\Controllers\MessageController::class, 'adminPoll']);
 
 $router->get('/friends', [App\Controllers\FriendController::class, 'index']);
 $router->post('/friends/request', [App\Controllers\FriendController::class, 'sendRequest']);

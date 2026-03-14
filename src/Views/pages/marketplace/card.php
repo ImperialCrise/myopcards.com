@@ -28,77 +28,20 @@ $isLoggedIn = \App\Core\Auth::check();
                              class="w-full h-full object-cover select-none"
                              style="border-radius:12px;display:block;"
                              onerror="cardImgErr(this)" draggable="false">
-                        <div id="card3dGlare" style="position:absolute;inset:0;border-radius:12px;pointer-events:none;opacity:0;transition:opacity 0.1s ease;"></div>
+                        <!-- Metallic glare -->
+                        <div id="card3dGlare" style="position:absolute;inset:0;border-radius:12px;pointer-events:none;opacity:0;"></div>
+                        <!-- Holographic foil overlay (mix-blend-mode highlights traits & edges) -->
+                        <div id="card3dFoil" style="position:absolute;inset:0;border-radius:12px;pointer-events:none;opacity:0;mix-blend-mode:overlay;"></div>
+                        <!-- Edge lighting -->
+                        <div id="card3dEdge" style="position:absolute;inset:0;border-radius:12px;pointer-events:none;opacity:0;"></div>
                         <template x-if="card.rarity">
                             <span class="absolute top-2 left-2 px-2 py-0.5 text-xs font-bold text-white rounded shadow"
                                 :class="rarityClass(card.rarity)" x-text="card.rarity"></span>
                         </template>
                     </div>
                 </div>
-                <script>
-                (function() {
-                    var wrap = document.getElementById('card3d');
-                    var inner = document.getElementById('card3dInner');
-                    var img = document.getElementById('card3dImg');
-                    var glare = document.getElementById('card3dGlare');
-                    if (!wrap || !inner || !img) return;
-
-                    var maxTilt = 20;
-                    var edgeLayers = 10;
-
-                    inner.style.boxShadow = '0 8px 30px rgba(0,0,0,0.35)';
-
-                    function onMove(e) {
-                        var rect = wrap.getBoundingClientRect();
-                        var cx = rect.left + rect.width / 2;
-                        var cy = rect.top + rect.height / 2;
-                        var clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                        var clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                        var dx = Math.max(-1, Math.min(1, (clientX - cx) / (rect.width / 2)));
-                        var dy = Math.max(-1, Math.min(1, (clientY - cy) / (rect.height / 2)));
-                        var rotY = dx * maxTilt;
-                        var rotX = -dy * maxTilt;
-
-                        inner.style.transition = 'transform 0.1s ease-out';
-                        inner.style.transform = 'rotateX(' + rotX + 'deg) rotateY(' + rotY + 'deg) scale3d(1.03,1.03,1.03)';
-
-                        // Edge thickness via stacked box-shadows (follows border-radius perfectly)
-                        var edgeShadows = [];
-                        for (var i = 1; i <= edgeLayers; i++) {
-                            var ox = (-rotY / maxTilt) * i * 0.6;
-                            var oy = (rotX / maxTilt) * i * 0.6;
-                            var b = Math.round(210 - (i / edgeLayers) * 80);
-                            edgeShadows.push(ox.toFixed(1) + 'px ' + oy.toFixed(1) + 'px 0 rgb(' + b + ',' + (b - 8) + ',' + (b - 16) + ')');
-                        }
-                        // Ground shadow
-                        var gsx = (-rotY / maxTilt) * 15;
-                        var gsy = 10 + (rotX / maxTilt) * 10;
-                        edgeShadows.push(gsx.toFixed(1) + 'px ' + gsy.toFixed(1) + 'px 30px rgba(0,0,0,0.45)');
-                        inner.style.boxShadow = edgeShadows.join(', ');
-
-                        // Glare
-                        if (glare) {
-                            var gx = ((dx + 1) / 2 * 100).toFixed(1);
-                            var gy = ((dy + 1) / 2 * 100).toFixed(1);
-                            var intensity = (Math.abs(dx) + Math.abs(dy)) / 2;
-                            glare.style.background = 'radial-gradient(ellipse at ' + gx + '% ' + gy + '%, rgba(255,255,255,' + (0.12 + intensity * 0.3).toFixed(2) + ') 0%, transparent 70%)';
-                            glare.style.opacity = '1';
-                        }
-                    }
-
-                    function onLeave() {
-                        inner.style.transition = 'transform 0.6s cubic-bezier(.03,.98,.52,.99), box-shadow 0.6s ease';
-                        inner.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
-                        inner.style.boxShadow = '0 8px 30px rgba(0,0,0,0.35)';
-                        if (glare) glare.style.opacity = '0';
-                    }
-
-                    wrap.addEventListener('mousemove', onMove);
-                    wrap.addEventListener('mouseleave', onLeave);
-                    wrap.addEventListener('touchmove', function(e) { e.preventDefault(); onMove(e); }, { passive: false });
-                    wrap.addEventListener('touchend', onLeave);
-                })();
-                </script>
+                <script src="<?= asset_v('/assets/js/card-3d.js') ?>"></script>
+                <script>document.addEventListener('DOMContentLoaded', function() { initCard3D('card3d'); });</script>
                 <div class="space-y-2">
                     <div class="flex justify-between text-sm">
                         <span class="text-dark-400"><?= t('marketplace.set', 'Set') ?></span>

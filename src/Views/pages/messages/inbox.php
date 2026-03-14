@@ -1,5 +1,7 @@
 <?php
 $currentUserId = \App\Core\Auth::id();
+$isAdminView = $isAdminView ?? false;
+$isAdmin = \App\Core\Auth::isAdmin();
 function msgTimeAgo(string $ts): string {
     $diff = time() - strtotime($ts);
     if ($diff < 60) return 'just now';
@@ -14,10 +16,23 @@ function msgTimeAgo(string $ts): string {
     <!-- Sidebar: conversation list -->
     <aside class="w-full md:w-80 lg:w-96 flex-shrink-0 flex flex-col border-r" style="border-color:var(--nav-border);background:var(--d900,#0f1117)">
         <div class="px-4 py-4 flex items-center justify-between border-b" style="border-color:var(--nav-border)">
-            <h1 class="text-lg font-display font-bold text-white"><?= t('messages.title') ?></h1>
-            <a href="/friends" class="p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700 transition" title="<?= t('friends.title') ?>">
-                <i data-lucide="user-plus" class="w-4 h-4"></i>
-            </a>
+            <h1 class="text-lg font-display font-bold text-white"><?= $isAdminView ? t('messages.admin_title', 'Admin — Messages') : t('messages.title') ?></h1>
+            <div class="flex items-center gap-1">
+                <?php if ($isAdmin && !$isAdminView): ?>
+                <a href="/admin/messages" class="p-2 rounded-lg text-amber-400 hover:text-amber-300 hover:bg-dark-700 transition" title="<?= t('messages.admin_view', 'Admin view') ?>">
+                    <i data-lucide="shield" class="w-4 h-4"></i>
+                </a>
+                <?php endif; ?>
+                <?php if ($isAdminView): ?>
+                <a href="/messages" class="p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700 transition" title="<?= t('messages.back_inbox', 'Back to my inbox') ?>">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                </a>
+                <?php else: ?>
+                <a href="/friends" class="p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700 transition" title="<?= t('friends.title') ?>">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                </a>
+                <?php endif; ?>
+            </div>
         </div>
 
         <div class="flex-1 overflow-y-auto">
@@ -35,16 +50,26 @@ function msgTimeAgo(string $ts): string {
             <?php else: ?>
             <div class="py-2">
                 <?php foreach ($conversations as $conv):
-                    $ou = $conv['other_user'];
+                    if ($isAdminView) {
+                        $ou = ['username' => ($conv['user1']['username'] ?? '?') . ' ↔ ' . ($conv['user2']['username'] ?? '?'), 'avatar_url' => $conv['user1']['avatar_url'] ?? null, 'is_system' => false];
+                        $convUrl = '/admin/messages/' . (int)$conv['id'];
+                    } else {
+                        $ou = $conv['other_user'];
+                        $convUrl = '/messages/' . (int)$conv['id'];
+                    }
                     $isSystem = $ou['is_system'] ?? false;
                     $hasUnread = ($conv['unread_count'] ?? 0) > 0;
                     $lastMsg = $conv['last_message'];
                 ?>
-                <a href="/messages/<?= (int)$conv['id'] ?>"
+                <a href="<?= htmlspecialchars($convUrl) ?>"
                    class="flex items-center gap-3 px-4 py-3 hover:bg-dark-700/50 transition group cursor-pointer <?= $hasUnread ? 'bg-dark-800/60' : '' ?>">
                     <!-- Avatar -->
                     <div class="flex-shrink-0 relative">
-                        <?php if ($isSystem): ?>
+                        <?php if ($isAdminView && isset($conv['user1'])): ?>
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500/30 to-amber-600/30 flex items-center justify-center flex-shrink-0 border border-amber-500/40">
+                            <i data-lucide="shield" class="w-6 h-6 text-amber-400"></i>
+                        </div>
+                        <?php elseif ($isSystem): ?>
                         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-gold-500 to-amber-600 flex items-center justify-center flex-shrink-0 shadow-lg">
                             <svg width="22" height="22" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="9" fill="rgba(0,0,0,0.2)"/><rect x="8" y="7" width="15" height="21" rx="2.5" fill="white" fill-opacity="0.25" transform="rotate(-8 8 7)"/><rect x="12" y="8" width="15" height="21" rx="2.5" fill="white" fill-opacity="0.9" transform="rotate(5 20 18)"/><text x="18" y="22" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="10" fill="#92400e" letter-spacing="-0.5">OP</text></svg>
                         </div>
@@ -73,7 +98,7 @@ function msgTimeAgo(string $ts): string {
                         </div>
                         <?php if ($lastMsg): ?>
                         <p class="text-xs truncate mt-0.5 <?= $hasUnread ? 'text-dark-300 font-medium' : 'text-dark-500' ?>">
-                            <?php if ((int)$lastMsg['sender_id'] === $currentUserId): ?><span class="text-dark-500">You: </span><?php endif; ?>
+                            <?php if (!$isAdminView && (int)$lastMsg['sender_id'] === $currentUserId): ?><span class="text-dark-500">You: </span><?php endif; ?>
                             <?= htmlspecialchars(mb_strimwidth($lastMsg['body'], 0, 60, '…')) ?>
                         </p>
                         <?php else: ?>

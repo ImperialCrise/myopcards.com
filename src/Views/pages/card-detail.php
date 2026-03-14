@@ -18,9 +18,31 @@ $rarityBg = $rarityColors[$card['rarity']] ?? 'from-gray-500 to-gray-600';
     <!-- Card Image -->
     <div class="lg:col-span-1">
         <div class="glass rounded-2xl p-4 sticky top-24">
-            <div class="aspect-[5/7] rounded-xl overflow-hidden bg-dark-700">
-                <img src="<?= htmlspecialchars(card_img_url($card)) ?: 'about:blank' ?>" data-ext-src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="<?= htmlspecialchars($card['card_name']) ?>" class="w-full h-full object-cover" onerror="cardImgErr(this)">
+            <!-- 3D Card -->
+            <div id="card3d" class="mb-4" style="perspective:1200px;cursor:grab;">
+                <div id="card3dInner" class="relative aspect-[5/7]"
+                     style="transition:transform 0.1s ease-out;will-change:transform;border-radius:12px;">
+                    <img id="card3dImg" src="<?= htmlspecialchars(card_img_url($card)) ?: 'about:blank' ?>" data-ext-src="<?= htmlspecialchars($card['card_image_url'] ?? '') ?>" alt="<?= htmlspecialchars($card['card_name']) ?>"
+                         class="w-full h-full object-cover select-none"
+                         style="border-radius:12px;display:block;"
+                         onerror="cardImgErr(this)" draggable="false">
+                    <!-- Metallic glare -->
+                    <div id="card3dGlare" style="position:absolute;inset:0;border-radius:12px;pointer-events:none;opacity:0;"></div>
+                    <!-- Holographic foil overlay (mix-blend-mode highlights traits & edges) -->
+                    <div id="card3dFoil" style="position:absolute;inset:0;border-radius:12px;pointer-events:none;opacity:0;mix-blend-mode:overlay;"></div>
+                    <!-- Edge lighting -->
+                    <div id="card3dEdge" style="position:absolute;inset:0;border-radius:12px;pointer-events:none;opacity:0;"></div>
+                    <?php if (!empty($card['rarity'])): ?>
+                    <span class="absolute top-2 left-2 px-2 py-0.5 text-xs font-bold text-white rounded shadow bg-gradient-to-r <?= $rarityBg ?>"><?= htmlspecialchars($card['rarity']) ?></span>
+                    <?php endif; ?>
+                </div>
             </div>
+            <p id="card3dHint" class="text-center text-xs text-dark-500 mt-2 transition-opacity duration-500" style="transition:opacity 0.5s ease">
+                <i data-lucide="mouse-pointer-2" class="w-3 h-3 inline-block mr-1"></i>
+                <?= t('cards.hover_for_3d', 'Hover over the card for 3D effect') ?>
+            </p>
+            <script src="<?= asset_v('/assets/js/card-3d.js') ?>"></script>
+            <script>initCard3D('card3d');</script>
 
             <?php if ($isLoggedIn): ?>
                 <div class="mt-4" x-data="{ qty: <?= $userOwns ?>, updating: false }">

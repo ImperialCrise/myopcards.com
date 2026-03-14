@@ -1,10 +1,12 @@
 <?php
 $currentUserId = \App\Core\Auth::id();
+$isAdminView = $isAdminView ?? false;
 $otherAvatarUrl = $otherUser ? \App\Models\User::getAvatarUrl($otherUser) : '';
 $isSystem = !empty($otherUser['is_system']);
 $convIdJson = (int)$conversation['id'];
 $currentUserIdJson = $currentUserId;
 $formattedMessages = \App\Controllers\MessageController::getFormattedMessages($messages);
+$inboxBackUrl = $isAdminView ? '/admin/messages' : '/messages';
 ?>
 
 <script>window.__CONV_MESSAGES = <?= json_encode($formattedMessages, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>;</script>
@@ -12,7 +14,7 @@ $formattedMessages = \App\Controllers\MessageController::getFormattedMessages($m
 <div
     class="flex flex-col"
     style="height:calc(100vh - 4rem);background:var(--d950,#07090e)"
-    x-data="conversationPage(<?= $convIdJson ?>, <?= $currentUserIdJson ?>)"
+    x-data="conversationPage(<?= $convIdJson ?>, <?= $currentUserIdJson ?>, <?= $isAdminView ? 'true' : 'false' ?>)"
     x-init="messages = window.__CONV_MESSAGES || []; lastId = messages.length ? messages[messages.length-1].id : 0; init();"
     @dragover.prevent="uploadDragOver = true"
     @dragleave.prevent="uploadDragOver = false"
@@ -21,9 +23,17 @@ $formattedMessages = \App\Controllers\MessageController::getFormattedMessages($m
 >
 <div class="flex flex-col flex-1 max-w-5xl w-full mx-auto overflow-hidden" style="height:100%">
 
+    <?php if ($isAdminView): ?>
+    <!-- Admin banner -->
+    <div class="flex-shrink-0 px-4 py-2 flex items-center gap-2" style="background:linear-gradient(90deg,rgba(245,158,11,0.15),rgba(217,119,6,0.08));border-bottom:1px solid rgba(245,158,11,0.3)">
+        <i data-lucide="shield" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+        <span class="text-amber-400 text-sm font-semibold">Vue Admin — Lecture seule</span>
+    </div>
+    <?php endif; ?>
+
     <!-- ── Header ─────────────────────────────────── -->
     <header class="flex items-center gap-3 px-4 py-3 flex-shrink-0 border-b" style="border-color:var(--nav-border);background:var(--d900,#0f1117)">
-        <a href="/messages" class="p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700 transition">
+        <a href="<?= htmlspecialchars($inboxBackUrl) ?>" class="p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700 transition">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
         <?php if ($isSystem): ?>
@@ -39,8 +49,12 @@ $formattedMessages = \App\Controllers\MessageController::getFormattedMessages($m
         <?php endif; ?>
         <div class="flex-1 min-w-0">
             <p class="font-bold text-white text-sm truncate">
+                <?php if ($isAdminView): ?>
+                <?= htmlspecialchars($user1['username'] ?? '?') ?> ↔ <?= htmlspecialchars($user2['username'] ?? '?') ?>
+                <?php else: ?>
                 <?= htmlspecialchars($otherUser['username'] ?? 'User') ?>
                 <?php if ($isSystem): ?><span class="ml-1 text-[9px] font-bold text-gold-400 bg-gold-500/10 px-1.5 py-0.5 rounded">SYSTEM</span><?php endif; ?>
+                <?php endif; ?>
             </p>
         </div>
         <?php if (!$isSystem): ?>
@@ -97,8 +111,8 @@ $formattedMessages = \App\Controllers\MessageController::getFormattedMessages($m
                         <template x-if="!msg.is_deleted">
                             <div class="flex items-center gap-1.5" :class="msg.sender_id===currentUserId?'flex-row-reverse':'flex-row'">
 
-                                <!-- Action buttons (hover, own messages) -->
-                                <div x-show="hoveredMsgId===msg.id && msg.sender_id===currentUserId && editingId!==msg.id"
+                                <!-- Action buttons (hover, own messages) — hidden in admin view -->
+                                <div x-show="!isAdminView && hoveredMsgId===msg.id && msg.sender_id===currentUserId && editingId!==msg.id"
                                      x-transition:enter="transition ease-out duration-100"
                                      x-transition:enter-start="opacity-0 scale-90"
                                      x-transition:enter-end="opacity-100 scale-100"
@@ -209,6 +223,7 @@ $formattedMessages = \App\Controllers\MessageController::getFormattedMessages($m
         </button>
     </div>
 
+    <?php if (!$isAdminView): ?>
     <!-- ── GIF picker panel ────────────────────────── -->
     <div x-show="gifOpen"
          x-transition:enter="transition ease-out duration-150"
@@ -222,7 +237,7 @@ $formattedMessages = \App\Controllers\MessageController::getFormattedMessages($m
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-dark-400 pointer-events-none"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                     <input type="text" x-model="gifQuery"
                         @input.debounce.500ms="searchGifs(gifQuery)"
-                        placeholder="Search GIFs…"
+                        placeholder="Search KLIPY"
                         class="w-full pl-8 pr-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white placeholder-dark-500 focus:outline-none focus:border-blue-500 transition">
                 </div>
                 <button @click="closeGifPicker()" class="p-1.5 text-dark-400 hover:text-white rounded-lg hover:bg-dark-700 transition flex-shrink-0">
@@ -318,6 +333,13 @@ $formattedMessages = \App\Controllers\MessageController::getFormattedMessages($m
         <!-- Drag-over hint -->
         <p x-show="uploadDragOver" class="text-center text-sm text-blue-400 mt-2 font-medium">Drop image here to attach</p>
     </div>
+    <?php else: ?>
+    <!-- Admin: read-only placeholder -->
+    <div class="flex-shrink-0 px-4 py-3 border-t text-center text-dark-500 text-sm" style="border-color:var(--nav-border);background:var(--d900,#0f1117)">
+        <i data-lucide="lock" class="w-4 h-4 inline-block mr-1 align-middle"></i>
+        Vue admin — impossible d'envoyer des messages
+    </div>
+    <?php endif; ?>
 
 </div><!-- /max-width wrapper -->
 

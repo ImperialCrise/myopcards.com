@@ -39,7 +39,8 @@
       "Bash(git stash:*)",
       "Bash(git fetch:*)",
       "Bash(php -l /home/ubuntu/projects/myopcards.com/src/Controllers/MarketplaceController.php)",
-      "Bash(php -l /home/ubuntu/projects/myopcards.com/src/Views/pages/marketplace/sell.php)"
+      "Bash(php -l /home/ubuntu/projects/myopcards.com/src/Views/pages/marketplace/sell.php)",
+      "Bash(find /home/ubuntu/projects/myopcards.com -name *sync* -o -name *download* -o -name *image*)"
     ]
   }
 }
