@@ -14,7 +14,7 @@
                 <template x-if="gainers.length === 0"><p class="text-sm text-dark-400 text-center py-4"><?= t('market.no_price_data') ?></p></template>
                 <template x-for="card in gainers" :key="card.id">
                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition">
-                        <img :src="cardImgSrc(card.card_image_url)" class="w-8 h-11 rounded object-cover bg-dark-700" :data-ext-src="card.card_image_url" onerror="cardImgErr(this)">
+                        <img :src="cardImgSrc(card.card_image_url, card.card_set_id)" class="w-8 h-11 rounded object-cover bg-dark-700" :data-ext-src="card.card_image_url" onerror="cardImgErr(this)">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-white truncate" x-text="card.card_name"></p>
                             <p class="text-xs text-dark-400" x-text="card.card_set_id"></p>
@@ -35,7 +35,7 @@
                 <template x-if="losers.length === 0"><p class="text-sm text-dark-400 text-center py-4"><?= t('market.no_price') ?></p></template>
                 <template x-for="card in losers" :key="card.id">
                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition">
-                        <img :src="cardImgSrc(card.card_image_url)" class="w-8 h-11 rounded object-cover bg-dark-700" :data-ext-src="card.card_image_url" onerror="cardImgErr(this)">
+                        <img :src="cardImgSrc(card.card_image_url, card.card_set_id)" class="w-8 h-11 rounded object-cover bg-dark-700" :data-ext-src="card.card_image_url" onerror="cardImgErr(this)">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-white truncate" x-text="card.card_name"></p>
                             <p class="text-xs text-dark-400" x-text="card.card_set_id"></p>
@@ -169,4 +169,4 @@
     </div>
 </div>
 
-<script src="/assets/js/pages/market.js"></script>
+<script src="<?= asset_v('/assets/js/pages/market.js') ?>"></script>

@@ -3,11 +3,7 @@ $top = $top ?? [];
 $me = $me ?? null;
 $myRank = $myRank ?? null;
 $currentUserId = $currentUserId ?? null;
-$rankColors = [
-    1 => ['row' => 'bg-yellow-500/10 border-yellow-500/30', 'num' => 'text-yellow-400', 'medal' => '🥇'],
-    2 => ['row' => 'bg-slate-400/10 border-slate-400/30', 'num' => 'text-slate-300', 'medal' => '🥈'],
-    3 => ['row' => 'bg-amber-700/10 border-amber-700/30', 'num' => 'text-amber-600', 'medal' => '🥉'],
-];
+$topJson = json_encode(array_values($top), JSON_HEX_TAG | JSON_HEX_APOS);
 ?>
 <div class="space-y-6">
     <div>
@@ -28,7 +24,7 @@ $rankColors = [
     </div>
     <?php endif; ?>
 
-    <div class="glass rounded-2xl overflow-hidden">
+    <div class="glass rounded-2xl overflow-hidden" x-data="leaderboardTable()" x-init="init()">
         <table class="w-full">
             <thead class="bg-dark-800/50">
                 <tr>
@@ -41,34 +37,53 @@ $rankColors = [
                 </tr>
             </thead>
             <tbody>
-                <?php foreach (array_values($top) as $i => $row): $rank = $i + 1;
-                    $isMe = $currentUserId && (int)($row['user_id'] ?? 0) === $currentUserId;
-                    $rc = $rankColors[$rank] ?? null;
-                    $rowClass = $rc ? 'border-t ' . $rc['row'] : 'border-t border-dark-700 hover:bg-dark-800/30';
-                ?>
-                <tr class="<?= $rowClass ?>">
-                    <td class="py-3 px-4 font-bold <?= $rc ? $rc['num'] : 'text-dark-400' ?>">
-                        <?= $rc ? $rc['medal'] . ' ' . $rank : $rank ?>
-                    </td>
-                    <td class="py-3 px-4 text-white">
-                        <?php if ($isMe): ?>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-md border border-blue-500/70 bg-blue-500/15 text-blue-400 font-semibold"><?= htmlspecialchars($row['username'] ?? '') ?></span>
-                            <span class="ml-1 text-xs text-blue-400/60">(<?= t('leaderboard.you') ?>)</span>
-                        <?php else: ?>
-                            <?= htmlspecialchars($row['username'] ?? '') ?>
-                        <?php endif; ?>
-                    </td>
-                    <td class="py-3 px-4 text-right text-gold-400 font-semibold"><?= (int)($row['elo_rating'] ?? 0) ?></td>
-                    <td class="py-3 px-4 text-right text-white"><?= (int)($row['wins'] ?? 0) ?></td>
-                    <td class="py-3 px-4 text-right text-white"><?= (int)($row['losses'] ?? 0) ?></td>
-                    <td class="py-3 px-4 text-right text-white"><?= (int)($row['streak'] ?? 0) ?></td>
-                </tr>
-                <?php endforeach; ?>
+                <template x-for="row in pageRows" :key="row.user_id">
+                    <tr :class="rowClass(row)">
+                        <td class="py-3 px-4 font-bold" :class="rankNumClass(row.rank)">
+                            <span x-text="rankLabel(row.rank)"></span>
+                        </td>
+                        <td class="py-3 px-4 text-white">
+                            <template x-if="row.is_me">
+                                <span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md border border-blue-500/70 bg-blue-500/15 text-blue-400 font-semibold" x-text="row.username"></span>
+                                    <span class="ml-1 text-xs text-blue-400/60">(<?= t('leaderboard.you') ?>)</span>
+                                </span>
+                            </template>
+                            <template x-if="!row.is_me">
+                                <a :href="'/user/' + row.username" class="hover:text-gold-400 transition" x-text="row.username"></a>
+                            </template>
+                        </td>
+                        <td class="py-3 px-4 text-right text-gold-400 font-semibold" x-text="row.elo_rating"></td>
+                        <td class="py-3 px-4 text-right text-white" x-text="row.wins"></td>
+                        <td class="py-3 px-4 text-right text-white" x-text="row.losses"></td>
+                        <td class="py-3 px-4 text-right text-white" x-text="row.streak"></td>
+                    </tr>
+                </template>
             </tbody>
         </table>
-        <?php if (empty($top)): ?>
-        <p class="p-8 text-center text-dark-400"><?= t('leaderboard.empty') ?></p>
-        <?php endif; ?>
+        <p class="p-8 text-center text-dark-400" x-show="allRows.length === 0"><?= t('leaderboard.empty') ?></p>
+        <!-- Pagination -->
+        <div class="flex items-center justify-between px-4 py-3 border-t border-dark-700" x-show="totalPages > 1">
+            <p class="text-xs text-dark-400">
+                <span x-text="(page - 1) * perPage + 1"></span>–<span x-text="Math.min(page * perPage, allRows.length)"></span>
+                / <span x-text="allRows.length"></span>
+            </p>
+            <div class="flex gap-1">
+                <button @click="page--" :disabled="page <= 1"
+                    class="px-3 py-1.5 glass rounded-lg text-sm text-dark-300 hover:text-white transition disabled:opacity-30">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                </button>
+                <template x-for="p in pageRange" :key="p">
+                    <button @click="page = p"
+                        :class="p === page ? 'bg-gold-500 text-dark-900 font-bold' : 'glass text-dark-300 hover:text-white'"
+                        class="px-3 py-1.5 rounded-lg text-sm transition" x-text="p"></button>
+                </template>
+                <button @click="page++" :disabled="page >= totalPages"
+                    class="px-3 py-1.5 glass rounded-lg text-sm text-dark-300 hover:text-white transition disabled:opacity-30">
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="glass rounded-2xl overflow-hidden" x-data="globalGameHistory()" x-init="load()">
@@ -109,7 +124,67 @@ $rankColors = [
 </div>
 
 <script>
+window.__LEADERBOARD_DATA = {
+    rows: <?= $topJson ?>,
+    currentUserId: <?= $currentUserId ? (int)$currentUserId : 'null' ?>
+};
+</script>
+<script>
 document.addEventListener('alpine:init', function () {
+  Alpine.data('leaderboardTable', function () {
+    return {
+      allRows: [],
+      page: 1,
+      perPage: 20,
+      init() {
+        const d = window.__LEADERBOARD_DATA || {};
+        const uid = d.currentUserId;
+        this.allRows = (d.rows || []).map((r, i) => ({
+          ...r,
+          rank: i + 1,
+          is_me: uid && parseInt(r.user_id) === parseInt(uid),
+        }));
+        // Jump to page where current user appears
+        if (uid) {
+          const idx = this.allRows.findIndex(r => r.is_me);
+          if (idx >= 0) this.page = Math.floor(idx / this.perPage) + 1;
+        }
+      },
+      get pageRows() {
+        const start = (this.page - 1) * this.perPage;
+        return this.allRows.slice(start, start + this.perPage);
+      },
+      get totalPages() {
+        return Math.ceil(this.allRows.length / this.perPage);
+      },
+      get pageRange() {
+        const start = Math.max(1, this.page - 2);
+        const end = Math.min(this.totalPages, this.page + 2);
+        const r = [];
+        for (let i = start; i <= end; i++) r.push(i);
+        return r;
+      },
+      rowClass(row) {
+        if (row.rank === 1) return 'border-t bg-yellow-500/10 border-yellow-500/30';
+        if (row.rank === 2) return 'border-t bg-slate-400/10 border-slate-400/30';
+        if (row.rank === 3) return 'border-t bg-amber-700/10 border-amber-700/30';
+        return 'border-t border-dark-700 hover:bg-dark-800/30';
+      },
+      rankNumClass(rank) {
+        if (rank === 1) return 'text-yellow-400';
+        if (rank === 2) return 'text-slate-300';
+        if (rank === 3) return 'text-amber-600';
+        return 'text-dark-400';
+      },
+      rankLabel(rank) {
+        if (rank === 1) return '🥇 1';
+        if (rank === 2) return '🥈 2';
+        if (rank === 3) return '🥉 3';
+        return rank;
+      },
+    };
+  });
+
   Alpine.data('globalGameHistory', function () {
     return {
       games: [],

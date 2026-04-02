@@ -5,3 +5,5 @@
 .DS_Store
 myopcards.com.conf
 /tmp/
+/public/uploads/cards/*
+!/public/uploads/cards/.gitkeep

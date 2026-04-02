@@ -1,10 +1,11 @@
 /* Messages — full social messaging JS */
 /* GIF calls go through the PHP proxy /api/gif/* (keeps API key server-side) */
 
-function conversationPage(convId, currentUserId) {
+function conversationPage(convId, currentUserId, isAdminView = false) {
     return {
         convId,
         currentUserId,
+        isAdminView,
         messages: [],
         messageBody: '',
         sending: false,
@@ -49,7 +50,10 @@ function conversationPage(convId, currentUserId) {
 
         async poll() {
             try {
-                const r = await fetch(`/api/messages/${this.convId}/poll?after=${this.lastId}`);
+                const url = this.isAdminView
+                    ? `/api/admin/messages/${this.convId}/poll?after=${this.lastId}`
+                    : `/api/messages/${this.convId}/poll?after=${this.lastId}`;
+                const r = await fetch(url);
                 if (!r.ok) return;
                 const data = await r.json();
                 if (!data.success) return;
@@ -80,6 +84,7 @@ function conversationPage(convId, currentUserId) {
         },
 
         onKeydown(e) {
+            if (this.isAdminView) return;
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 this.send();
@@ -89,6 +94,7 @@ function conversationPage(convId, currentUserId) {
         },
 
         signalTyping() {
+            if (this.isAdminView) return;
             clearTimeout(this.typingTimer);
             this.typingTimer = setTimeout(async () => {
                 const fd = new FormData();
@@ -99,6 +105,7 @@ function conversationPage(convId, currentUserId) {
 
         // ── SEND ────────────────────────────────────────────────
         async send() {
+            if (this.isAdminView) return;
             const body = this.messageBody.trim();
             const hasAttachment = !!this.pendingAttachment;
             if (!body && !hasAttachment) return;

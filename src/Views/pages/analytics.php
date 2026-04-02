@@ -131,4 +131,4 @@
     </div>
 </div>
 
-<script src="/assets/js/pages/analytics.js"></script>
+<script src="<?= asset_v('/assets/js/pages/analytics.js') ?>"></script>

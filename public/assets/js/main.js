@@ -180,6 +180,19 @@ function unifiedNotifications() {
                 case 'friend_request': return 'user-plus';
                 case 'friend_accepted': return 'user-check';
                 case 'private_message': return 'mail';
+                case 'marketplace_bid_received': return 'gavel';
+                case 'marketplace_bid_accepted': return 'check-circle';
+                case 'marketplace_bid_rejected': return 'x-circle';
+                case 'marketplace_bid_expired': return 'clock';
+                case 'marketplace_item_sold': return 'shopping-bag';
+                case 'marketplace_order_shipped': return 'truck';
+                case 'marketplace_order_completed': return 'package-check';
+                case 'marketplace_order_delivered': return 'package';
+                case 'marketplace_funds_released': return 'wallet';
+                case 'marketplace_dispute_opened': return 'alert-triangle';
+                case 'marketplace_dispute_resolved': return 'shield-check';
+                case 'marketplace_review_received': return 'star';
+                case 'marketplace_watchlist_alert': return 'eye';
                 default: return 'bell';
             }
         }
@@ -194,9 +207,41 @@ function cardImgErr(el) {
     el.src = __PLACEHOLDER; el.onerror = null;
 }
 
-function cardImgSrc(url) {
-    if (url == null || typeof url !== 'string') return __PLACEHOLDER;
+/** Same-origin proxy — en.onepiece-cardgame.com cardlist PNGs are blocked in cross-site img (CORP). */
+function opOfficialCardProxyUrl(cardSetId) {
+    if (!cardSetId || typeof cardSetId !== 'string') return '';
+    if (!/^[A-Za-z0-9._-]+$/.test(cardSetId) || /^don_\d/i.test(cardSetId)) return '';
+    return '/api/op-official-card?' + new URLSearchParams({ i: cardSetId }).toString();
+}
+
+function cardImgSrc(url, cardSetId) {
+    if (url == null || typeof url !== 'string') url = '';
+    var sid = cardSetId != null && typeof cardSetId === 'string' ? cardSetId : '';
+    if (sid && /^don_\d+(?:_[a-z0-9]+)*$/i.test(sid)) {
+        if (url && url.indexOf('/uploads/cards/don_') === 0) {
+            var base = url.replace(/^.*\//, '').toLowerCase();
+            var want = sid.toLowerCase() + '.jpg';
+            var wantJ = sid.toLowerCase() + '.jpeg';
+            if (base === want || base === wantJ) return url;
+            return '/api/don-card-image?' + new URLSearchParams({ i: sid }).toString();
+        }
+        if (!url || url.indexOf('don-card-placeholder') !== -1 || url.indexOf('tcgplayer-cdn.tcgplayer.com') !== -1 || url.indexOf('product-images.tcgplayer.com') !== -1) {
+            return '/api/don-card-image?' + new URLSearchParams({ i: sid }).toString();
+        }
+    }
+    if (url == null || typeof url !== 'string' || url === '') {
+        var pu = opOfficialCardProxyUrl(sid);
+        if (pu) return pu;
+        return __PLACEHOLDER;
+    }
     if (url.indexOf('optcgapi.com') !== -1) return '/uploads/cards/' + url.split('/').pop();
+    if (url.indexOf('onepiece-cardgame.com') !== -1 && url.indexOf('/images/cardlist/card/') !== -1) {
+        var mm = url.match(/\/images\/cardlist\/card\/([A-Za-z0-9._-]+)\.png/i);
+        if (mm) {
+            var px = opOfficialCardProxyUrl(mm[1]);
+            if (px) return px;
+        }
+    }
     return url;
 }
 

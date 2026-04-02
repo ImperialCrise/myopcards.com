@@ -56,6 +56,81 @@ class MessageController
         ]);
     }
 
+    public function adminInbox(): void
+    {
+        Auth::requireAdmin();
+        try {
+            $conversations = Message::getAllConversations();
+            View::render('pages/messages/inbox', [
+                'title' => 'Messages (Admin)',
+                'conversations' => $conversations,
+                'isAdminView' => true,
+                'noTicker' => true,
+                'fullWidth' => true,
+            ]);
+        } catch (\Throwable $e) {
+            error_log('[MessageController::adminInbox] ' . $e->getMessage());
+            http_response_code(500);
+            View::render('pages/500', ['title' => 'Error', 'message' => 'Unable to load admin messages.']);
+        }
+    }
+
+    public function adminConversation(int $id): void
+    {
+        Auth::requireAdmin();
+        $conv = Message::getConversationById($id);
+        if (!$conv) {
+            http_response_code(404);
+            View::render('pages/404', ['title' => 'Not Found']);
+            return;
+        }
+        $user1 = User::findById((int)($conv['user1_id'] ?? 0)) ?: ['username' => '?', 'id' => 0];
+        $user2 = User::findById((int)($conv['user2_id'] ?? 0)) ?: ['username' => '?', 'id' => 0];
+        if (($user1['is_system'] ?? false) || ($user2['is_system'] ?? false)) {
+            http_response_code(404);
+            View::render('pages/404', ['title' => 'Not Found']);
+            return;
+        }
+        $messages = Message::getMessagesForAdmin($id);
+        $otherUser = $user1;
+        View::render('pages/messages/conversation', [
+            'title' => 'Chat (Admin): ' . ($user1['username'] ?? '') . ' & ' . ($user2['username'] ?? ''),
+            'conversation' => $conv,
+            'messages' => $messages,
+            'otherUser' => $otherUser,
+            'user1' => $user1,
+            'user2' => $user2,
+            'isAdminView' => true,
+            'noTicker' => true,
+            'fullWidth' => true,
+        ]);
+    }
+
+    public function adminPoll(int $id): void
+    {
+        Auth::requireAdmin();
+        header('Content-Type: application/json');
+        $afterId = (int)($_GET['after'] ?? 0);
+        $conv = Message::getConversationById($id);
+        if (!$conv) {
+            echo json_encode(['success' => false, 'messages' => [], 'typing' => []]);
+            return;
+        }
+        $user1 = User::findById((int)($conv['user1_id'] ?? 0)) ?: [];
+        $user2 = User::findById((int)($conv['user2_id'] ?? 0)) ?: [];
+        if (($user1['is_system'] ?? false) || ($user2['is_system'] ?? false)) {
+            echo json_encode(['success' => false, 'messages' => [], 'typing' => []]);
+            return;
+        }
+        $messages = Message::pollMessagesForAdmin($id, $afterId);
+        $formatted = array_map(fn($m) => self::formatMessage($m), $messages);
+        echo json_encode([
+            'success' => true,
+            'messages' => $formatted,
+            'typing' => [],
+        ]);
+    }
+
     public function newConversation(string $username): void
     {
         Auth::requireAuth();

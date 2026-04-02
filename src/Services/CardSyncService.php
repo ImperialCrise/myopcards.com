@@ -20,11 +20,27 @@ class CardSyncService
 
     public function syncAll(): array
     {
-        $stats = ['sets' => 0, 'cards' => 0, 'errors' => []];
+        $stats = ['sets' => 0, 'cards' => 0, 'sets_backfilled' => 0, 'errors' => []];
 
         $this->syncBoosterSets($stats);
         $this->syncStarterDecks($stats);
         $this->syncPromos($stats);
+        $this->syncDonCards($stats);
+        $stats['sets_backfilled'] = CardSet::ensureFromCards();
+        $this->recalculateSetCounts();
+
+        return $stats;
+    }
+
+    /**
+     * Sync only DON!! cards from /allDonCards/ (faster than full catalog sync).
+     * Still runs set backfill from cards and recalculates per-set card counts.
+     */
+    public function syncDonOnly(): array
+    {
+        $stats = ['sets' => 0, 'cards' => 0, 'sets_backfilled' => 0, 'errors' => []];
+        $this->syncDonCards($stats);
+        $stats['sets_backfilled'] = CardSet::ensureFromCards();
         $this->recalculateSetCounts();
 
         return $stats;
@@ -69,8 +85,8 @@ class CardSyncService
         }
 
         foreach ($decks as $deck) {
-            $setId = $deck['st_id'] ?? null;
-            $setName = $deck['st_name'] ?? null;
+            $setId = $deck['structure_deck_id'] ?? $deck['st_id'] ?? null;
+            $setName = $deck['structure_deck_name'] ?? $deck['st_name'] ?? null;
             if (!$setId || !$setName) continue;
             CardSet::upsert($setId, $setName, 'starter');
             $stats['sets']++;
@@ -93,7 +109,10 @@ class CardSyncService
     private function syncPromos(array &$stats): void
     {
         echo "Fetching all promo cards...\n";
-        $cards = $this->apiGet('/allPromoCards/');
+        $cards = $this->apiGet('/allPromos/');
+        if (!$cards) {
+            $cards = $this->apiGet('/allPromoCards/');
+        }
         if (!$cards) {
             $stats['errors'][] = 'Failed to fetch promos';
             return;
@@ -107,6 +126,83 @@ class CardSyncService
             $this->upsertCard($card, 'PROMO');
             $stats['cards']++;
         }
+    }
+
+    private function syncDonCards(array &$stats): void
+    {
+        echo "Fetching all DON!! cards...\n";
+        $cards = $this->apiGet('/allDonCards/');
+        if (!$cards) {
+            $stats['errors'][] = 'Failed to fetch DON!! cards';
+            return;
+        }
+
+        CardSet::upsert('DON', 'DON!! Cards', 'don');
+        $stats['sets']++;
+
+        echo "Processing " . count($cards) . " DON!! cards...\n";
+        foreach ($cards as $card) {
+            $imgId = trim((string)($card['card_image_id'] ?? $card['don_id'] ?? ''));
+            if ($imgId === '') {
+                continue;
+            }
+            $row = $card;
+            $row['card_set_id'] = $imgId;
+            $donLine = trim((string)($card['optcg_don_name'] ?? ''));
+            $row['set_name'] = $donLine !== '' ? $donLine : (string)($card['card_name'] ?? 'DON!!');
+            $releaseSetId = self::parseDonReleaseSetId($donLine);
+            if ($releaseSetId !== null && strlen($releaseSetId) <= 20) {
+                $row['set_id'] = $releaseSetId;
+            }
+            $this->upsertCard($row, 'DON');
+            $stats['cards']++;
+        }
+    }
+
+    /**
+     * Suffix in optcg_don_name vs canonical set_id in /allSets/ (rare mismatches).
+     *
+     * @var array<string, string> UPPER short code => official set_id
+     */
+    private const DON_OPTCG_SET_SUFFIX_ALIASES = [
+        'OP01' => 'OP-01',
+        'OP02' => 'OP-02',
+        'OP03' => 'OP-03',
+        'OP04' => 'OP-04',
+        'OP05' => 'OP-05',
+        'OP06' => 'OP-06',
+        'OP07' => 'OP-07',
+        'OP08' => 'OP-08',
+        'OP09' => 'OP-09',
+        'OP10' => 'OP-10',
+        'OP11' => 'OP-11',
+        'OP12' => 'OP-12',
+        'OP13' => 'OP-13',
+        'OP14' => 'OP14-EB04',
+        'OP15' => 'OP-15',
+        'OP16' => 'OP-16',
+        'OP17' => 'OP-17'
+    ];
+
+    /**
+     * OPTCG encodes the physical release in optcg_don_name, e.g.
+     * "DON!! Card (Sakazuki) (Gold) - Premium Booster -The Best- (PRB-01)" → PRB-01.
+     * Azure Sea's Seven uses "(OP14)" in DON strings but the set is OP14-EB04 in allSets.
+     */
+    public static function parseDonReleaseSetId(string $optcgDonName): ?string
+    {
+        $optcgDonName = trim($optcgDonName);
+        if ($optcgDonName === '') {
+            return null;
+        }
+        if (!preg_match('/\(([A-Za-z0-9.-]+)\)\s*$/', $optcgDonName, $m)) {
+            return null;
+        }
+
+        $suffix = $m[1];
+        $key = strtoupper($suffix);
+
+        return self::DON_OPTCG_SET_SUFFIX_ALIASES[$key] ?? $suffix;
     }
 
     private function recalculateSetCounts(): void
@@ -125,11 +221,22 @@ class CardSyncService
 
         [$uniqueId, $isParallel] = self::deriveUniqueId($card);
 
+        $setId = trim((string)($card['set_id'] ?? $card['st_id'] ?? $defaultSetId));
+        if ($setId === '') {
+            $setId = $defaultSetId;
+        }
+        // Schema: VARCHAR(20). API sometimes returns junk (e.g. a color list) on promos.
+        if (strlen($setId) > 20) {
+            $setId = $defaultSetId !== '' ? $defaultSetId : substr($setId, 0, 20);
+        }
+
+        $imageUrl = self::resolveCardImageUrl($card, $uniqueId);
+
         Card::upsert([
             'card_set_id' => $uniqueId,
             'card_name' => $card['card_name'] ?? '',
             'set_name' => $card['set_name'] ?? $card['st_name'] ?? '',
-            'set_id' => $card['set_id'] ?? $card['st_id'] ?? $defaultSetId,
+            'set_id' => $setId,
             'rarity' => $card['rarity'] ?? '',
             'card_color' => $card['card_color'] ?? '',
             'card_type' => $card['card_type'] ?? '',
@@ -140,14 +247,14 @@ class CardSyncService
             'counter_amount' => $card['counter_amount'] ?? null,
             'attribute' => $card['attribute'] ?? null,
             'card_text' => $card['card_text'] ?? null,
-            'card_image_url' => $card['card_image'] ?? null,
+            'card_image_url' => $imageUrl,
             'market_price' => $card['market_price'] ?? null,
             'inventory_price' => $card['inventory_price'] ?? null,
             'is_parallel' => $isParallel ? 1 : 0,
         ]);
 
-        $imgUrl = $card['card_image'] ?? null;
-        if ($imgUrl && StorageService::isConfigured()) {
+        $imgUrl = isset($card['card_image']) ? trim((string) $card['card_image']) : '';
+        if ($imgUrl !== '' && StorageService::isConfigured()) {
             $filename = basename(parse_url($imgUrl, PHP_URL_PATH));
             if ($filename) {
                 $key = 'cards/' . $filename;
@@ -208,6 +315,108 @@ class CardSyncService
         }
 
         return [$cardSetId, false];
+    }
+
+    /**
+     * Official English cardlist PNG (same rule as sync fallback). Not used for DON!! ids.
+     */
+    public static function officialPngUrlForCardSetId(string $cardSetId): ?string
+    {
+        if ($cardSetId === '' || !preg_match('/^[A-Za-z0-9._-]+$/', $cardSetId)) {
+            return null;
+        }
+        if (DonCardImageResolver::isDonCardSetId($cardSetId)) {
+            return null;
+        }
+        $base = rtrim($_ENV['OP_OFFICIAL_CARD_IMAGE_BASE'] ?? 'https://en.onepiece-cardgame.com/images/cardlist/card', '/');
+
+        return $base . '/' . $cardSetId . '.png';
+    }
+
+    /**
+     * Browser-safe URL: official cardlist CDN uses CORP so cross-site img loads fail (NotSameSite).
+     * Use /api/op-official-card to fetch server-side and re-serve from our origin.
+     */
+    public static function officialCardlistProxyUrl(string $cardSetId): ?string
+    {
+        return self::officialPngUrlForCardSetId($cardSetId) !== null
+            ? '/api/op-official-card?' . http_build_query(['i' => $cardSetId])
+            : null;
+    }
+
+    /** MinIO key for a cached official English cardlist PNG (see UploadController::serveCards). */
+    public static function officialCardlistCacheStorageKey(string $cardSetId): string
+    {
+        return 'cards/official/' . $cardSetId . '.png';
+    }
+
+    public static function officialCardlistCachePublicPath(string $cardSetId): string
+    {
+        return '/uploads/cards/official/' . $cardSetId . '.png';
+    }
+
+    public static function officialCardlistCacheLocalPath(string $cardSetId): string
+    {
+        return \dirname(__DIR__, 2) . '/public/uploads/cards/official/' . $cardSetId . '.png';
+    }
+
+    public static function officialCardlistCacheExists(string $cardSetId): bool
+    {
+        $key = self::officialCardlistCacheStorageKey($cardSetId);
+        if (StorageService::isConfigured() && StorageService::exists($key)) {
+            return true;
+        }
+        $local = self::officialCardlistCacheLocalPath($cardSetId);
+
+        return is_file($local) && is_readable($local);
+    }
+
+    /** Rewrite hotlinks to en.*.onepiece-cardgame.com cardlist PNGs to same-origin proxy URLs. */
+    public static function rewriteOfficialCardlistUrlToProxy(string $url): string
+    {
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return $url;
+        }
+        $host = strtolower((string)(parse_url($url, PHP_URL_HOST) ?? ''));
+        if ($host === '' || !str_contains($host, 'onepiece-cardgame.com')) {
+            return $url;
+        }
+        $path = (string)(parse_url($url, PHP_URL_PATH) ?? '');
+        if (!preg_match('#/images/cardlist/card/([A-Za-z0-9._-]+)\.png$#i', $path, $m)) {
+            return $url;
+        }
+        $p = self::officialCardlistProxyUrl($m[1]);
+
+        return $p ?? $url;
+    }
+
+    /**
+     * OPTCG API often leaves card_image empty (e.g. all promos with set_id "P"). Official English CDN
+     * serves PNGs at /images/cardlist/card/{card_set_id}.png for standard game cards.
+     */
+    public static function resolveCardImageUrl(array $card, string $uniqueCardSetId): ?string
+    {
+        $direct = isset($card['card_image']) ? trim((string) $card['card_image']) : '';
+        if ($direct !== '') {
+            return $direct;
+        }
+        if ($uniqueCardSetId === '' || !preg_match('/^[A-Za-z0-9._-]+$/', $uniqueCardSetId)) {
+            return null;
+        }
+        if (DonCardImageResolver::isDonCardSetId($uniqueCardSetId)) {
+            $resolved = DonCardImageResolver::resolve(
+                $uniqueCardSetId,
+                (string)($card['card_name'] ?? ''),
+                false
+            );
+            if ($resolved !== null && str_starts_with($resolved, 'http')) {
+                return $resolved;
+            }
+
+            return null;
+        }
+
+        return self::officialPngUrlForCardSetId($uniqueCardSetId);
     }
 
     private function apiGet(string $endpoint): ?array

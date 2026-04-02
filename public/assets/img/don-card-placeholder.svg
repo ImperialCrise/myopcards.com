@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="700" viewBox="0 0 500 700">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="50%" style="stop-color:#fbbf24"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+  </defs>
+  <rect width="500" height="700" rx="28" fill="url(#bg)"/>
+  <rect x="20" y="20" width="460" height="660" rx="20" fill="none" stroke="url(#gold)" stroke-width="4" opacity="0.85"/>
+  <text x="250" y="280" text-anchor="middle" fill="url(#gold)" font-family="system-ui,Segoe UI,sans-serif" font-size="72" font-weight="800" letter-spacing="0.06em">DON!!</text>
+  <text x="250" y="360" text-anchor="middle" fill="#94a3b8" font-family="system-ui,Segoe UI,sans-serif" font-size="22" font-weight="600">Card</text>
+</svg>

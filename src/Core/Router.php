@@ -29,7 +29,8 @@ class Router
             $pattern = $this->convertToRegex($route['path']);
 
             if (preg_match($pattern, $uri, $matches)) {
-                if ($method === 'POST' && !Auth::validateCsrf()) {
+                $csrfExempt = ['/webhook/stripe', '/webhook/coinbase'];
+                if ($method === 'POST' && !in_array($uri, $csrfExempt) && !Auth::validateCsrf()) {
                     http_response_code(403);
                     echo 'Invalid or missing CSRF token';
                     return;

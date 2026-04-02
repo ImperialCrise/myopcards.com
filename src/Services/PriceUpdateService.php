@@ -35,10 +35,22 @@ class PriceUpdateService
             }
         }
 
-        $promos = $this->apiGet($apiBase . '/allPromoCards/');
+        $promos = $this->apiGet($apiBase . '/allPromos/');
+        if (!$promos) {
+            $promos = $this->apiGet($apiBase . '/allPromoCards/');
+        }
         if ($promos) {
             echo "  Processing " . count($promos) . " promo cards...\n";
             foreach ($promos as $card) {
+                $this->updateSingleTcgPrice($card);
+                $stats['updated']++;
+            }
+        }
+
+        $donCards = $this->apiGet($apiBase . '/allDonCards/');
+        if ($donCards) {
+            echo "  Processing " . count($donCards) . " DON!! cards...\n";
+            foreach ($donCards as $card) {
                 $this->updateSingleTcgPrice($card);
                 $stats['updated']++;
             }
@@ -50,8 +62,13 @@ class PriceUpdateService
     private function updateSingleTcgPrice(array $card): void
     {
         $db = Database::getConnection();
-        $cardSetId = $card['card_set_id'] ?? '';
-        if (empty($cardSetId)) return;
+        $cardSetId = $card['card_set_id'] ?? $card['card_image_id'] ?? '';
+        if (empty($cardSetId)) {
+            return;
+        }
+        if (empty($card['card_set_id']) && !empty($card['card_image_id'])) {
+            $card['card_set_id'] = $card['card_image_id'];
+        }
 
         [$uniqueId] = CardSyncService::deriveUniqueId($card);
 

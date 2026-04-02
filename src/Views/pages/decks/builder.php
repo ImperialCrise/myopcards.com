@@ -165,7 +165,7 @@ $safeSets = str_replace("'", "&#39;", $setsJson);
                 <div class="db-title">Leader</div>
                 <template x-if="leader">
                     <div class="db-leader-picked">
-                        <img :src="cardImgSrc(leader.card_image_url)" :alt="leader.card_name">
+                        <img :src="cardImgSrc(leader.card_image_url, leader.card_set_id)" :alt="leader.card_name">
                         <div class="db-leader-info">
                             <p class="db-leader-name" x-text="leader.card_name"></p>
                             <p class="db-leader-meta" x-text="leader.card_set_id + ' · ' + (leader.card_color || '')"></p>
@@ -179,7 +179,7 @@ $safeSets = str_replace("'", "&#39;", $setsJson);
                         <div x-show="leaderResults.length" class="db-leader-list">
                             <template x-for="c in leaderResults" :key="c.id">
                                 <button type="button" @click="selectLeader(c)" class="db-leader-item">
-                                    <img :src="cardImgSrc(c.card_image_url)" :alt="c.card_name">
+                                    <img :src="cardImgSrc(c.card_image_url, c.card_set_id)" :alt="c.card_name">
                                     <div>
                                         <div class="db-leader-item-name" x-text="c.card_name"></div>
                                         <div class="db-leader-item-set" x-text="c.card_set_id + ' · ' + (c.card_color || '')"></div>
@@ -204,8 +204,8 @@ $safeSets = str_replace("'", "&#39;", $setsJson);
                     <template x-for="c in cardResults" :key="c.id">
                         <div class="db-card-cell" :class="{ 'in-deck': getDeckQty(c.id) > 0 }"
                             @click="addCard(c)" :title="c.card_name + ' (' + (c.card_cost || 0) + ' cost)'">
-                            <img :src="cardImgSrc(c.card_image_url)" :alt="c.card_name">
-                            <span class="db-card-cost" x-text="c.card_cost || '0'"></span>
+                            <img :src="cardImgSrc(c.card_image_url, c.card_set_id)" :alt="c.card_name">
+                        <span class="db-card-cost" x-text="c.card_cost || '0'"></span>
                             <span class="db-card-qty" x-show="getDeckQty(c.id) > 0" x-text="'×' + getDeckQty(c.id)"></span>
                             <div class="db-card-add">+</div>
                         </div>
@@ -220,7 +220,7 @@ $safeSets = str_replace("'", "&#39;", $setsJson);
                     <template x-for="c in recommendedCards" :key="'rec-' + c.id">
                         <div class="db-card-cell" :class="{ 'in-deck': getDeckQty(c.id) > 0 }"
                             @click="addCard(c)" :title="c.card_name">
-                            <img :src="cardImgSrc(c.card_image_url)" :alt="c.card_name">
+                            <img :src="cardImgSrc(c.card_image_url, c.card_set_id)" :alt="c.card_name">
                             <span class="db-card-cost" x-text="c.card_cost || '0'"></span>
                             <span class="db-card-qty" x-show="getDeckQty(c.id) > 0" x-text="'×' + getDeckQty(c.id)"></span>
                             <div class="db-card-add">+</div>
@@ -237,7 +237,7 @@ $safeSets = str_replace("'", "&#39;", $setsJson);
                 <div class="db-deck-cards">
                     <template x-for="entry in deckCards" :key="entry.card_id">
                         <div class="db-deck-entry" :class="{ 'db-deck-entry-mismatch': cardColorMismatch(entry) }">
-                            <img :src="cardImgSrc(entry.card_image_url)" :alt="entry.card_name">
+                            <img :src="cardImgSrc(entry.card_image_url, entry.card_set_id)" :alt="entry.card_name">
                             <div class="db-deck-entry-info">
                                 <div class="db-deck-entry-name" x-text="entry.card_name"></div>
                                 <div class="db-deck-entry-meta" x-text="entry.card_set_id + ' · ' + (entry.card_type || '') + (cardColorMismatch(entry) ? ' — Color mismatch' : '')"></div>
@@ -303,7 +303,11 @@ document.addEventListener('alpine:init', () => {
         recommendedLoading: false,
         saving: false,
 
-        cardImgSrc(url) {
+        cardImgSrc(url, setId) {
+            if (typeof window.cardImgSrc === 'function') {
+                var u = window.cardImgSrc(url, setId);
+                if (u && u.indexOf('data:image') !== 0) return u;
+            }
             if (url == null || typeof url !== 'string') return '/assets/img/card-back.png';
             if (url.indexOf('optcgapi.com') !== -1) return '/uploads/cards/' + url.split('/').pop();
             return url;

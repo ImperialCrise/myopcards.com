@@ -98,6 +98,23 @@ class StorageService
         }
     }
 
+    public static function exists(string $key): bool
+    {
+        if (!self::isConfigured()) {
+            return false;
+        }
+        try {
+            self::getClient()->headObject([
+                'Bucket' => self::getBucket(),
+                'Key' => $key,
+            ]);
+
+            return true;
+        } catch (AwsException $e) {
+            return false;
+        }
+    }
+
     public static function delete(string $key): bool
     {
         if (!self::isConfigured()) {

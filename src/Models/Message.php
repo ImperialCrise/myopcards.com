@@ -156,6 +156,141 @@ class Message
         return $stmt->fetch() ?: null;
     }
 
+    public static function getConversationById(int $conversationId): ?array
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare(
+            "SELECT c.*,
+                    (SELECT user_id FROM conversation_participants WHERE conversation_id = c.id ORDER BY user_id ASC LIMIT 1) as user1_id,
+                    (SELECT user_id FROM conversation_participants WHERE conversation_id = c.id ORDER BY user_id DESC LIMIT 1) as user2_id
+             FROM conversations c
+             WHERE c.id = :cid"
+        );
+        $stmt->execute(['cid' => $conversationId]);
+        return $stmt->fetch() ?: null;
+    }
+
+    public static function getAllConversations(): array
+    {
+        $db = Database::getConnection();
+        $stmt = $db->query(
+            "SELECT c.id, c.created_at
+             FROM conversations c
+             ORDER BY c.id DESC"
+        );
+        $convs = $stmt->fetchAll();
+        $result = [];
+        foreach ($convs as $conv) {
+            $participants = $db->prepare(
+                "SELECT cp.user_id FROM conversation_participants cp WHERE cp.conversation_id = ? ORDER BY cp.user_id"
+            );
+            $participants->execute([$conv['id']]);
+            $userIds = $participants->fetchAll(\PDO::FETCH_COLUMN);
+            if (count($userIds) < 2) {
+                continue;
+            }
+            $user1 = User::findById((int)$userIds[0]);
+            $user2 = User::findById((int)$userIds[1]);
+            if (($user1['is_system'] ?? false) || ($user2['is_system'] ?? false)) {
+                continue;
+            }
+            $lastMsg = $db->prepare(
+                "SELECT body, created_at, sender_id, type, media_url, is_deleted FROM messages
+                 WHERE conversation_id = ? ORDER BY created_at DESC LIMIT 1"
+            );
+            $lastMsg->execute([$conv['id']]);
+            $last = $lastMsg->fetch();
+
+            $lastBody = '';
+            if ($last) {
+                if ($last['is_deleted']) {
+                    $lastBody = '(message deleted)';
+                } elseif ($last['type'] === 'image') {
+                    $lastBody = 'Image';
+                } elseif ($last['type'] === 'gif') {
+                    $lastBody = 'GIF';
+                } else {
+                    $lastBody = $last['body'];
+                }
+            }
+
+            $result[] = [
+                'id' => (int)$conv['id'],
+                'user1' => $user1 ? [
+                    'id' => $user1['id'],
+                    'username' => $user1['username'],
+                    'avatar_url' => User::getAvatarUrl($user1),
+                    'is_system' => (bool)($user1['is_system'] ?? false),
+                ] : null,
+                'user2' => $user2 ? [
+                    'id' => $user2['id'],
+                    'username' => $user2['username'],
+                    'avatar_url' => User::getAvatarUrl($user2),
+                    'is_system' => (bool)($user2['is_system'] ?? false),
+                ] : null,
+                'last_message' => $last ? [
+                    'body' => $lastBody,
+                    'created_at' => $last['created_at'],
+                    'sender_id' => (int)$last['sender_id'],
+                ] : null,
+            ];
+        }
+        usort($result, function ($a, $b) {
+            $dateA = ($a['last_message'] ?? [])['created_at'] ?? (string)($a['id'] ?? '');
+            $dateB = ($b['last_message'] ?? [])['created_at'] ?? (string)($b['id'] ?? '');
+            return strcmp($dateB, $dateA);
+        });
+        return $result;
+    }
+
+    public static function getMessagesForAdmin(int $conversationId, int $limit = 50): array
+    {
+        $conv = self::getConversationById($conversationId);
+        if (!$conv) {
+            return [];
+        }
+        $db = Database::getConnection();
+        $stmt = $db->prepare(
+            "SELECT m.id, m.conversation_id, m.sender_id, m.body, m.type, m.media_url,
+                    m.edited_at, m.is_deleted, m.created_at,
+                    u.username as sender_username, u.avatar as sender_avatar, u.custom_avatar as sender_custom_avatar,
+                    u.is_system as sender_is_system
+             FROM messages m
+             JOIN users u ON u.id = m.sender_id
+             WHERE m.conversation_id = :cid
+             ORDER BY m.created_at DESC
+             LIMIT :lim"
+        );
+        $stmt->bindValue('cid', $conversationId, PDO::PARAM_INT);
+        $stmt->bindValue('lim', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return array_reverse($stmt->fetchAll());
+    }
+
+    public static function pollMessagesForAdmin(int $conversationId, int $afterId): array
+    {
+        $conv = self::getConversationById($conversationId);
+        if (!$conv) {
+            return [];
+        }
+        $db = Database::getConnection();
+        $stmt = $db->prepare(
+            "SELECT m.id, m.conversation_id, m.sender_id, m.body, m.type, m.media_url,
+                    m.edited_at, m.is_deleted, m.created_at,
+                    u.username as sender_username, u.avatar as sender_avatar, u.custom_avatar as sender_custom_avatar,
+                    u.is_system as sender_is_system
+             FROM messages m
+             JOIN users u ON u.id = m.sender_id
+             WHERE m.conversation_id = :cid AND m.id > :after
+             ORDER BY m.created_at ASC
+             LIMIT 50"
+        );
+        $stmt->bindValue('cid', $conversationId, PDO::PARAM_INT);
+        $stmt->bindValue('after', $afterId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public static function getMessages(int $conversationId, int $userId, int $limit = 50): array
     {
         $conv = self::getConversationForUser($conversationId, $userId);

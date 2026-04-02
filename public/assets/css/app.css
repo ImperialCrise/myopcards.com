@@ -323,3 +323,85 @@ html.dark [contenteditable="true"] { color: #e5e7eb !important; }
     color: #fff;
     letter-spacing: 0.03em;
 }
+
+/* ===== MARKETPLACE ===== */
+.escrow-timeline { display: flex; align-items: center; gap: 0; }
+.escrow-step { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+.escrow-step .step-dot { width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; z-index: 1; }
+.escrow-step .step-dot.active { background: #f59e0b; color: #000; }
+.escrow-step .step-dot.completed { background: #10b981; color: #fff; }
+.escrow-step .step-dot.pending { background: #374151; color: #6b7280; }
+.escrow-step .step-line { position: absolute; top: 1rem; left: 50%; width: 100%; height: 2px; background: #374151; }
+.escrow-step .step-line.completed { background: #10b981; }
+.escrow-step:last-child .step-line { display: none; }
+.rating-stars { display: inline-flex; gap: 2px; }
+.rating-stars .star { color: #374151; }
+.rating-stars .star.filled { color: #f59e0b; }
+.status-badge { padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
+.status-paid { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.status-shipped { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.status-delivered { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.status-completed { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.status-disputed { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.status-cancelled { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
+
+/* ===== CARD RULES (matches game board.js formatCardText / game.css) ===== */
+.card-rules-text .kw-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    vertical-align: baseline;
+    margin: 0 1px;
+}
+.card-rules-text .kw-red {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.28);
+}
+.card-rules-text .kw-yellow {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.28);
+}
+.card-rules-text .kw-blue {
+    background: rgba(59, 130, 246, 0.15);
+    color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.28);
+}
+.card-rules-text .kw-green {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.28);
+}
+.card-rules-text .kw-purple {
+    background: rgba(139, 92, 246, 0.15);
+    color: #7c3aed;
+    border: 1px solid rgba(139, 92, 246, 0.28);
+}
+.card-rules-text .kw-gray {
+    background: rgba(0, 0, 0, 0.06);
+    color: #4b5563;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+html.dark .card-rules-text .kw-gray {
+    background: rgba(255, 255, 255, 0.08);
+    color: #9ca3af;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.card-rules-text .don-inline {
+    font-weight: 800;
+    color: #d97706;
+}
+html.dark .card-rules-text .don-inline {
+    color: #f59e0b;
+}
+.card-rules-text .pow-inline {
+    font-weight: 700;
+    color: #dc2626;
+}
+html.dark .card-rules-text .pow-inline {
+    color: #f87171;
+}

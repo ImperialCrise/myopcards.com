@@ -1,4 +1,39 @@
 services:
+  # NordVPN (OpenVPN) — HTTP proxy on host :8888 for PHP scraping (SCRAPING_HTTP_PROXY).
+  # Requires NORDVPN_USER / NORDVPN_PASSWORD in .env (Nord account, not API key).
+  # Start: docker compose --profile nordvpn up -d gluetun
+  # The .ovpn file is mounted read-only; credentials are injected by Gluetun (auth-user-pass).
+  gluetun:
+    image: qdm12/gluetun:latest
+    container_name: myopcards-gluetun
+    profiles:
+      - nordvpn
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    restart: unless-stopped
+    environment:
+      VPN_SERVICE_PROVIDER: custom
+      VPN_TYPE: openvpn
+      OPENVPN_CUSTOM_CONFIG: /gluetun/nord.ovpn
+      OPENVPN_USER: ${NORDVPN_USER}
+      OPENVPN_PASSWORD: ${NORDVPN_PASSWORD}
+      UPDATER_PERIOD: 24h
+      HTTPPROXY: "on"
+      HTTPPROXY_LISTENING_ADDRESS: ":8888"
+      HEALTH_SERVER_ADDRESS: 127.0.0.1:9999
+    volumes:
+      - ./config/fr912.nordvpn.com.udp.ovpn:/gluetun/nord.ovpn:ro
+    ports:
+      - "127.0.0.1:8888:8888/tcp"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- https://ipinfo.io/ip | grep -qE '^[0-9.]+$'"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 90s
+
   game-server:
     build: ./game-server
     container_name: myopcards-game-server
@@ -12,6 +47,8 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  # Cardmarket requests originate here → use host VPN (NordVPN OpenVPN/WireGuard) or place this service
+  # behind a VPN container network so egress IP is not your datacenter.
   myopcards-flaresolverr:
     image: 21hsmw/flaresolverr:nodriver
     container_name: myopcards-flaresolverr
