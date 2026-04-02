@@ -261,9 +261,10 @@ class AdminController
         try {
             $service = new \App\Services\CardSyncService();
             $result = $service->syncAll();
-            $msg = "Synced {$result['cards']} cards, {$result['sets']} sets";
+            $bf = (int)($result['sets_backfilled'] ?? 0);
+            $msg = "Synced {$result['cards']} cards, {$result['sets']} sets" . ($bf > 0 ? ", {$bf} set rows backfilled from cards" : '');
             $log->success($msg, $result);
-            echo json_encode(['success' => true, 'message' => $msg, 'errors' => $result['errors']]);
+            echo json_encode(['success' => true, 'message' => $msg, 'errors' => $result['errors'], 'sets_backfilled' => $bf]);
         } catch (\Throwable $e) {
             $log->fail($e->getMessage());
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);

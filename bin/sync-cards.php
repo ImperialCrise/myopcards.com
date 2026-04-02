@@ -17,7 +17,8 @@ $log = new SyncLogger('card_sync', 'cron');
 try {
     $service = new App\Services\CardSyncService();
     $stats = $service->syncAll();
-    $msg = "Sets: {$stats['sets']}, Cards: {$stats['cards']}";
+    $backfill = (int)($stats['sets_backfilled'] ?? 0);
+    $msg = "Sets: {$stats['sets']}, Cards: {$stats['cards']}, Sets backfilled from cards: {$backfill}";
     $log->success($msg, $stats);
     echo "Sync completed: $msg\n";
     if (!empty($stats['errors'])) {

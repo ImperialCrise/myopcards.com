@@ -20,11 +20,13 @@ class CardSyncService
 
     public function syncAll(): array
     {
-        $stats = ['sets' => 0, 'cards' => 0, 'errors' => []];
+        $stats = ['sets' => 0, 'cards' => 0, 'sets_backfilled' => 0, 'errors' => []];
 
         $this->syncBoosterSets($stats);
         $this->syncStarterDecks($stats);
         $this->syncPromos($stats);
+        $this->syncDonCards($stats);
+        $stats['sets_backfilled'] = CardSet::ensureFromCards();
         $this->recalculateSetCounts();
 
         return $stats;
@@ -69,8 +71,8 @@ class CardSyncService
         }
 
         foreach ($decks as $deck) {
-            $setId = $deck['st_id'] ?? null;
-            $setName = $deck['st_name'] ?? null;
+            $setId = $deck['structure_deck_id'] ?? $deck['st_id'] ?? null;
+            $setName = $deck['structure_deck_name'] ?? $deck['st_name'] ?? null;
             if (!$setId || !$setName) continue;
             CardSet::upsert($setId, $setName, 'starter');
             $stats['sets']++;
@@ -93,7 +95,10 @@ class CardSyncService
     private function syncPromos(array &$stats): void
     {
         echo "Fetching all promo cards...\n";
-        $cards = $this->apiGet('/allPromoCards/');
+        $cards = $this->apiGet('/allPromos/');
+        if (!$cards) {
+            $cards = $this->apiGet('/allPromoCards/');
+        }
         if (!$cards) {
             $stats['errors'][] = 'Failed to fetch promos';
             return;
@@ -105,6 +110,32 @@ class CardSyncService
         echo "Processing " . count($cards) . " promo cards...\n";
         foreach ($cards as $card) {
             $this->upsertCard($card, 'PROMO');
+            $stats['cards']++;
+        }
+    }
+
+    private function syncDonCards(array &$stats): void
+    {
+        echo "Fetching all DON!! cards...\n";
+        $cards = $this->apiGet('/allDonCards/');
+        if (!$cards) {
+            $stats['errors'][] = 'Failed to fetch DON!! cards';
+            return;
+        }
+
+        CardSet::upsert('DON', 'DON!! Cards', 'don');
+        $stats['sets']++;
+
+        echo "Processing " . count($cards) . " DON!! cards...\n";
+        foreach ($cards as $card) {
+            $imgId = trim((string)($card['card_image_id'] ?? $card['don_id'] ?? ''));
+            if ($imgId === '') {
+                continue;
+            }
+            $row = $card;
+            $row['card_set_id'] = $imgId;
+            $row['set_name'] = (string)($card['optcg_don_name'] ?? $card['card_name'] ?? 'DON!!');
+            $this->upsertCard($row, 'DON');
             $stats['cards']++;
         }
     }
@@ -125,11 +156,22 @@ class CardSyncService
 
         [$uniqueId, $isParallel] = self::deriveUniqueId($card);
 
+        $setId = trim((string)($card['set_id'] ?? $card['st_id'] ?? $defaultSetId));
+        if ($setId === '') {
+            $setId = $defaultSetId;
+        }
+        // Schema: VARCHAR(20). API sometimes returns junk (e.g. a color list) on promos.
+        if (strlen($setId) > 20) {
+            $setId = $defaultSetId !== '' ? $defaultSetId : substr($setId, 0, 20);
+        }
+
+        $imageUrl = self::resolveCardImageUrl($card, $uniqueId);
+
         Card::upsert([
             'card_set_id' => $uniqueId,
             'card_name' => $card['card_name'] ?? '',
             'set_name' => $card['set_name'] ?? $card['st_name'] ?? '',
-            'set_id' => $card['set_id'] ?? $card['st_id'] ?? $defaultSetId,
+            'set_id' => $setId,
             'rarity' => $card['rarity'] ?? '',
             'card_color' => $card['card_color'] ?? '',
             'card_type' => $card['card_type'] ?? '',
@@ -140,14 +182,14 @@ class CardSyncService
             'counter_amount' => $card['counter_amount'] ?? null,
             'attribute' => $card['attribute'] ?? null,
             'card_text' => $card['card_text'] ?? null,
-            'card_image_url' => $card['card_image'] ?? null,
+            'card_image_url' => $imageUrl,
             'market_price' => $card['market_price'] ?? null,
             'inventory_price' => $card['inventory_price'] ?? null,
             'is_parallel' => $isParallel ? 1 : 0,
         ]);
 
-        $imgUrl = $card['card_image'] ?? null;
-        if ($imgUrl && StorageService::isConfigured()) {
+        $imgUrl = isset($card['card_image']) ? trim((string) $card['card_image']) : '';
+        if ($imgUrl !== '' && StorageService::isConfigured()) {
             $filename = basename(parse_url($imgUrl, PHP_URL_PATH));
             if ($filename) {
                 $key = 'cards/' . $filename;
@@ -208,6 +250,27 @@ class CardSyncService
         }
 
         return [$cardSetId, false];
+    }
+
+    /**
+     * OPTCG API often leaves card_image empty (e.g. all promos with set_id "P"). Official English CDN
+     * serves PNGs at /images/cardlist/card/{card_set_id}.png for standard game cards.
+     */
+    public static function resolveCardImageUrl(array $card, string $uniqueCardSetId): ?string
+    {
+        $direct = isset($card['card_image']) ? trim((string) $card['card_image']) : '';
+        if ($direct !== '') {
+            return $direct;
+        }
+        if ($uniqueCardSetId === '' || !preg_match('/^[A-Za-z0-9._-]+$/', $uniqueCardSetId)) {
+            return null;
+        }
+        if (preg_match('/^don_\d+$/i', $uniqueCardSetId)) {
+            return null;
+        }
+        $base = rtrim($_ENV['OP_OFFICIAL_CARD_IMAGE_BASE'] ?? 'https://en.onepiece-cardgame.com/images/cardlist/card', '/');
+
+        return $base . '/' . $uniqueCardSetId . '.png';
     }
 
     private function apiGet(string $endpoint): ?array

@@ -344,3 +344,64 @@ html.dark [contenteditable="true"] { color: #e5e7eb !important; }
 .status-completed { background: rgba(16, 185, 129, 0.2); color: #34d399; }
 .status-disputed { background: rgba(239, 68, 68, 0.2); color: #f87171; }
 .status-cancelled { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
+
+/* ===== CARD RULES (matches game board.js formatCardText / game.css) ===== */
+.card-rules-text .kw-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    vertical-align: baseline;
+    margin: 0 1px;
+}
+.card-rules-text .kw-red {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.28);
+}
+.card-rules-text .kw-yellow {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.28);
+}
+.card-rules-text .kw-blue {
+    background: rgba(59, 130, 246, 0.15);
+    color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.28);
+}
+.card-rules-text .kw-green {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.28);
+}
+.card-rules-text .kw-purple {
+    background: rgba(139, 92, 246, 0.15);
+    color: #7c3aed;
+    border: 1px solid rgba(139, 92, 246, 0.28);
+}
+.card-rules-text .kw-gray {
+    background: rgba(0, 0, 0, 0.06);
+    color: #4b5563;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+html.dark .card-rules-text .kw-gray {
+    background: rgba(255, 255, 255, 0.08);
+    color: #9ca3af;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.card-rules-text .don-inline {
+    font-weight: 800;
+    color: #d97706;
+}
+html.dark .card-rules-text .don-inline {
+    color: #f59e0b;
+}
+.card-rules-text .pow-inline {
+    font-weight: 700;
+    color: #dc2626;
+}
+html.dark .card-rules-text .pow-inline {
+    color: #f87171;
+}

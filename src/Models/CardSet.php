@@ -20,9 +20,40 @@ class CardSet
         $stmt = $db->prepare(
             'INSERT INTO sets (set_id, set_name, set_type, last_synced_at)
              VALUES (:set_id, :set_name, :set_type, NOW())
-             ON DUPLICATE KEY UPDATE set_name = VALUES(set_name), last_synced_at = NOW()'
+             ON DUPLICATE KEY UPDATE set_name = VALUES(set_name), set_type = VALUES(set_type), last_synced_at = NOW()'
         );
         $stmt->execute(['set_id' => $setId, 'set_name' => $setName, 'set_type' => $setType]);
+    }
+
+    /**
+     * Insert rows into `sets` for any set_id that appears on cards but not in `sets`.
+     * Does not delete or modify existing cards.
+     */
+    public static function ensureFromCards(): int
+    {
+        $db = Database::getConnection();
+        $sql = <<<'SQL'
+INSERT INTO sets (set_id, set_name, set_type, last_synced_at)
+SELECT
+  c.set_id,
+  COALESCE(NULLIF(MIN(NULLIF(TRIM(c.set_name), '')), ''), c.set_id) AS set_name,
+  CASE
+    WHEN c.set_id LIKE 'ST-%' THEN 'starter'
+    WHEN c.set_id = 'PROMO' THEN 'promo'
+    WHEN c.set_id = 'DON' OR c.card_type = 'DON!!' THEN 'don'
+    ELSE 'booster'
+  END AS set_type,
+  NOW()
+FROM cards c
+LEFT JOIN sets s ON s.set_id = c.set_id
+WHERE s.set_id IS NULL
+  AND c.set_id IS NOT NULL
+  AND TRIM(c.set_id) != ''
+GROUP BY c.set_id
+SQL;
+        $affected = $db->exec($sql);
+
+        return $affected !== false ? (int)$affected : 0;
     }
 
     public static function updateCardCount(string $setId, int $count): void

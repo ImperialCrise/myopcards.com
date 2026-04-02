@@ -110,8 +110,8 @@ $rarityBg = $rarityColors[$card['rarity']] ?? 'from-gray-500 to-gray-600';
             </div>
 
             <?php if (!empty($card['card_text'])): ?>
-                <div class="mt-4 p-4 bg-gray-50 border border-gray-100 rounded-xl">
-                    <p class="text-sm text-gray-700 leading-relaxed"><?= nl2br(htmlspecialchars($card['card_text'])) ?></p>
+                <div class="mt-4 p-4 bg-gray-50 border border-gray-100 rounded-xl card-rules-text">
+                    <div class="text-sm text-gray-700 leading-relaxed"><?= format_card_rules_html($card['card_text']) ?></div>
                 </div>
             <?php endif; ?>
         </div>
