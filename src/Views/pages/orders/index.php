@@ -45,7 +45,7 @@ $sellerOrdersJson = json_encode($sellerOrders ?? [], JSON_HEX_APOS | JSON_HEX_TA
             <a :href="'/orders/' + order.id" class="block glass rounded-xl p-4 hover:bg-dark-800/30 transition">
                 <div class="flex items-center gap-4">
                     <div class="flex-shrink-0">
-                        <img :src="cardImgSrc(order.card_image_url)" :data-ext-src="order.card_image_url" class="w-14 h-20 rounded-lg object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
+                        <img :src="cardImgSrc(order.card_image_url, order.card_set_id)" :data-ext-src="order.card_image_url" class="w-14 h-20 rounded-lg object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">

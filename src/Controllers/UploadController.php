@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\HttpCache;
 use App\Services\StorageService;
 
 class UploadController
@@ -106,8 +107,30 @@ class UploadController
             if ($content !== null) {
                 $contentType = StorageService::getContentType($key) ?? 'image/jpeg';
                 header('Content-Type: ' . $contentType);
-                header('Cache-Control: public, max-age=31536000');
+                header('Cache-Control: ' . HttpCache::CARD_IMAGE_IMMUTABLE);
                 echo $content;
+                return;
+            }
+        }
+
+        // Local disk (DON!! images cached when MinIO is off, or fallback if object store miss)
+        $localBase = dirname(__DIR__, 2) . '/public/uploads/cards';
+        $realBase = realpath($localBase);
+        if ($realBase !== false) {
+            $localPath = $realBase . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+            $realFile = realpath($localPath);
+            if ($realFile !== false && str_starts_with($realFile, $realBase . DIRECTORY_SEPARATOR) && is_file($realFile)) {
+                $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                $ctype = match ($ext) {
+                    'png' => 'image/png',
+                    'webp' => 'image/webp',
+                    'gif' => 'image/gif',
+                    default => 'image/jpeg',
+                };
+                header('Content-Type: ' . $ctype);
+                header('Cache-Control: ' . HttpCache::CARD_IMAGE_IMMUTABLE);
+                header('Content-Length: ' . (string)filesize($realFile));
+                readfile($realFile);
                 return;
             }
         }

@@ -92,7 +92,7 @@ $raritiesJson = json_encode($rarities ?? [], JSON_HEX_APOS | JSON_HEX_TAG);
             <a :href="'/marketplace/card/' + encodeURIComponent(card.card_set_id)" class="group card-hover">
                 <div class="glass rounded-xl overflow-hidden">
                     <div class="relative aspect-[5/7] bg-dark-700">
-                        <img :src="cardImgSrc(card.card_image_url)" :data-ext-src="card.card_image_url" alt="" class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
+                        <img :src="cardImgSrc(card.card_image_url, card.card_set_id)" :data-ext-src="card.card_image_url" alt="" class="w-full h-full object-cover" loading="lazy" onerror="cardImgErr(this)">
                         <template x-if="card.rarity">
                             <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-bold text-white rounded shadow"
                                 :class="rarityClass(card.rarity)" x-text="card.rarity"></span>
@@ -162,7 +162,7 @@ $raritiesJson = json_encode($rarities ?? [], JSON_HEX_APOS | JSON_HEX_TAG);
                         <tr class="border-b border-dark-700/50">
                             <td class="py-3 pr-4">
                                 <a :href="'/marketplace/card/' + encodeURIComponent(sale.card_set_id)" class="flex items-center gap-3 hover:text-gold-400 transition">
-                                    <img :src="cardImgSrc(sale.card_image_url)" :data-ext-src="sale.card_image_url" class="w-7 h-10 rounded object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
+                                    <img :src="cardImgSrc(sale.card_image_url, sale.card_set_id)" :data-ext-src="sale.card_image_url" class="w-7 h-10 rounded object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
                                     <div>
                                         <p class="text-white font-medium" x-text="sale.card_name"></p>
                                         <p class="text-xs text-dark-400" x-text="sale.card_set_id"></p>

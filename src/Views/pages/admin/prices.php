@@ -37,16 +37,28 @@
         <div class="glass rounded-2xl p-6">
             <h2 class="text-lg font-display font-bold text-gray-900 mb-4">Sync Actions</h2>
             <div class="space-y-3">
-                <button @click="runSync('cards')" :disabled="syncing" class="w-full flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition disabled:opacity-50">
-                    <div class="flex items-center gap-3">
-                        <i data-lucide="refresh-cw" class="w-5 h-5 text-blue-500" :class="syncing === 'cards' && 'animate-spin'"></i>
-                        <div class="text-left">
-                            <p class="text-sm font-bold text-gray-900">Sync Cards</p>
-                            <p class="text-xs text-gray-400">Re-fetch all card data from OPTCG API</p>
+                <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2">
+                    <button @click="runSync('cards')" :disabled="syncing" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="refresh-cw" class="w-5 h-5 text-blue-500" :class="syncing === 'cards' && 'animate-spin'"></i>
+                            <div class="text-left">
+                                <p class="text-sm font-bold text-gray-900">Sync Cards</p>
+                                <p class="text-xs text-gray-400">Full catalog (boosters, starters, promos, DON!!)</p>
+                            </div>
                         </div>
-                    </div>
-                    <i data-lucide="play" class="w-4 h-4 text-gray-400"></i>
-                </button>
+                        <i data-lucide="play" class="w-4 h-4 text-gray-400"></i>
+                    </button>
+                    <button @click="runSync('cards-don')" :disabled="syncing" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="sparkles" class="w-5 h-5 text-amber-500" :class="syncing === 'cards-don' && 'animate-spin'"></i>
+                            <div class="text-left">
+                                <p class="text-sm font-bold text-gray-900">Sync DON!! only</p>
+                                <p class="text-xs text-gray-400">DON!! list only — faster when testing set / image changes</p>
+                            </div>
+                        </div>
+                        <i data-lucide="play" class="w-4 h-4 text-gray-400"></i>
+                    </button>
+                </div>
                 <button @click="runSync('tcg')" :disabled="syncing" class="w-full flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition disabled:opacity-50">
                     <div class="flex items-center gap-3">
                         <i data-lucide="dollar-sign" class="w-5 h-5 text-emerald-500" :class="syncing === 'tcg' && 'animate-spin'"></i>
@@ -145,6 +157,7 @@ function adminPrices() {
             try {
                 var url, data = {};
                 if (type === 'cards') url = '/admin/sync/cards';
+                else if (type === 'cards-don') { url = '/admin/sync/cards'; data = { don_only: '1' }; }
                 else if (type === 'tcg') url = '/admin/sync/prices-tcg';
                 else if (type === 'snapshot') url = '/admin/sync/snapshot';
                 else { url = '/admin/sync/prices-cardmarket'; data = { edition: this.cmEdition, limit: this.cmLimit }; }

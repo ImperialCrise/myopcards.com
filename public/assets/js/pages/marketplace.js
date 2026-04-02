@@ -204,13 +204,13 @@ document.addEventListener('alpine:init', () => {
             const rawImages = this.listing.images || [];
             this.images = rawImages.map(img => img.startsWith('http') ? img : '/uploads/' + img);
             if (this.images.length === 0 && this.listing.card_image_url) {
-                this.images = [typeof cardImgSrc === 'function' ? cardImgSrc(this.listing.card_image_url) : this.listing.card_image_url];
+                this.images = [typeof cardImgSrc === 'function' ? cardImgSrc(this.listing.card_image_url, this.listing.card_set_id) : this.listing.card_image_url];
             }
             this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
         },
 
         get activeImage() {
-            return this.images[this.activeImageIdx] || (typeof cardImgSrc === 'function' ? cardImgSrc(this.listing.card_image_url) : this.listing.card_image_url) || '';
+            return this.images[this.activeImageIdx] || (typeof cardImgSrc === 'function' ? cardImgSrc(this.listing.card_image_url, this.listing.card_set_id) : this.listing.card_image_url) || '';
         },
 
         get buyerFee() {

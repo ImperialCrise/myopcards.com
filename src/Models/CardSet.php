@@ -40,7 +40,7 @@ SELECT
   CASE
     WHEN c.set_id LIKE 'ST-%' THEN 'starter'
     WHEN c.set_id = 'PROMO' THEN 'promo'
-    WHEN c.set_id = 'DON' OR c.card_type = 'DON!!' THEN 'don'
+    WHEN c.set_id = 'DON' THEN 'don'
     ELSE 'booster'
   END AS set_type,
   NOW()

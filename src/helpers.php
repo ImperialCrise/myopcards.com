@@ -34,15 +34,37 @@ if (!function_exists('card_img_url')) {
     function card_img_url(array $card): string
     {
         $url = $card['card_image_url'] ?? '';
-        if (empty($url)) {
-            return '';
+        $csi = (string)($card['card_set_id'] ?? '');
+        $ctype = (string)($card['card_type'] ?? '');
+        $isDon = $ctype === 'DON!!' || \App\Services\DonCardImageResolver::isDonCardSetId($csi);
+        $isTcgplayerCdnDonImg = $url !== ''
+            && (str_contains($url, 'tcgplayer-cdn.tcgplayer.com') || str_contains($url, 'product-images.tcgplayer.com'));
+        $isCachedDonFile = \App\Services\DonCardImageResolver::isLocalDonUploadForCard($csi, $url);
+        $wrongLocalDon = $url !== ''
+            && str_starts_with($url, '/')
+            && str_contains($url, '/uploads/cards/don_')
+            && !\App\Services\DonCardImageResolver::isLocalDonUploadForCard($csi, $url);
+        if ($isDon && !$isCachedDonFile && ($url === '' || str_contains($url, 'don-card-placeholder.svg') || $isTcgplayerCdnDonImg || $wrongLocalDon)) {
+            $q = [
+                'i' => $csi,
+                'n' => $card['card_name'] ?? '',
+            ];
+            $sn = trim((string)($card['set_name'] ?? ''));
+            if ($sn !== '') {
+                $q['s'] = $sn;
+            }
+
+            return '/api/don-card-image?' . http_build_query($q);
+        }
+        if ($url === '') {
+            return \App\Services\CardSyncService::officialCardlistProxyUrl($csi) ?? '';
         }
         $host = parse_url($url, PHP_URL_HOST) ?? '';
         if ($host === 'optcgapi.com' || $host === 'www.optcgapi.com') {
             return '/uploads/cards/' . basename(parse_url($url, PHP_URL_PATH));
         }
 
-        return $url;
+        return \App\Services\CardSyncService::rewriteOfficialCardlistUrlToProxy($url);
     }
 }
 

@@ -26,7 +26,7 @@ $bidsJson = json_encode($bids ?? [], JSON_HEX_APOS | JSON_HEX_TAG);
         <template x-for="bid in filteredBids" :key="bid.id">
             <div class="glass rounded-xl p-4 flex items-center gap-4">
                 <a :href="'/marketplace/listing/' + bid.listing_id" class="flex-shrink-0">
-                    <img :src="cardImgSrc(bid.card_image_url)" :data-ext-src="bid.card_image_url" class="w-14 h-20 rounded-lg object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
+                    <img :src="cardImgSrc(bid.card_image_url, bid.card_set_id)" :data-ext-src="bid.card_image_url" class="w-14 h-20 rounded-lg object-cover bg-dark-700" onerror="cardImgErr(this)" loading="lazy">
                 </a>
                 <div class="flex-1 min-w-0">
                     <a :href="'/marketplace/listing/' + bid.listing_id" class="hover:text-gold-400 transition">

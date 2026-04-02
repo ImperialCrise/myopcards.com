@@ -32,6 +32,20 @@ class CardSyncService
         return $stats;
     }
 
+    /**
+     * Sync only DON!! cards from /allDonCards/ (faster than full catalog sync).
+     * Still runs set backfill from cards and recalculates per-set card counts.
+     */
+    public function syncDonOnly(): array
+    {
+        $stats = ['sets' => 0, 'cards' => 0, 'sets_backfilled' => 0, 'errors' => []];
+        $this->syncDonCards($stats);
+        $stats['sets_backfilled'] = CardSet::ensureFromCards();
+        $this->recalculateSetCounts();
+
+        return $stats;
+    }
+
     private function syncBoosterSets(array &$stats): void
     {
         $sets = $this->apiGet('/allSets/');
@@ -134,10 +148,61 @@ class CardSyncService
             }
             $row = $card;
             $row['card_set_id'] = $imgId;
-            $row['set_name'] = (string)($card['optcg_don_name'] ?? $card['card_name'] ?? 'DON!!');
+            $donLine = trim((string)($card['optcg_don_name'] ?? ''));
+            $row['set_name'] = $donLine !== '' ? $donLine : (string)($card['card_name'] ?? 'DON!!');
+            $releaseSetId = self::parseDonReleaseSetId($donLine);
+            if ($releaseSetId !== null && strlen($releaseSetId) <= 20) {
+                $row['set_id'] = $releaseSetId;
+            }
             $this->upsertCard($row, 'DON');
             $stats['cards']++;
         }
+    }
+
+    /**
+     * Suffix in optcg_don_name vs canonical set_id in /allSets/ (rare mismatches).
+     *
+     * @var array<string, string> UPPER short code => official set_id
+     */
+    private const DON_OPTCG_SET_SUFFIX_ALIASES = [
+        'OP01' => 'OP-01',
+        'OP02' => 'OP-02',
+        'OP03' => 'OP-03',
+        'OP04' => 'OP-04',
+        'OP05' => 'OP-05',
+        'OP06' => 'OP-06',
+        'OP07' => 'OP-07',
+        'OP08' => 'OP-08',
+        'OP09' => 'OP-09',
+        'OP10' => 'OP-10',
+        'OP11' => 'OP-11',
+        'OP12' => 'OP-12',
+        'OP13' => 'OP-13',
+        'OP14' => 'OP14-EB04',
+        'OP15' => 'OP-15',
+        'OP16' => 'OP-16',
+        'OP17' => 'OP-17'
+    ];
+
+    /**
+     * OPTCG encodes the physical release in optcg_don_name, e.g.
+     * "DON!! Card (Sakazuki) (Gold) - Premium Booster -The Best- (PRB-01)" → PRB-01.
+     * Azure Sea's Seven uses "(OP14)" in DON strings but the set is OP14-EB04 in allSets.
+     */
+    public static function parseDonReleaseSetId(string $optcgDonName): ?string
+    {
+        $optcgDonName = trim($optcgDonName);
+        if ($optcgDonName === '') {
+            return null;
+        }
+        if (!preg_match('/\(([A-Za-z0-9.-]+)\)\s*$/', $optcgDonName, $m)) {
+            return null;
+        }
+
+        $suffix = $m[1];
+        $key = strtoupper($suffix);
+
+        return self::DON_OPTCG_SET_SUFFIX_ALIASES[$key] ?? $suffix;
     }
 
     private function recalculateSetCounts(): void
@@ -253,6 +318,79 @@ class CardSyncService
     }
 
     /**
+     * Official English cardlist PNG (same rule as sync fallback). Not used for DON!! ids.
+     */
+    public static function officialPngUrlForCardSetId(string $cardSetId): ?string
+    {
+        if ($cardSetId === '' || !preg_match('/^[A-Za-z0-9._-]+$/', $cardSetId)) {
+            return null;
+        }
+        if (DonCardImageResolver::isDonCardSetId($cardSetId)) {
+            return null;
+        }
+        $base = rtrim($_ENV['OP_OFFICIAL_CARD_IMAGE_BASE'] ?? 'https://en.onepiece-cardgame.com/images/cardlist/card', '/');
+
+        return $base . '/' . $cardSetId . '.png';
+    }
+
+    /**
+     * Browser-safe URL: official cardlist CDN uses CORP so cross-site img loads fail (NotSameSite).
+     * Use /api/op-official-card to fetch server-side and re-serve from our origin.
+     */
+    public static function officialCardlistProxyUrl(string $cardSetId): ?string
+    {
+        return self::officialPngUrlForCardSetId($cardSetId) !== null
+            ? '/api/op-official-card?' . http_build_query(['i' => $cardSetId])
+            : null;
+    }
+
+    /** MinIO key for a cached official English cardlist PNG (see UploadController::serveCards). */
+    public static function officialCardlistCacheStorageKey(string $cardSetId): string
+    {
+        return 'cards/official/' . $cardSetId . '.png';
+    }
+
+    public static function officialCardlistCachePublicPath(string $cardSetId): string
+    {
+        return '/uploads/cards/official/' . $cardSetId . '.png';
+    }
+
+    public static function officialCardlistCacheLocalPath(string $cardSetId): string
+    {
+        return \dirname(__DIR__, 2) . '/public/uploads/cards/official/' . $cardSetId . '.png';
+    }
+
+    public static function officialCardlistCacheExists(string $cardSetId): bool
+    {
+        $key = self::officialCardlistCacheStorageKey($cardSetId);
+        if (StorageService::isConfigured() && StorageService::exists($key)) {
+            return true;
+        }
+        $local = self::officialCardlistCacheLocalPath($cardSetId);
+
+        return is_file($local) && is_readable($local);
+    }
+
+    /** Rewrite hotlinks to en.*.onepiece-cardgame.com cardlist PNGs to same-origin proxy URLs. */
+    public static function rewriteOfficialCardlistUrlToProxy(string $url): string
+    {
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return $url;
+        }
+        $host = strtolower((string)(parse_url($url, PHP_URL_HOST) ?? ''));
+        if ($host === '' || !str_contains($host, 'onepiece-cardgame.com')) {
+            return $url;
+        }
+        $path = (string)(parse_url($url, PHP_URL_PATH) ?? '');
+        if (!preg_match('#/images/cardlist/card/([A-Za-z0-9._-]+)\.png$#i', $path, $m)) {
+            return $url;
+        }
+        $p = self::officialCardlistProxyUrl($m[1]);
+
+        return $p ?? $url;
+    }
+
+    /**
      * OPTCG API often leaves card_image empty (e.g. all promos with set_id "P"). Official English CDN
      * serves PNGs at /images/cardlist/card/{card_set_id}.png for standard game cards.
      */
@@ -265,12 +403,20 @@ class CardSyncService
         if ($uniqueCardSetId === '' || !preg_match('/^[A-Za-z0-9._-]+$/', $uniqueCardSetId)) {
             return null;
         }
-        if (preg_match('/^don_\d+$/i', $uniqueCardSetId)) {
+        if (DonCardImageResolver::isDonCardSetId($uniqueCardSetId)) {
+            $resolved = DonCardImageResolver::resolve(
+                $uniqueCardSetId,
+                (string)($card['card_name'] ?? ''),
+                false
+            );
+            if ($resolved !== null && str_starts_with($resolved, 'http')) {
+                return $resolved;
+            }
+
             return null;
         }
-        $base = rtrim($_ENV['OP_OFFICIAL_CARD_IMAGE_BASE'] ?? 'https://en.onepiece-cardgame.com/images/cardlist/card', '/');
 
-        return $base . '/' . $uniqueCardSetId . '.png';
+        return self::officialPngUrlForCardSetId($uniqueCardSetId);
     }
 
     private function apiGet(string $endpoint): ?array

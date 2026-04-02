@@ -26,30 +26,42 @@ $filtersJson = json_encode($filters, JSON_HEX_APOS | JSON_HEX_TAG);
             </div>
             <div>
                 <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5"><?= t('cards.set') ?></label>
-                <select x-model="f.set_id" @change="doSearch()" class="w-full px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
+                <select x-ref="setSel"
+                    :value="f.set_id"
+                    @change="f.set_id = $event.target.value; doSearch()"
+                    class="w-full px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
                     <option value=""><?= t('collection.all_sets') ?></option>
                     <template x-for="s in sets" :key="s"><option :value="s" x-text="s"></option></template>
                 </select>
             </div>
             <div>
                 <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5"><?= t('cards.color') ?></label>
-                <select x-model="f.color" @change="doSearch()" class="w-full px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
+                <select x-ref="colorSel"
+                    :value="f.color"
+                    @change="f.color = $event.target.value; doSearch()"
+                    class="w-full px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
                     <option value=""><?= t('collection.all_colors') ?></option>
                     <template x-for="c in colors" :key="c"><option :value="c" x-text="c"></option></template>
                 </select>
             </div>
             <div>
                 <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5"><?= t('cards.rarity') ?></label>
-                <select x-model="f.rarity" @change="doSearch()" class="w-full px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
+                <select x-ref="raritySel"
+                    :value="f.rarity"
+                    @change="f.rarity = $event.target.value; doSearch()"
+                    class="w-full px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
                     <option value=""><?= t('collection.all_rarities') ?></option>
                     <template x-for="r in rarities" :key="r"><option :value="r" x-text="r"></option></template>
                 </select>
             </div>
             <div>
                 <label class="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-1.5"><?= t('cards.type') ?></label>
-                <select x-model="f.type" @change="doSearch()" class="w-full px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
+                <select x-ref="typeSel"
+                    :value="f.type"
+                    @change="f.type = $event.target.value; doSearch()"
+                    class="w-full px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
                     <option value=""><?= t('cards.all_types') ?></option>
-                    <template x-for="t in types" :key="t"><option :value="t" x-text="t"></option></template>
+                    <template x-for="ty in types" :key="ty"><option :value="ty" x-text="ty"></option></template>
                 </select>
             </div>
             <button @click="resetFilters()" class="block w-full text-center text-xs text-dark-400 hover:text-gold-400 transition py-1"><?= t('cards.reset_filters') ?></button>
@@ -69,7 +81,9 @@ $filtersJson = json_encode($filters, JSON_HEX_APOS | JSON_HEX_TAG);
                 </div>
                 <div class="flex items-center gap-1.5">
                     <i data-lucide="arrow-up-down" class="w-4 h-4 text-dark-400"></i>
-                    <select x-model="f.sort" @change="doSearch()"
+                    <select x-ref="sortSel"
+                        :value="f.sort"
+                        @change="f.sort = $event.target.value; doSearch()"
                         class="px-3 py-1.5 bg-dark-800 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-gold-500/50 transition">
                         <option value="set"><?= t('collection.set_number') ?></option>
                         <option value="price"><?= t('collection.price_high') ?></option>
@@ -89,7 +103,7 @@ $filtersJson = json_encode($filters, JSON_HEX_APOS | JSON_HEX_TAG);
                     <a :href="'/cards/' + card.card_set_id" class="block">
                         <div class="glass rounded-xl overflow-hidden">
                             <div class="relative aspect-[5/7] bg-dark-700">
-                                <img :src="cardImgSrc(card.card_image_url)" :data-ext-src="card.card_image_url" alt="" class="w-full h-full object-cover" loading="lazy"
+                                <img :src="cardImgSrc(card.card_image_url, card.card_set_id)" :data-ext-src="card.card_image_url" alt="" class="w-full h-full object-cover" loading="lazy"
                                      onerror="cardImgErr(this)">
                                 <template x-if="ownedCards[card.id]">
                                     <div class="absolute top-1.5 right-1.5 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
@@ -136,6 +150,7 @@ $filtersJson = json_encode($filters, JSON_HEX_APOS | JSON_HEX_TAG);
 </div>
 
 <script>
+window.__MYOPCARDS_DEBUG_CARDS = false;
 window.__PAGE_DATA = {
     filters: <?= $filtersJson ?>,
     sets: <?= $setsJson ?>,

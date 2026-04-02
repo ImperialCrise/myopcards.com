@@ -125,6 +125,7 @@ $__v = (string)(@filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/js/main.js') ?: 
     <script>
     window.__CURRENCY = <?= json_encode(\App\Core\Currency::info()) ?>;
     window.__LANG = <?= isset($t) ? json_encode($t, JSON_UNESCAPED_UNICODE) : '{}' ?>;
+    window.OP_OFFICIAL_CARD_IMAGE_BASE = <?= json_encode(rtrim($_ENV['OP_OFFICIAL_CARD_IMAGE_BASE'] ?? 'https://en.onepiece-cardgame.com/images/cardlist/card', '/'), JSON_UNESCAPED_SLASHES) ?>;
     </script>
     <script src="<?= asset_v('/assets/js/main.js') ?>"></script>
 </head>
@@ -134,26 +135,26 @@ $__v = (string)(@filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/js/main.js') ?: 
     <div id="bg-carousel" aria-hidden="true">
         <?php if (!empty($_r1)): ?>
         <div class="carousel-row carousel-row-1"><div class="carousel-track carousel-track-left">
-            <?php foreach ($_r1 as $_i): ?><img src="<?= htmlspecialchars($_i) ?>" alt="" loading="lazy"><?php endforeach; ?>
-            <?php foreach ($_r1 as $_i): ?><img src="<?= htmlspecialchars($_i) ?>" alt="" loading="lazy"><?php endforeach; ?>
+            <?php foreach ($_r1 as $_i): ?><img src="<?= htmlspecialchars(\App\Services\CardSyncService::rewriteOfficialCardlistUrlToProxy((string)$_i)) ?>" alt="" loading="lazy"><?php endforeach; ?>
+            <?php foreach ($_r1 as $_i): ?><img src="<?= htmlspecialchars(\App\Services\CardSyncService::rewriteOfficialCardlistUrlToProxy((string)$_i)) ?>" alt="" loading="lazy"><?php endforeach; ?>
         </div></div>
         <?php endif; ?>
         <?php if (!empty($_r2)): ?>
         <div class="carousel-row carousel-row-2"><div class="carousel-track carousel-track-right">
-            <?php foreach ($_r2 as $_i): ?><img src="<?= htmlspecialchars($_i) ?>" alt="" loading="lazy"><?php endforeach; ?>
-            <?php foreach ($_r2 as $_i): ?><img src="<?= htmlspecialchars($_i) ?>" alt="" loading="lazy"><?php endforeach; ?>
+            <?php foreach ($_r2 as $_i): ?><img src="<?= htmlspecialchars(\App\Services\CardSyncService::rewriteOfficialCardlistUrlToProxy((string)$_i)) ?>" alt="" loading="lazy"><?php endforeach; ?>
+            <?php foreach ($_r2 as $_i): ?><img src="<?= htmlspecialchars(\App\Services\CardSyncService::rewriteOfficialCardlistUrlToProxy((string)$_i)) ?>" alt="" loading="lazy"><?php endforeach; ?>
         </div></div>
         <?php endif; ?>
         <?php if (!empty($_r3)): ?>
         <div class="carousel-row carousel-row-3"><div class="carousel-track carousel-track-left">
-            <?php foreach ($_r3 as $_i): ?><img src="<?= htmlspecialchars($_i) ?>" alt="" loading="lazy"><?php endforeach; ?>
-            <?php foreach ($_r3 as $_i): ?><img src="<?= htmlspecialchars($_i) ?>" alt="" loading="lazy"><?php endforeach; ?>
+            <?php foreach ($_r3 as $_i): ?><img src="<?= htmlspecialchars(\App\Services\CardSyncService::rewriteOfficialCardlistUrlToProxy((string)$_i)) ?>" alt="" loading="lazy"><?php endforeach; ?>
+            <?php foreach ($_r3 as $_i): ?><img src="<?= htmlspecialchars(\App\Services\CardSyncService::rewriteOfficialCardlistUrlToProxy((string)$_i)) ?>" alt="" loading="lazy"><?php endforeach; ?>
         </div></div>
         <?php endif; ?>
         <?php if (!empty($_r4)): ?>
         <div class="carousel-row carousel-row-4"><div class="carousel-track carousel-track-right">
-            <?php foreach ($_r4 as $_i): ?><img src="<?= htmlspecialchars($_i) ?>" alt="" loading="lazy"><?php endforeach; ?>
-            <?php foreach ($_r4 as $_i): ?><img src="<?= htmlspecialchars($_i) ?>" alt="" loading="lazy"><?php endforeach; ?>
+            <?php foreach ($_r4 as $_i): ?><img src="<?= htmlspecialchars(\App\Services\CardSyncService::rewriteOfficialCardlistUrlToProxy((string)$_i)) ?>" alt="" loading="lazy"><?php endforeach; ?>
+            <?php foreach ($_r4 as $_i): ?><img src="<?= htmlspecialchars(\App\Services\CardSyncService::rewriteOfficialCardlistUrlToProxy((string)$_i)) ?>" alt="" loading="lazy"><?php endforeach; ?>
         </div></div>
         <?php endif; ?>
     </div>
@@ -258,7 +259,7 @@ $__v = (string)(@filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/js/main.js') ?: 
                                 <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider" x-text="typeof __LANG !== 'undefined' && __LANG['nav.cards_label'] ? __LANG['nav.cards_label'] : 'Cards'"></div>
                                 <template x-for="(card, i) in results.cards" :key="'c'+card.id">
                                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition" :class="activeIdx === i ? 'search-result-active' : ''">
-                                        <img :src="cardImgSrc(card.card_image_url)" :data-ext-src="card.card_image_url" class="w-8 h-11 rounded object-cover bg-gray-100" onerror="cardImgErr(this)">
+                                        <img :src="cardImgSrc(card.card_image_url, card.card_set_id)" :data-ext-src="card.card_image_url" class="w-8 h-11 rounded object-cover bg-gray-100" onerror="cardImgErr(this)">
                                         <div class="flex-1 min-w-0"><p class="text-sm text-gray-900 truncate" x-text="card.display_name || card.card_name"></p><p class="text-xs text-gray-400" x-text="card.card_set_id + ' · ' + card.rarity"></p></div>
                                         <span x-show="getCardPrice(card) > 0" class="text-xs font-bold text-gray-900" x-text="formatCardPrice(card)"></span>
                                     </a>
@@ -389,7 +390,7 @@ $__v = (string)(@filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/js/main.js') ?: 
             <div x-show="open && results.cards.length > 0" class="mt-2 glass rounded-lg max-h-60 overflow-y-auto">
                 <template x-for="card in results.cards" :key="'mc'+card.id">
                     <a :href="'/cards/' + card.card_set_id" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition">
-                        <img :src="cardImgSrc(card.card_image_url)" :data-ext-src="card.card_image_url" class="w-6 h-8 rounded object-cover" onerror="cardImgErr(this)">
+                        <img :src="cardImgSrc(card.card_image_url, card.card_set_id)" :data-ext-src="card.card_image_url" class="w-6 h-8 rounded object-cover" onerror="cardImgErr(this)">
                         <span class="text-sm text-gray-900 truncate" x-text="card.display_name || card.card_name"></span>
                     </a>
                 </template>

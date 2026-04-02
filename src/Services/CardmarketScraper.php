@@ -13,11 +13,16 @@ class CardmarketScraper
     private int $maxTimeout;
     private int $requestDelay;
 
+    /** @var ?string HTTP(S) or SOCKS proxy for cURL → FlareSolverr (rare; usually unset). */
+    private ?string $curlProxy;
+
     public function __construct()
     {
         $this->flareSolverrUrl = rtrim($_ENV['FLARESOLVERR_URL'] ?? 'http://127.0.0.1:8192/v1', '/');
         $this->maxTimeout = 60000;
         $this->requestDelay = 8;
+        $proxy = $_ENV['CARDMARKET_FLARE_CURL_PROXY'] ?? $_ENV['HTTP_PROXY'] ?? '';
+        $this->curlProxy = $proxy !== '' ? $proxy : null;
     }
 
     public function scrapeCardsForToday(int $limit = 100, string $edition = 'en'): array
@@ -37,7 +42,7 @@ class CardmarketScraper
             }
 
             try {
-                $result = $this->scrapeCardPrice($card['card_set_id'], $edition);
+                $result = $this->scrapeCardPrice($card, $edition);
 
                 if ($result !== null) {
                     $this->updateCardPrice($card['id'], $result['price'], $result['url'], $edition);
@@ -111,13 +116,17 @@ class CardmarketScraper
     private function flareRequest(array $payload): array
     {
         $ch = curl_init($this->flareSolverrUrl);
-        curl_setopt_array($ch, [
+        $opts = [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => 120,
             CURLOPT_POST => true,
             CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
             CURLOPT_POSTFIELDS => json_encode($payload),
-        ]);
+        ];
+        if ($this->curlProxy !== null) {
+            $opts[CURLOPT_PROXY] = $this->curlProxy;
+        }
+        curl_setopt_array($ch, $opts);
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -135,8 +144,13 @@ class CardmarketScraper
         return preg_replace('/_(?:par|spr?|aa|dp|rp|p\d+)$/i', '', $cardSetId);
     }
 
-    private function scrapeCardPrice(string $cardSetId, string $edition = 'en'): ?array
+    private function scrapeCardPrice(array $card, string $edition = 'en'): ?array
     {
+        $cardSetId = $card['card_set_id'] ?? '';
+        if ($cardSetId === '') {
+            return null;
+        }
+
         $searchId = $this->cleanCardSetId($cardSetId);
         $lang = match ($edition) {
             'fr' => 'fr',
@@ -153,7 +167,8 @@ class CardmarketScraper
 
         if (empty($results)) return null;
 
-        $best = $this->pickBestResult($results, $cardSetId, $edition);
+        $profile = $this->resolveVariantProfile($card);
+        $best = $this->pickBestResult($results, $profile, $edition);
 
         if (!$best || !$best['url']) return null;
 
@@ -214,59 +229,189 @@ class CardmarketScraper
         return $results;
     }
 
-    private function pickBestResult(array $results, string $cardSetId, string $edition): ?array
+    /**
+     * Normalized variant for Cardmarket listing titles/URLs (OPTCG parallels, SPR, promos, etc.).
+     *
+     * @return array{type: string, is_parallel_db: bool, rarity: string}
+     */
+    private function resolveVariantProfile(array $card): array
     {
-        if (count($results) === 1) {
-            return $results[0];
+        $id = $card['card_set_id'] ?? '';
+        $rarity = strtoupper((string)($card['rarity'] ?? ''));
+        $isParallelDb = (int)($card['is_parallel'] ?? 0) === 1;
+
+        $type = 'standard';
+        if (preg_match('/_spr$/i', $id)) {
+            $type = 'spr';
+        } elseif (preg_match('/_dp$/i', $id)) {
+            $type = 'dash_pack';
+        } elseif (preg_match('/_rep$/i', $id)) {
+            $type = 'reprint';
+        } elseif (preg_match('/_manga$/i', $id)) {
+            $type = 'manga';
+        } elseif (preg_match('/_foil$/i', $id)) {
+            $type = 'pirate_foil';
+        } elseif (preg_match('/_sp$/i', $id)) {
+            $type = 'sp_pack';
+        } elseif (preg_match('/_aa$/i', $id)) {
+            $type = 'alt_art';
+        } elseif ($isParallelDb
+            || preg_match('/_par$/i', $id)
+            || preg_match('/_p\d+$/i', $id)) {
+            $type = 'parallel';
+        } elseif (in_array($rarity, ['SP', 'SEC'], true) && $isParallelDb) {
+            $type = 'parallel';
         }
 
-        $suffix = '';
-        if (preg_match('/_(par|spr?|aa|dp|rp|p\d+)$/i', $cardSetId, $sm)) {
-            $suffix = strtolower($sm[1]);
+        return ['type' => $type, 'is_parallel_db' => $isParallelDb, 'rarity' => $rarity];
+    }
+
+    /**
+     * Score a search result; highest score wins. Separates base print from alternates / JP / promo SKUs.
+     */
+    private function scoreListingMatch(string $url, string $title, array $profile, string $edition): int
+    {
+        $urlLower = strtolower($url);
+        $titleLower = strtolower($title);
+        $blob = $urlLower . ' ' . $titleLower;
+
+        $isJpListing = str_contains($urlLower, 'japanese');
+        if ($edition === 'jp' && !$isJpListing) {
+            return -10000;
+        }
+        if ($edition !== 'jp' && $isJpListing) {
+            return -10000;
         }
 
-        $isParallel = in_array($suffix, ['par', 'p1', 'p2', 'p3']);
-        $isSpr = in_array($suffix, ['sp', 'spr']);
-        $isAlt = $suffix === 'aa';
+        $score = 0;
+        if ($profile['rarity'] !== '') {
+            $score += 2;
+        }
+
+        $hasV = static function (string $s, int $n): bool {
+            return (bool)preg_match('/\(v\.\s*' . $n . '\)|\bv\.\s*' . $n . '\b|-v' . $n . '(?:\b|\/)/i', $s);
+        };
+
+        $looksParallel = str_contains($titleLower, 'parallel')
+            || $hasV($blob, 1) || $hasV($blob, 2);
+        $looksSpr = str_contains($titleLower, 'special art') || $hasV($blob, 3) || $hasV($blob, 4);
+        $looksAlt = str_contains($titleLower, 'alternate') || str_contains($titleLower, 'alt art');
+        $looksDash = str_contains($titleLower, 'dash pack');
+        $looksManga = str_contains($titleLower, 'manga');
+        $looksReprint = str_contains($titleLower, 'reprint');
+        $looksPirateFoil = str_contains($titleLower, 'pirate foil') || str_contains($titleLower, 'foil');
+        $looksPremiumBandai = str_contains($urlLower, 'premium-bandai') || str_contains($titleLower, 'premium bandai');
+
+        switch ($profile['type']) {
+            case 'parallel':
+                if ($looksParallel || $hasV($blob, 2)) {
+                    $score += 200;
+                }
+                if ($hasV($blob, 1)) {
+                    $score += 160;
+                }
+                if (!$looksParallel && !$hasV($blob, 1) && !$hasV($blob, 2)) {
+                    $score -= 120;
+                }
+                break;
+            case 'spr':
+                if ($looksSpr) {
+                    $score += 220;
+                }
+                if ($looksParallel && !$looksSpr) {
+                    $score -= 80;
+                }
+                break;
+            case 'alt_art':
+                if ($looksAlt || $hasV($blob, 2) || $hasV($blob, 3)) {
+                    $score += 200;
+                }
+                if (!$looksAlt && !$hasV($blob, 2)) {
+                    $score -= 100;
+                }
+                break;
+            case 'dash_pack':
+                if ($looksDash) {
+                    $score += 220;
+                } else {
+                    $score -= 150;
+                }
+                break;
+            case 'manga':
+                if ($looksManga) {
+                    $score += 220;
+                } else {
+                    $score -= 150;
+                }
+                break;
+            case 'reprint':
+                if ($looksReprint) {
+                    $score += 200;
+                }
+                break;
+            case 'pirate_foil':
+                if ($looksPirateFoil) {
+                    $score += 200;
+                } else {
+                    $score -= 120;
+                }
+                break;
+            case 'sp_pack':
+                if (str_contains($titleLower, '(sp)') || str_contains($titleLower, ' dash ') || $looksSpr) {
+                    $score += 120;
+                }
+                break;
+            case 'standard':
+            default:
+                if ($looksParallel || $looksSpr || $looksAlt || $hasV($blob, 1) || $hasV($blob, 2) || $hasV($blob, 3) || $hasV($blob, 4)) {
+                    $score -= 180;
+                }
+                if (preg_match('/\(v\./i', $titleLower) || preg_match('/-v\d/i', $urlLower)) {
+                    $score -= 80;
+                }
+                $score += 50;
+                break;
+        }
+
+        if ($looksPremiumBandai) {
+            $score -= 40;
+        }
+
+        return $score;
+    }
+
+    private function pickBestResult(array $results, array $profile, string $edition): ?array
+    {
+        $best = null;
+        $bestScore = PHP_INT_MIN;
 
         foreach ($results as $r) {
-            $urlLower = strtolower($r['url']);
-            $titleLower = strtolower($r['title']);
-            $isJpUrl = str_contains($urlLower, 'japanese');
-
-            if ($edition === 'jp' && !$isJpUrl) continue;
-            if ($edition !== 'jp' && $isJpUrl) continue;
-
-            if ($isParallel) {
-                if (str_contains($titleLower, '(v.2)') || str_contains($urlLower, '-v2')
-                    || str_contains($titleLower, 'parallel') || str_contains($titleLower, '(v.1)')) {
-                    return $r;
-                }
-            } elseif ($isSpr) {
-                if (str_contains($titleLower, 'special art') || str_contains($titleLower, '(v.')
-                    || str_contains($urlLower, '-v3') || str_contains($urlLower, '-v4')) {
-                    return $r;
-                }
-            } elseif ($isAlt) {
-                if (str_contains($titleLower, 'alternate') || str_contains($titleLower, '(v.')) {
-                    return $r;
-                }
-            } else {
-                if (!str_contains($urlLower, 'premium-bandai')
-                    && !str_contains($titleLower, '(v.')
-                    && !str_contains($urlLower, '-v2')
-                    && !str_contains($urlLower, '-v3')
-                    && !str_contains($urlLower, '-v4')) {
-                    return $r;
-                }
+            $s = $this->scoreListingMatch($r['url'], $r['title'], $profile, $edition);
+            if ($s < -5000) {
+                continue;
+            }
+            if ($r['from_price'] !== null) {
+                $s += 1;
+            }
+            if ($s > $bestScore) {
+                $bestScore = $s;
+                $best = $r;
             }
         }
 
+        if ($best !== null) {
+            return $best;
+        }
+
         foreach ($results as $r) {
             $urlLower = strtolower($r['url']);
             $isJpUrl = str_contains($urlLower, 'japanese');
-            if ($edition === 'jp' && $isJpUrl) return $r;
-            if ($edition !== 'jp' && !$isJpUrl) return $r;
+            if ($edition === 'jp' && $isJpUrl) {
+                return $r;
+            }
+            if ($edition !== 'jp' && !$isJpUrl) {
+                return $r;
+            }
         }
 
         return $results[0];
@@ -294,7 +439,7 @@ class CardmarketScraper
         $db = Database::getConnection();
 
         $stmt = $db->prepare("
-            SELECT id, card_set_id, rarity, market_price,
+            SELECT id, card_set_id, rarity, is_parallel, market_price,
                    CASE
                        WHEN rarity IN ('SEC','SP','L') AND is_parallel = 1 THEN 1
                        WHEN COALESCE(market_price, 0) > 20 THEN 1

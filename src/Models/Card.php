@@ -66,8 +66,10 @@ class Card
         $offset = ($page - 1) * $perPage;
 
         $priceCol = \App\Core\Currency::column();
+        // DON!! ids must sort numerically (don_11 after don_10, not after don_109).
+        $donNumOrder = "IF(card_set_id REGEXP '^don_[0-9]+$', CAST(SUBSTRING(card_set_id, 5) AS UNSIGNED), 4294967295)";
         $sortMap = [
-            'set'        => 'set_id ASC, card_set_id ASC',
+            'set'        => "set_id ASC, $donNumOrder ASC, card_set_id ASC",
             'name'       => 'card_name ASC',
             'name_desc'  => 'card_name DESC',
             'price'      => "$priceCol DESC",
@@ -122,7 +124,7 @@ class Card
                 :card_power, :card_cost, :life, :sub_types, :counter_amount, :attribute, :card_text,
                 :card_image_url, :market_price, :inventory_price, :is_parallel, NOW())
              ON DUPLICATE KEY UPDATE
-                card_name = VALUES(card_name), set_name = VALUES(set_name),
+                card_name = VALUES(card_name), set_name = VALUES(set_name), set_id = VALUES(set_id),
                 market_price = VALUES(market_price), inventory_price = VALUES(inventory_price),
                 card_image_url = VALUES(card_image_url), last_synced_at = NOW()'
         );

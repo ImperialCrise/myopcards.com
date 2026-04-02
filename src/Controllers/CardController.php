@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\HttpCache;
 use App\Core\View;
 use App\Models\Card;
 use App\Models\Collection;
 use App\Models\PriceHistory;
+use App\Services\CardSyncService;
+use App\Services\DonCardImageResolver;
+use App\Services\StorageService;
 
 class CardController
 {
@@ -77,12 +81,17 @@ class CardController
             . ($card['market_price'] ? 'Market price: $' . number_format((float)$card['market_price'], 2) . '. ' : '')
             . 'View prices, details and add to your collection on MyOPCards.';
 
+        $cardImageForMeta = card_img_url($card);
+        if ($cardImageForMeta !== '' && str_starts_with($cardImageForMeta, '/')) {
+            $cardImageForMeta = rtrim($_ENV['APP_URL'] ?? 'https://myopcards.com', '/') . $cardImageForMeta;
+        }
+
         $jsonLd = [
             '@context' => 'https://schema.org',
             '@type' => 'Product',
             'name' => $card['card_name'],
             'description' => $cardDesc,
-            'image' => $card['card_image_url'] ?? '',
+            'image' => $cardImageForMeta,
             'sku' => $card['card_set_id'],
             'brand' => ['@type' => 'Brand', 'name' => 'Bandai - One Piece TCG'],
             'category' => 'Trading Card Games > One Piece TCG > ' . ($card['set_name'] ?? ''),
@@ -104,7 +113,7 @@ class CardController
             'userOwns' => $userOwns,
             'isFeatured' => $isFeatured,
             'seoDescription' => $cardDesc,
-            'seoImage' => $card['card_image_url'] ?? '',
+            'seoImage' => $cardImageForMeta,
             'seoOgType' => 'product',
             'seoJsonLd' => $jsonLd,
         ]);
@@ -200,6 +209,103 @@ class CardController
         }
     }
 
+    /**
+     * Resolve DON!! artwork (OPECards, TCGPlayer API map, cache / config).
+     * TCGPlayer CDN URLs are proxied as image bytes (hotlink 403 from browsers); others redirect.
+     */
+    public function donCardImage(): void
+    {
+        $id = $_GET['i'] ?? '';
+        $name = (string)($_GET['n'] ?? '');
+        $setHint = (string)($_GET['s'] ?? '');
+        if (!DonCardImageResolver::isDonCardSetId($id)) {
+            http_response_code(400);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo 'Invalid id';
+
+            return;
+        }
+        $resolved = DonCardImageResolver::resolve($id, $name, true, $setHint);
+        if ($resolved === null) {
+            $resolved = DonCardImageResolver::placeholderPath();
+        }
+        if (str_starts_with($resolved, 'http') && DonCardImageResolver::isTcgplayerCdnImageUrl($resolved)) {
+            if (DonCardImageResolver::serveTcgPlayerDonImage($id, $resolved)) {
+                exit;
+            }
+            $resolved = DonCardImageResolver::placeholderPath();
+        } elseif (str_starts_with($resolved, 'http')) {
+            DonCardImageResolver::persistToDatabase($id, $resolved);
+        }
+        $base = rtrim($_ENV['APP_URL'] ?? 'https://myopcards.com', '/');
+        $location = str_starts_with($resolved, '/') ? $base . $resolved : $resolved;
+        header('Cache-Control: ' . HttpCache::CARD_IMAGE_IMMUTABLE);
+        header('Location: ' . $location, true, 302);
+        exit;
+    }
+
+    /**
+     * Proxy official English cardlist PNGs — CDN blocks cross-site display in browsers (CORP / SameSite).
+     */
+    public function officialCardlistImage(): void
+    {
+        $id = trim((string)($_GET['i'] ?? ''));
+        $src = CardSyncService::officialPngUrlForCardSetId($id);
+        if ($src === null) {
+            http_response_code(400);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo 'Invalid id';
+
+            return;
+        }
+
+        if (CardSyncService::officialCardlistCacheExists($id)) {
+            $base = rtrim($_ENV['APP_URL'] ?? 'https://myopcards.com', '/');
+            header('Cache-Control: ' . HttpCache::CARD_IMAGE_IMMUTABLE);
+            header('Location: ' . $base . CardSyncService::officialCardlistCachePublicPath($id), true, 302);
+
+            return;
+        }
+
+        $ch = curl_init($src);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => 25,
+            CURLOPT_USERAGENT => 'MyOPCards/1.0 (Official card art proxy)',
+        ]);
+        $proxy = trim((string)($_ENV['SCRAPING_HTTP_PROXY'] ?? $_ENV['HTTP_PROXY'] ?? ''));
+        if ($proxy !== '') {
+            curl_setopt($ch, CURLOPT_PROXY, $proxy);
+        }
+        $body = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($body === false || $code !== 200 || strlen((string)$body) < 64) {
+            http_response_code($code === 404 ? 404 : 502);
+
+            return;
+        }
+        $body = (string)$body;
+
+        $key = CardSyncService::officialCardlistCacheStorageKey($id);
+        if (StorageService::isConfigured()) {
+            StorageService::put($key, $body, 'image/png');
+        }
+        $localPath = CardSyncService::officialCardlistCacheLocalPath($id);
+        $dir = \dirname($localPath);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        @file_put_contents($localPath, $body);
+
+        header('Content-Type: image/png');
+        header('Cache-Control: ' . HttpCache::CARD_IMAGE_IMMUTABLE);
+        header('Cross-Origin-Resource-Policy: cross-origin');
+        header('Content-Length: ' . (string)strlen($body));
+        echo $body;
+    }
+
     public function proxyImage(): void
     {
         $url = $_GET['url'] ?? '';
@@ -230,7 +336,7 @@ class CardController
             $ctype = $ext === 'png' ? 'image/png' : ($ext === 'gif' ? 'image/gif' : 'image/webp');
         }
         header('Content-Type: ' . $ctype);
-        header('Cache-Control: public, max-age=86400');
+        header('Cache-Control: ' . HttpCache::CARD_IMAGE_IMMUTABLE);
         header('Content-Length: ' . strlen($body));
         echo $body;
     }

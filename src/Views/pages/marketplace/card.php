@@ -24,7 +24,7 @@ $isLoggedIn = \App\Core\Auth::check();
                 <div id="card3d" class="mb-4" style="perspective:1200px;cursor:grab;">
                     <div id="card3dInner" class="relative aspect-[5/7]"
                          style="transition:transform 0.1s ease-out;will-change:transform;border-radius:12px;">
-                        <img id="card3dImg" :src="cardImgSrc(card.card_image_url)" :data-ext-src="card.card_image_url" alt=""
+                        <img id="card3dImg" :src="cardImgSrc(card.card_image_url, card.card_set_id)" :data-ext-src="card.card_image_url" alt=""
                              class="w-full h-full object-cover select-none"
                              style="border-radius:12px;display:block;"
                              onerror="cardImgErr(this)" draggable="false">

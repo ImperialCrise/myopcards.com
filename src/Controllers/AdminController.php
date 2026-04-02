@@ -259,12 +259,26 @@ class AdminController
         $log = new SyncLogger('card_sync', 'admin:' . Auth::user()['username']);
 
         try {
+            $donOnly = isset($_POST['don_only'])
+                && in_array(strtolower(trim((string)$_POST['don_only'])), ['1', 'true', 'yes', 'on'], true);
             $service = new \App\Services\CardSyncService();
-            $result = $service->syncAll();
+            $result = $donOnly ? $service->syncDonOnly() : $service->syncAll();
             $bf = (int)($result['sets_backfilled'] ?? 0);
-            $msg = "Synced {$result['cards']} cards, {$result['sets']} sets" . ($bf > 0 ? ", {$bf} set rows backfilled from cards" : '');
+            if ($donOnly) {
+                $msg = "DON!! only: {$result['cards']} cards, {$result['sets']} set rows upserted"
+                    . ($bf > 0 ? ", {$bf} sets backfilled from cards" : '');
+            } else {
+                $msg = "Synced {$result['cards']} cards, {$result['sets']} sets"
+                    . ($bf > 0 ? ", {$bf} set rows backfilled from cards" : '');
+            }
             $log->success($msg, $result);
-            echo json_encode(['success' => true, 'message' => $msg, 'errors' => $result['errors'], 'sets_backfilled' => $bf]);
+            echo json_encode([
+                'success' => true,
+                'message' => $msg,
+                'errors' => $result['errors'],
+                'sets_backfilled' => $bf,
+                'don_only' => $donOnly,
+            ]);
         } catch (\Throwable $e) {
             $log->fail($e->getMessage());
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);

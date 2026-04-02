@@ -27,7 +27,7 @@ $isEdit = !empty($editListing);
             <div x-show="cardResults.length > 0 && !selectedCard" x-transition class="absolute top-full left-0 right-0 mt-1 glass-strong rounded-xl shadow-2xl max-h-72 overflow-y-auto z-50">
                 <template x-for="card in cardResults" :key="card.id">
                     <button @click="selectCard(card)" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-dark-800/50 transition text-left">
-                        <img :src="cardImgSrc(card.card_image_url)" :data-ext-src="card.card_image_url" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="cardImgErr(this)">
+                        <img :src="cardImgSrc(card.card_image_url, card.card_set_id)" :data-ext-src="card.card_image_url" class="w-8 h-11 rounded object-cover bg-dark-700" onerror="cardImgErr(this)">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-white truncate" x-text="card.card_name"></p>
                             <p class="text-xs text-dark-400" x-text="card.card_set_id + (card.rarity ? ' - ' + card.rarity : '')"></p>
@@ -39,7 +39,7 @@ $isEdit = !empty($editListing);
         </div>
         <!-- Selected Card Preview -->
         <div x-show="selectedCard" class="mt-4 flex items-center gap-4 p-4 bg-dark-800/30 rounded-xl">
-            <img :src="selectedCard ? cardImgSrc(selectedCard.card_image_url) : ''" class="w-16 h-22 rounded-lg object-cover bg-dark-700" onerror="cardImgErr(this)">
+            <img :src="selectedCard ? cardImgSrc(selectedCard.card_image_url, selectedCard.card_set_id) : ''" class="w-16 h-22 rounded-lg object-cover bg-dark-700" onerror="cardImgErr(this)">
             <div class="flex-1 min-w-0">
                 <p class="text-white font-bold" x-text="selectedCard?.card_name"></p>
                 <p class="text-sm text-dark-400" x-text="selectedCard?.card_set_id"></p>

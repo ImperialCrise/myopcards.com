@@ -1,9 +1,26 @@
+function mcCardsLog() {
+    if (window.__MYOPCARDS_DEBUG_CARDS) {
+        var a = Array.prototype.slice.call(arguments);
+        a.unshift('[myopcards:cards]');
+        console.log.apply(console, a);
+    }
+}
+
 function cardBrowser() {
     var data = window.__PAGE_DATA || {};
+    var dFilters = data.filters || {};
+    mcCardsLog('cardBrowser() invoked; __PAGE_DATA keys:', data && Object.keys(data));
     return {
         cards: [], total: 0, page: 1, totalPages: 1, loading: false,
         sidebarOpen: false,
-        f: data.filters || {},
+        f: {
+            q: dFilters.q ?? '',
+            set_id: dFilters.set_id ?? '',
+            color: dFilters.color ?? '',
+            rarity: dFilters.rarity ?? '',
+            type: dFilters.type ?? '',
+            sort: dFilters.sort ?? 'set',
+        },
         sets: data.sets || [],
         colors: data.colors || [],
         rarities: data.rarities || [],
@@ -11,11 +28,90 @@ function cardBrowser() {
         ownedCards: data.ownedCards || {},
 
         init() {
+            if (this._mcCardsInitDone) {
+                mcCardsLog('init() skipped (already ran — Alpine or transition can fire twice)');
+                return;
+            }
+            this._mcCardsInitDone = true;
+
+            this.applyFiltersFromUrl();
+            this.ensureSelectOptionsMatchFilters();
             var initial = data.initialResult || { cards: [], total: 0, page: 1, total_pages: 1 };
             this.cards = initial.cards;
             this.total = initial.total;
             this.page = initial.page;
             this.totalPages = initial.total_pages;
+            mcCardsLog('init OK; f =', JSON.parse(JSON.stringify(this.f)), 'total', this.total);
+
+            var self = this;
+            this.$nextTick(function () {
+                self._syncFilterSelectDom();
+                self.$nextTick(function () {
+                    self._syncFilterSelectDom();
+                });
+            });
+        },
+
+        /** Native <select> display can desync from Alpine when options come from x-for; force .value after DOM updates. */
+        _syncFilterSelectDom() {
+            var pairs = [['setSel', 'set_id'], ['colorSel', 'color'], ['raritySel', 'rarity'], ['typeSel', 'type'], ['sortSel', 'sort']];
+            for (var i = 0; i < pairs.length; i++) {
+                var ref = pairs[i][0];
+                var key = pairs[i][1];
+                var el = this.$refs[ref];
+                if (!el || el.tagName !== 'SELECT') {
+                    continue;
+                }
+                var want = this.f[key] != null ? String(this.f[key]) : '';
+                if (el.value !== want) {
+                    el.value = want;
+                    mcCardsLog('DOM sync', ref, '=', want);
+                }
+            }
+        },
+
+        /** Query string is the source of truth on full page load (bookmark / reload). */
+        applyFiltersFromUrl() {
+            try {
+                var p = new URLSearchParams(window.location.search || '');
+                if (window.__MYOPCARDS_DEBUG_CARDS) {
+                    mcCardsLog('URL set_id=', p.get('set_id'), 'type=', p.get('type'));
+                }
+                if (p.has('q')) {
+                    this.f.q = p.get('q') || '';
+                }
+                if (p.has('set_id')) {
+                    this.f.set_id = p.get('set_id') || '';
+                }
+                if (p.has('color')) {
+                    this.f.color = p.get('color') || '';
+                }
+                if (p.has('rarity')) {
+                    this.f.rarity = p.get('rarity') || '';
+                }
+                if (p.has('type')) {
+                    this.f.type = p.get('type') || '';
+                }
+                if (p.has('sort')) {
+                    this.f.sort = p.get('sort') || 'set';
+                }
+            } catch (e) {
+                console.warn('[myopcards:cards] applyFiltersFromUrl error', e);
+            }
+        },
+
+        /** <select> only shows x-model when a matching <option> exists (URL/deep-link values may be missing from DISTINCT lists). */
+        ensureSelectOptionsMatchFilters() {
+            var prependIfMissing = function (arr, val) {
+                if (val === undefined || val === null || String(val).trim() === '') return arr;
+                var s = String(val);
+                if (arr.indexOf(s) === -1) return [s].concat(arr);
+                return arr;
+            };
+            this.sets = prependIfMissing(this.sets, this.f.set_id);
+            this.colors = prependIfMissing(this.colors, this.f.color);
+            this.rarities = prependIfMissing(this.rarities, this.f.rarity);
+            this.types = prependIfMissing(this.types, this.f.type);
         },
 
         get totalFormatted() {
@@ -52,8 +148,14 @@ function cardBrowser() {
                 this.total = result.total;
                 this.page = result.page;
                 this.totalPages = result.total_pages;
-            } catch (e) {}
+            } catch (e) {
+                console.warn('[myopcards:cards] doSearch fetch error', e);
+            }
             this.loading = false;
+            var self = this;
+            this.$nextTick(function () {
+                self._syncFilterSelectDom();
+            });
             window.scrollTo({ top: 0, behavior: 'smooth' });
         },
 
@@ -64,7 +166,7 @@ function cardBrowser() {
         },
 
         resetFilters() {
-            this.f = { q: '', set_id: '', color: '', rarity: '', type: '', sort: 'set' };
+            Object.assign(this.f, { q: '', set_id: '', color: '', rarity: '', type: '', sort: 'set' });
             this.doSearch();
         },
 

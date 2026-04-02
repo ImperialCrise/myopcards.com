@@ -42,6 +42,8 @@ $router->get('/cards', [App\Controllers\CardController::class, 'index']);
 $router->get('/cards/{id}', [App\Controllers\CardController::class, 'show']);
 $router->get('/api/cards/search', [App\Controllers\CardController::class, 'search']);
 $router->get('/api/cards/recommended', [App\Controllers\CardController::class, 'recommended']);
+$router->get('/api/don-card-image', [App\Controllers\CardController::class, 'donCardImage']);
+$router->get('/api/op-official-card', [App\Controllers\CardController::class, 'officialCardlistImage']);
 $router->get('/api/card-image', [App\Controllers\CardController::class, 'proxyImage']);
 
 $router->get('/collection', [App\Controllers\CollectionController::class, 'index']);

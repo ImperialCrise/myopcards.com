@@ -54,7 +54,7 @@ $isSellerVal = $isSeller ? 'true' : 'false';
     <!-- Card Info -->
     <div class="glass rounded-2xl p-6">
         <div class="flex items-center gap-5">
-            <img :src="cardImgSrc(order.card_image_url)" :data-ext-src="order.card_image_url" class="w-20 h-28 rounded-xl object-cover bg-dark-700 flex-shrink-0" onerror="cardImgErr(this)">
+            <img :src="cardImgSrc(order.card_image_url, order.card_set_id)" :data-ext-src="order.card_image_url" class="w-20 h-28 rounded-xl object-cover bg-dark-700 flex-shrink-0" onerror="cardImgErr(this)">
             <div class="flex-1 min-w-0">
                 <h3 class="text-lg font-bold text-white" x-text="order.card_name"></h3>
                 <p class="text-sm text-dark-400" x-text="order.card_set_id"></p>
